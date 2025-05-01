@@ -1,3 +1,8 @@
-const User = require('../models/User');
+import express from 'express';
+const router = express.Router();
+import { register, login } from '../controllers/authController.js';
 
-// TODO: use controller for signup and login, using auth middleware for protected routes
+router.post('/register', register);
+router.post('/login', login);
+
+export default router;

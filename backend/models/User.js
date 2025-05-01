@@ -21,7 +21,17 @@ const userSchema = new Schema({
     plans: [{
         type: Schema.Types.ObjectId,
         default: []
-    }]
+    }],
+    forms: [{
+        type: Schema.Types.ObjectId,
+        default: []
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    }
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema)
+
+export default User;

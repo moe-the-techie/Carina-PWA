@@ -1,12 +1,13 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import User from'../models/User.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+// TODO: consider adding logout endpoint if needed
 
 const generateToken = (userId) => {
     return jwt.sign({ userId }, process.env.JWT_SECRET, {expiresIn: '30d'});
 };
 
-const register = async (req, res) => {
+export const register = async (req, res) => {
     try {
         const { email, password, name } = req.body;
 
@@ -15,13 +16,26 @@ const register = async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUser = await User.find({ email: email });
+        const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
             return res.status(400).json({ message: `User with the email ${email} already exists` });
         }
         // TODO: encrypt password, generate token, and save useer to db
 
+        const salt = await bcrypt.genSalt(10);
+
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            name: name,
+            email: email,
+            password: hashedPassword,
+        });
+
+        await newUser.save();
+
+        res.status(200).json({message: 'User created successfully!', user: newUser, token: generateToken(newUser._id)});
         
     } catch (error) {
         console.error(error);
@@ -29,7 +43,7 @@ const register = async (req, res) => {
     }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -54,9 +68,4 @@ const login = async (req, res) => {
     } catch (error) {
         res.status(500).json(error);
     }
-};
-
-module.exports = {
-    register,
-    login
 };

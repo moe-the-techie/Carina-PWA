@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 // TODO: add the logic for admin access
 
@@ -18,8 +18,8 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user from the token (excluding password)
-      req.user = await User.findById(decoded.id).select('-password');
+      // Get user from the token (excluding password) and store in req.user
+      req.user = await User.findById(decoded.userId).select('-password');
 
       next();
     } catch (error) {
@@ -33,4 +33,4 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = protect;
+export default protect;

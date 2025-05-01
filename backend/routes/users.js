@@ -1,16 +1,11 @@
-const express = require('express');
-const router = require('express').Router();
-
-const {
-    getAllUsers,
-    getUserById,
-    searchByEmail
-} = require('../controllers/usersController');
-
-const { protect } = require('../middleware/auth');
+import express from 'express';
+const router = express.Router();
+import { getAllUsers, getUserById, searchByEmail, searchByName }  from '../controllers/usersController.js';
+import protect from '../middleware/auth.js';
 
 router.get('/', protect, getAllUsers); // GET all users
-router.get('/:id', protect, getUserById); // GET user by ID
-router.get('/search/:email', protect, searchByEmail); // GET user by email (search)
+router.get('/id/:id', protect, getUserById); // GET user by ID
+router.get('/email/:email', protect, searchByEmail); // GET user by email (search)
+router.get('/name/:name', protect, searchByName); // GET user by name (search)
 
-module.exports = router;
+export default router;
