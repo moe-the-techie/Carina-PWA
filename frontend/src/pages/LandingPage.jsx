@@ -3,28 +3,38 @@ import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-100 px-4 text-center">
-      <img src="/logo.PNG" alt="App Logo" className="w-40 h-40 mb-6" />
+    <div className="min-h-screen flex flex-col justify-center bg-gray-50 items-center px-6 text-center relative overflow-hidden">
+      <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8 relative z-10" />
 
-      <h1 className="text-2xl font-semibold text-gray-800 mb-2">
-        Welcome to Carina!
+      <h1 className="text-3xl font-semibold text-gray-800 mb-4 relative z-10">
+        Welcome!
       </h1>
-      <p className="text-gray-600 mb-8">
-        Your health companion — always within reach.
+      <p className="text-lg text-gray-600 mb-10 relative z-10">
+        Your Nutrition Journey Begins Here.
       </p>
 
-      <div className="flex space-x-4">
-        <Link to="/login">
-          <button className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition">
+      <div className="flex flex-col gap-4 w-full max-w-md relative z-10">
+        <Link to="/login" className="w-full">
+          <button
+            className={`
+              w-full bg-lime-400 text-black py-3 rounded-md
+              hover:bg-opacity-90 transition duration-200 font-semibold
+            `}
+          >
             Login
           </button>
         </Link>
-        <Link to="/signup">
-          <button className="bg-gray-300 text-gray-800 px-6 py-2 rounded-full hover:bg-gray-400 transition">
+        <Link to="/signup" className="w-full">
+          <button
+            className={`
+              w-full bg-lime-400 text-black py-3 rounded-md
+              hover:bg-opacity-80 transition duration-200 font-semibold
+            `}
+          >
             Sign Up
           </button>
         </Link>
       </div>
     </div>
   );
-};
+}
