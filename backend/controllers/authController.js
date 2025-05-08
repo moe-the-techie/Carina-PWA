@@ -21,7 +21,7 @@ export async function register(req, res) {
         const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
-            return res.status(400).json({ message: `User with the email ${email} already exists` });
+            return res.status(400).json({ error: `User with the email ${email} already exists` });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -40,7 +40,7 @@ export async function register(req, res) {
         
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -75,17 +75,17 @@ export async function validateToken(req, res) {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
+        return res.status(401).json({ error: 'No token provided' });
     }
 
     try {
         const decoded = await verifyToken(token); // Use the function
         const user = await User.findById(decoded.userId);
         if(!user){
-        return res.status(401).json({message: 'Invalid Token'})
+        return res.status(401).json({error: 'Invalid Token'})
         }
         res.status(200).json({ message: 'Token is valid', userId: decoded.userId });
     } catch (error) {
-        return res.status(401).json({ message: 'Invalid token' });
+        return res.status(401).json({ error: 'Invalid token' });
     }
 }

@@ -11,7 +11,7 @@ export async function getAllUsers(req, res) {
         res.status(200).json(users);
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message});
+        res.status(500).json({error: error.message});
     }
 };
 
@@ -28,7 +28,7 @@ export async function getUserById(req, res) {
         res.status(200).json(user);
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message});
+        res.status(500).json({error: error.message});
     }
 };
 
@@ -52,7 +52,7 @@ export async function searchByEmail(req, res) {
         res.status(200).json({users: users});
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message});
+        res.status(500).json({error: error.message});
     }
 };
 
@@ -75,6 +75,6 @@ export async function searchByName(req, res) {
         res.status(200).json({users: users});
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message});
+        res.status(500).json({error: error.message});
     }
 };
