@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-const apiBaseUrl = import.meta.env.VERCEL_API_URL;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
