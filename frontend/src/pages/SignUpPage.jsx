@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VERCEL_API_URL;
 
 export default function SignUpPage({ onLogin }) {
   const [name, setName] = useState('');

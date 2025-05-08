@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage'
 import SignUpPage from './pages/SignUpPage';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = import.meta.env.VERCEL_API_URL;
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
