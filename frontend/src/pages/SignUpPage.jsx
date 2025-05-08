@@ -8,11 +8,12 @@ export default function SignUpPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [backendError, setBackendError] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false); // State for password confirmation visibility
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     let errors = {};
 
@@ -45,28 +46,46 @@ export default function SignUpPage({ onLogin }) {
     }
 
     setFormErrors(errors);
+    setBackendError('');
 
     if (Object.keys(errors).length === 0) {
-      fetch(`${apiBaseUrl}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, passwordConfirmation, name }),
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Register successful!', data);
-        localStorage.setItem('token', data.token);
-        onLogin();
-        navigate('/');
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again later.');
-      });
-    
-      // Reset form fields
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, passwordConfirmation, name }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // handle backend error
+          if (data && data.error) {
+            setBackendError(data.error);
+          } else {
+            setBackendError(`Registration failed: ${response.status}`);
+          }
+          return;
+        }
+
+        // Print whatever the API returns
+        console.log(data);
+
+        // Successful registration
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          onLogin();
+          navigate('/');
+        } else {
+          setBackendError('Registration succeeded but token is missing.');
+        }
+
+      } catch (error) {
+        console.error('Network error:', error);
+        setBackendError('Network error: ' + error.message);
+      }
+
+      // Clear form only if no backend/network error
       setEmail('');
       setPassword('');
       setPasswordConfirmation('');
@@ -80,10 +99,7 @@ export default function SignUpPage({ onLogin }) {
       <h1 className="text-3xl font-semibold text-gray-800 mb-8">
         Create an Account
       </h1>
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <div className="space-y-2">
           <label htmlFor="name" className="block text-left text-gray-700 text-sm font-bold mb-1">
             Name
@@ -93,15 +109,9 @@ export default function SignUpPage({ onLogin }) {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={`
-              w-full px-4 py-3 rounded-md border
-              ${formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-              focus:outline-none transition duration-200
-            `}
+            className={`w-full px-4 py-3 rounded-md border ${formErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} focus:outline-none transition duration-200`}
           />
-          {formErrors.name && (
-            <p className="text-red-500 text-sm text-left">{formErrors.name}</p>
-          )}
+          {formErrors.name && <p className="text-red-500 text-sm text-left">{formErrors.name}</p>}
         </div>
         <div className="space-y-2">
           <label htmlFor="email" className="block text-left text-gray-700 text-sm font-bold mb-1">
@@ -112,15 +122,9 @@ export default function SignUpPage({ onLogin }) {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`
-              w-full px-4 py-3 rounded-md border
-              ${formErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-              focus:outline-none transition duration-200
-            `}
+            className={`w-full px-4 py-3 rounded-md border ${formErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} focus:outline-none transition duration-200`}
           />
-          {formErrors.email && (
-            <p className="text-red-500 text-sm text-left">{formErrors.email}</p>
-          )}
+          {formErrors.email && <p className="text-red-500 text-sm text-left">{formErrors.email}</p>}
         </div>
         <div className="space-y-1">
           <label htmlFor="password" className="block text-left text-gray-700 text-sm font-bold mb-1">
@@ -132,11 +136,7 @@ export default function SignUpPage({ onLogin }) {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`
-                w-full px-4 py-3 rounded-md border
-                ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-                focus:outline-none transition duration-200
-              `}
+              className={`w-full px-4 py-3 rounded-md border ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} focus:outline-none transition duration-200`}
             />
             <button
               type="button"
@@ -146,9 +146,7 @@ export default function SignUpPage({ onLogin }) {
               {showPassword ? 'Hide' : 'Show'} {/* Button text depending on showPassword state */}
             </button>
           </div>
-          {formErrors.password && (
-            <p className="text-red-500 text-sm text-left">{formErrors.password}</p>
-          )}
+          {formErrors.password && <p className="text-red-500 text-sm text-left">{formErrors.password}</p>}
         </div>
         <div className="space-y-2">
           <label htmlFor="passwordConfirmation" className="block text-left text-gray-700 text-sm font-bold mb-1">
@@ -160,11 +158,7 @@ export default function SignUpPage({ onLogin }) {
               id="passwordConfirmation"
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
-              className={`
-                w-full px-4 py-3 rounded-md border
-                ${formErrors.passwordConfirmation ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-                focus:outline-none transition duration-200
-              `}
+              className={`w-full px-4 py-3 rounded-md border ${formErrors.passwordConfirmation ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'} focus:outline-none transition duration-200`}
             />
             <button
               type="button"
@@ -174,29 +168,26 @@ export default function SignUpPage({ onLogin }) {
               {showPasswordConfirmation ? 'Hide' : 'Show'} {/* Button text depending on showPasswordConfirmation state */}
             </button>
           </div>
-          {formErrors.passwordConfirmation && (
-            <p className="text-red-500 text-sm text-left">{formErrors.passwordConfirmation}</p>
-          )}
+          {formErrors.passwordConfirmation && <p className="text-red-500 text-sm text-left">{formErrors.passwordConfirmation}</p>}
         </div>
+        {backendError && (
+          <p className="text-red-500 text-sm text-left">{backendError}</p>
+        )}
         <div className="mt-10">
           <button
             type="submit"
-            className={`
-              w-full bg-lime-400 text-gray-800 py-3 rounded-md
-              hover:bg-lime-600 transition duration-200 font-semibold
-              shadow-md
-            `}
+            className="w-full bg-lime-400 text-gray-800 py-3 rounded-md hover:bg-lime-600 transition duration-200 font-semibold shadow-md"
           >
             Sign Up
           </button>
         </div>
         <div className="text-gray-600 text-base">
           Already Registered?{' '}
-          <Link to="/login" className={`text-lime-400 font-semibold hover:underline`}>
+          <Link to="/login" className="text-lime-400 font-semibold hover:underline">
             Log In
           </Link>
         </div>
       </form>
     </div>
   );
-};
+}
