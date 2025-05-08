@@ -8,6 +8,8 @@ export default function SignUpPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false); // State for password confirmation visibility
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -67,13 +69,14 @@ export default function SignUpPage({ onLogin }) {
       // Reset form fields
       setEmail('');
       setPassword('');
+      setPasswordConfirmation('');
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-6 text-center">
-        <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8" />
-        
+      <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8" />
+      
       <h1 className="text-3xl font-semibold text-gray-800 mb-8">
         Create an Account
       </h1>
@@ -123,17 +126,26 @@ export default function SignUpPage({ onLogin }) {
           <label htmlFor="password" className="block text-left text-gray-700 text-sm font-bold mb-1">
             Password
           </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`
-              w-full px-4 py-3 rounded-md border
-              ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-              focus:outline-none transition duration-200
-            `}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'} // Toggle between password and text
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`
+                w-full px-4 py-3 rounded-md border
+                ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                focus:outline-none transition duration-200
+              `}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)} // Toggle showPassword state
+              className="absolute inset-y-0 right-0 px-3 py-2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? 'Hide' : 'Show'} {/* Button text depending on showPassword state */}
+            </button>
+          </div>
           {formErrors.password && (
             <p className="text-red-500 text-sm text-left">{formErrors.password}</p>
           )}
@@ -142,32 +154,41 @@ export default function SignUpPage({ onLogin }) {
           <label htmlFor="passwordConfirmation" className="block text-left text-gray-700 text-sm font-bold mb-1">
             Confirm Password
           </label>
-          <input
-            type="password"
-            id="passwordConfirmation"
-            value={passwordConfirmation}
-            onChange={(e) => setPasswordConfirmation(e.target.value)}
-            className={`
-              w-full px-4 py-3 rounded-md border
-              ${formErrors.passwordConfirmation ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-              focus:outline-none transition duration-200
-            `}
-          />
+          <div className="relative">
+            <input
+              type={showPasswordConfirmation ? 'text' : 'password'} // Toggle between password and text
+              id="passwordConfirmation"
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+              className={`
+                w-full px-4 py-3 rounded-md border
+                ${formErrors.passwordConfirmation ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                focus:outline-none transition duration-200
+              `}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)} // Toggle showPasswordConfirmation state
+              className="absolute inset-y-0 right-0 px-3 py-2 text-gray-500 hover:text-gray-700"
+            >
+              {showPasswordConfirmation ? 'Hide' : 'Show'} {/* Button text depending on showPasswordConfirmation state */}
+            </button>
+          </div>
           {formErrors.passwordConfirmation && (
             <p className="text-red-500 text-sm text-left">{formErrors.passwordConfirmation}</p>
           )}
         </div>
         <div className="mt-10">
-        <button
-          type="submit"
-          className={`
-            w-full bg-lime-400 text-gray-800 py-3 rounded-md
-            hover:bg-lime-500 transition duration-200 font-semibold
-            shadow-md
-          `}
-        >
-          Sign Up
-        </button>
+          <button
+            type="submit"
+            className={`
+              w-full bg-lime-400 text-gray-800 py-3 rounded-md
+              hover:bg-lime-600 transition duration-200 font-semibold
+              shadow-md
+            `}
+          >
+            Sign Up
+          </button>
         </div>
         <div className="text-gray-600 text-base">
           Already Registered?{' '}
