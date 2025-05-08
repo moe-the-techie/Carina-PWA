@@ -60,7 +60,7 @@ export default function LoginPage({ onLogin }) {
       } catch (error) {
         // Handle network errors or errors in the fetch process itself
         console.error('Error:', error);
-        setBackendError('An unexpected error occurred. Please try again later.');
+        setBackendError(error.message);e
       }
 
       setEmail('');
