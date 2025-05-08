@@ -25,7 +25,7 @@ export async function getUserById(req, res) {
             return res.status(404).json({error: `404: User with ID ${id} not found`});
         }
 
-        res.status(200).json(user);
+        res.status(200).json({user: user});
     } catch (error) {
         console.error(error);
         res.status(500).json({error: error.message});
