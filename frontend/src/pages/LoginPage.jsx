@@ -7,12 +7,13 @@ export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [backendError, setBackendError] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     let errors = {};
-  
+
     if (!email.trim()) {
       errors.email = 'Email is required';
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -20,7 +21,7 @@ export default function LoginPage({ onLogin }) {
     } else if (email.includes('"') || email.includes("'") || email.includes(';') || email.includes('`')) {
       errors.email = 'Email cannot contain special characters like ", \', ;, or `';
     }
-  
+
     if (!password.trim()) {
       errors.password = 'Password is required';
     } else if (password.length < 8) {
@@ -28,10 +29,10 @@ export default function LoginPage({ onLogin }) {
     } else if (password.includes('"') || password.includes("'") || password.includes(';') || password.includes('`')) {
       errors.password = 'Password cannot contain special characters like ", \', ;, or `';
     }
-  
+
     setFormErrors(errors);
     setBackendError('');
-  
+
     if (Object.keys(errors).length === 0) {
       try {
         const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
@@ -39,9 +40,9 @@ export default function LoginPage({ onLogin }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
-  
+
         const data = await response.json();
-        
+
         if (!response.ok) {
           // handle backend error
           if (data && data.error) {
@@ -51,7 +52,7 @@ export default function LoginPage({ onLogin }) {
           }
           return;
         }
-  
+
         // Successful login
         if (data.token) {
           localStorage.setItem('token', data.token);
@@ -60,18 +61,17 @@ export default function LoginPage({ onLogin }) {
         } else {
           setBackendError('Login succeeded but token is missing.');
         }
-  
+
       } catch (error) {
         console.error('Network error:', error);
         setBackendError('Network error: ' + error.message);
       }
-  
+
       // Clear form only if no backend/network error
       setEmail('');
       setPassword('');
     }
   };
-  
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-6 text-center">
@@ -107,32 +107,44 @@ export default function LoginPage({ onLogin }) {
           <label htmlFor="password" className="block text-left text-gray-700 text-sm font-bold mb-1">
             Password
           </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`
-              w-full px-4 py-3 rounded-md border
-              ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
-              focus:outline-none transition duration-200
-            `}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'} // Toggle between password and text
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`
+                w-full px-4 py-3 rounded-md border
+                ${formErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}
+                focus:outline-none transition duration-200
+              `}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)} // Toggle showPassword state
+              className="absolute inset-y-0 right-0 px-3 py-2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? 'Hide' : 'Show'} {/* Button text depending on showPassword state */}
+            </button>
+          </div>
+          {formErrors.password && (
+            <p className="text-red-500 text-sm text-left">{formErrors.password}</p>
+          )}
         </div>
         {backendError && (
           <p className="text-red-500 text-sm text-left">{backendError}</p>
         )}
         <div className="mt-20">
-        <button
-          type="submit"
-          className={`
-            w-full bg-lime-400 text-gray-800 py-3 rounded-md
-            hover:bg-lime-500 transition duration-200 font-semibold
-            shadow-md
-          `}
-        >
-          Log In
-        </button>
+          <button
+            type="submit"
+            className={`
+              w-full bg-lime-400 text-gray-800 py-3 rounded-md
+              hover:bg-lime-500 transition duration-200 font-semibold
+              shadow-md
+            `}
+          >
+            Log In
+          </button>
         </div>
         <div className="text-gray-600 text-base">
           Don't have an account?{' '}
@@ -143,4 +155,4 @@ export default function LoginPage({ onLogin }) {
       </form>
     </div>
   );
-};
+}
