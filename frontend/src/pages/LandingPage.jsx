@@ -24,7 +24,7 @@ export default function LandingPage() {
             Login
           </button>
         </Link>
-        <Link to="/signup" className="w-full">
+        <Link to="/register" className="w-full">
           <button
             className={`
               w-full bg-lime-400 text-black py-3 rounded-md

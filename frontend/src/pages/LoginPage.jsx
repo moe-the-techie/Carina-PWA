@@ -115,7 +115,7 @@ export default function LoginPage({ onLogin }) {
         </div>
         <div className="text-gray-600 text-base">
           Don't have an account?{' '}
-          <Link to="/signup" className={`text-lime-400 font-semibold hover:underline`}>
+          <Link to="/register" className={`text-lime-400 font-semibold hover:underline`}>
             Sign Up
           </Link>
         </div>
