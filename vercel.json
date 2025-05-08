@@ -4,7 +4,6 @@
       {
         "src": "frontend",
         "use": "@vercel/static-build",
-        "dest": "dist"
       },
       {
         "src": "backend/server.js",
