@@ -68,7 +68,7 @@ export async function login(req, res) {
         res.status(200).json({message: 'Login successful!', user: user, token: generateToken(user._id)});
 
     } catch (error) {
-        res.status(500).json(error);
+        res.status(500).json({error: error.message});
     }
 };
 

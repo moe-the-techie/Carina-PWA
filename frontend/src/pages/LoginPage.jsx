@@ -30,7 +30,7 @@ export default function LoginPage({ onLogin }) {
     }
   
     setFormErrors(errors);
-    setBackendError(''); // clear any previous backend error
+    setBackendError('');
   
     if (Object.keys(errors).length === 0) {
       try {
@@ -40,7 +40,7 @@ export default function LoginPage({ onLogin }) {
           body: JSON.stringify({ email, password }),
         });
   
-        const data = await response.json(); // always parse body
+        const data = await response.json();
         
         if (!response.ok) {
           // handle backend error
@@ -49,7 +49,7 @@ export default function LoginPage({ onLogin }) {
           } else {
             setBackendError(`Login failed: ${response.status}`);
           }
-          return; // do NOT continue to navigate
+          return;
         }
   
         // Successful login
