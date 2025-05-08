@@ -42,7 +42,7 @@ export default function LoginPage({ onLogin }) {
 
         const res = await response.json();
 
-        if (res.status() !== 200) {
+        if (res.error) {
           // Handle HTTP errors (e.g., 400, 404, 500)
           const errorData = await response.json(); 
           if (errorData && errorData.error) {
