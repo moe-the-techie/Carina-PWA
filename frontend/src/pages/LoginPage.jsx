@@ -40,9 +40,9 @@ export default function LoginPage({ onLogin }) {
           body: JSON.stringify({ email, password }),
         });
 
-        const res = await response.json();
+        console.log('Response:', response); // Log the response object
 
-        if (res.error) {
+        if (response.error) {
           // Handle HTTP errors (e.g., 400, 404, 500)
           const errorData = await response.json(); 
           if (errorData && errorData.error) {
@@ -53,8 +53,8 @@ export default function LoginPage({ onLogin }) {
           return; // Stop processing here
         }
         
-        console.log('Login successful!', res);
-        localStorage.setItem('token', res.token);
+        console.log('Login successful!', response);
+        localStorage.setItem('token', response.token);
         onLogin();
         navigate('/');
       } catch (error) {
