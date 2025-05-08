@@ -3,7 +3,7 @@
     "builds": [
       {
         "src": "frontend",
-        "use": "@vercel/static-build",
+        "use": "@vercel/static-build"
       },
       {
         "src": "backend/server.js",
