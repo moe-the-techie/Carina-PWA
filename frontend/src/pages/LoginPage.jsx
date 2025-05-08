@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -29,7 +30,7 @@ export default function LoginPage({ onLogin }) {
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      fetch('/api/auth/login', {
+      fetch(`${apiBaseUrl}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

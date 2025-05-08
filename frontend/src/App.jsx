@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage'
 import SignUpPage from './pages/SignUpPage';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -13,7 +14,7 @@ function App() {
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            fetch('/api/auth/validateToken', {
+            fetch(`${apiBaseUrl}/api/auth/validateToken`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 export default function SignUpPage({ onLogin }) {
   const [name, setName] = useState('');
@@ -44,7 +45,7 @@ export default function SignUpPage({ onLogin }) {
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      fetch('/api/auth/register', {
+      fetch(`${apiBaseUrl}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
