@@ -6,9 +6,10 @@ export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [backendError, setBackendError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     let errors = {};
 
@@ -30,26 +31,37 @@ export default function LoginPage({ onLogin }) {
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      fetch(`${apiBaseUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-      .then(response => response.json())
-      .then(data => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!response.ok) {
+          // Handle HTTP errors (e.g., 400, 404, 500)
+          const errorData = await response.json(); 
+          if (errorData && errorData.error) {
+            setBackendError(errorData.error); // Set the backend error message
+          } else {
+             setBackendError(`Login failed: ${response.status}`);
+          }
+          return; // Stop processing here
+        }
+
+        const data = await response.json();
         console.log('Login successful!', data);
         localStorage.setItem('token', data.token);
         onLogin();
         navigate('/');
-      })
-      .catch(error => {
+      } catch (error) {
+        // Handle network errors or errors in the fetch process itself
         console.error('Error:', error);
-        alert('An error occurred. Please try again later.');
-      });
-    
-      // Reset form fields
+        setBackendError('An unexpected error occurred. Please try again later.');
+      }
+
       setEmail('');
       setPassword('');
     }
@@ -100,8 +112,10 @@ export default function LoginPage({ onLogin }) {
               focus:outline-none transition duration-200
             `}
           />
-          
         </div>
+        {backendError && (
+          <p className="text-red-500 text-sm text-left">{backendError}</p>
+        )}
         <div className="mt-20">
         <button
           type="submit"

@@ -14,12 +14,12 @@ export default function HomePage({ onLogin }) {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h1 className="text-3xl font-semibold text-blue-600 mb-4">
-          Welcome to the Home Page
+          Welcome to the Home Page! This page is still under development.
         </h1>
         <p className="text-gray-700 mb-6">You are now logged in!</p>
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          className="bg-lime-400 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
           Logout
         </button>
