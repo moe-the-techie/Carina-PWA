@@ -12,7 +12,7 @@ export default function LoginPage({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let errors = {};
-
+  
     if (!email.trim()) {
       errors.email = 'Email is required';
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -20,6 +20,7 @@ export default function LoginPage({ onLogin }) {
     } else if (email.includes('"') || email.includes("'") || email.includes(';') || email.includes('`')) {
       errors.email = 'Email cannot contain special characters like ", \', ;, or `';
     }
+  
     if (!password.trim()) {
       errors.password = 'Password is required';
     } else if (password.length < 8) {
@@ -27,46 +28,50 @@ export default function LoginPage({ onLogin }) {
     } else if (password.includes('"') || password.includes("'") || password.includes(';') || password.includes('`')) {
       errors.password = 'Password cannot contain special characters like ", \', ;, or `';
     }
-
+  
     setFormErrors(errors);
-
+    setBackendError(''); // clear any previous backend error
+  
     if (Object.keys(errors).length === 0) {
       try {
         const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
-
-        console.log('Response:', response); // Log the response object
-
-        if (response.error) {
-          // Handle HTTP errors (e.g., 400, 404, 500)
-          const errorData = await response.json(); 
-          if (errorData && errorData.error) {
-            setBackendError(errorData.error); // Set the backend error message
-          } else {
-             setBackendError(`Login failed: ${response.status}`);
-          }
-          return; // Stop processing here
-        }
+  
+        const data = await response.json(); // always parse body
         
-        console.log('Login successful!', response);
-        localStorage.setItem('token', response.token);
-        onLogin();
-        navigate('/');
+        if (!response.ok) {
+          // handle backend error
+          if (data && data.error) {
+            setBackendError(data.error);
+          } else {
+            setBackendError(`Login failed: ${response.status}`);
+          }
+          return; // do NOT continue to navigate
+        }
+  
+        // Successful login
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          onLogin();
+          navigate('/');
+        } else {
+          setBackendError('Login succeeded but token is missing.');
+        }
+  
       } catch (error) {
-        // Handle network errors or errors in the fetch process itself
-        console.error('Error:', error);
-        setBackendError(error.message);e
+        console.error('Network error:', error);
+        setBackendError('Network error: ' + error.message);
       }
-
+  
+      // Clear form only if no backend/network error
       setEmail('');
       setPassword('');
     }
   };
+  
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-6 text-center">
