@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.jsx'
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
+  navigator.serviceWorker.register('/sw.js')
     .then(reg => console.log('[PWA] Service worker registered:', reg.scope))
     .catch(err => console.error('[PWA] SW registration failed:', err));
 
