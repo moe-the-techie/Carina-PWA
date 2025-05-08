@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 
 // GET all users
-export const getAllUsers = async (req, res) => {
+export async function getAllUsers(req, res) {
     try {
         const users = await User.find();
         if (!users){
@@ -16,7 +16,7 @@ export const getAllUsers = async (req, res) => {
 };
 
 // Get user by ID
-export const getUserById = async (req, res) => {
+export async function getUserById(req, res) {
     try {
         const id = req.params.id;
         const user = await User.findById(id);
@@ -33,15 +33,19 @@ export const getUserById = async (req, res) => {
 };
 
 // GET user by Email (search)
-export const searchByEmail = async (req, res) => {
+export async function searchByEmail(req, res) {
     try {
         const email = req.params.email;
+
+        if (!email || email.trim() === '') {
+            return res.status(400).json({ error: '400: Email parameter is required' });
+          }
         
         const regex = new RegExp(email, 'i'); // Case-insensitive regex
 
         const users = await User.find({ email: regex });
 
-        if (!users || users.length === 0) {
+        if (users.length === 0) {
             return res.status(404).json({error: `404: No users with email ${email} found`});
         }
 
@@ -52,9 +56,13 @@ export const searchByEmail = async (req, res) => {
     }
 };
 
-export const searchByName = async (req, res) => {
+export async function searchByName(req, res) {
     try {
         const name = req.params.name;
+
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: '400: Name parameter is required' });
+        }
         
         const regex = new RegExp(name, 'i'); // Case-insensitive regex
 

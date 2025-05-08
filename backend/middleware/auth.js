@@ -1,36 +1,45 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-// TODO: add the logic for admin access
+// TODO: add logic for admin access
 
-const protect = async (req, res, next) => {
-  let token;
-
-  // Check if Authorization header exists and starts with "Bearer"
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
-      // Get token from header
-      token = req.headers.authorization.split(' ')[1];
-
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Get user from the token (excluding password) and store in req.user
-      req.user = await User.findById(decoded.userId).select('-password');
-
-      next();
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'Not authorized, token failed' });
-    }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
+// Function to verify the JWT token (for login)
+export async function verifyToken(token) {
+  try {
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
+    return decoded; // Return the decoded payload
+  } catch (error) {
+    throw error; // Re-throw the error to be caught by the caller
   }
 };
 
-export default protect;
+export async function protect(req, res, next) {
+  let token;
+
+  try {
+    // Check for the token
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: 'Not authorized, no token' });
+    }
+
+    // Verify the token
+    const decoded = await verifyToken(token);
+
+    // Get the user (and check if they exist)
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) {
+      return res.status(401).json({ message: 'Not authorized, invalid token' }); // Or a more specific message
+    }
+
+    req.user = user; // Store user in request
+    next(); // Move to the next middleware/route
+  } catch (error) {
+    // Handle all errors (token verification, user lookup) in one place
+    console.error(error);
+    return res.status(401).json({ message: 'Not authorized, token failed' });
+  }
+};

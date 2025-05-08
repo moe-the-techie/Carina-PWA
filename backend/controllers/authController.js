@@ -1,13 +1,15 @@
 import User from'../models/User.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { verifyToken } from '../middleware/auth.js';
+
 // TODO: consider adding logout endpoint if needed
 
 const generateToken = (userId) => {
     return jwt.sign({ userId }, process.env.JWT_SECRET, {expiresIn: '30d'});
 };
 
-export const register = async (req, res) => {
+export async function register(req, res) {
     try {
         const { email, password, name } = req.body;
 
@@ -43,7 +45,7 @@ export const register = async (req, res) => {
     }
 };
 
-export const login = async (req, res) => {
+export async function login(req, res) {
     try {
         const { email, password } = req.body;
 
@@ -69,3 +71,22 @@ export const login = async (req, res) => {
         res.status(500).json(error);
     }
 };
+
+export async function validateToken(req, res) {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ message: 'No token provided' });
+    }
+
+    try {
+        const decoded = await verifyToken(token); // Use the function
+        const user = await User.findById(decoded.userId);
+        if(!user){
+        return res.status(401).json({message: 'Invalid Token'})
+        }
+        res.status(200).json({ message: 'Token is valid', userId: decoded.userId });
+    } catch (error) {
+        return res.status(401).json({ message: 'Invalid token' });
+    }
+}

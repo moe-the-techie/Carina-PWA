@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function SignUpPage() {
+export default function SignUpPage({ onLogin }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,17 +15,26 @@ export default function SignUpPage() {
 
     if (!name.trim()) {
       errors.name = 'Name is required';
+    } else if (name.includes('"') || name.includes("'") || name.includes(';') || name.includes('`')) {
+      errors.name = 'Name cannot contain special characters like ", \', ;, or `';
     }
+
     if (!email.trim()) {
       errors.email = 'Email is required';
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
       errors.email = 'Invalid email format';
+    } else if (email.includes('"') || email.includes("'") || email.includes(';') || email.includes('`')) {
+      errors.email = 'Email cannot contain special characters like ", \', ;, or `';
     }
+
     if (!password.trim()) {
       errors.password = 'Password is required';
     } else if (password.length < 8) {
       errors.password = 'Password must be at least 8 characters';
+    } else if (password.includes('"') || password.includes("'") || password.includes(';') || password.includes('`')) {
+      errors.password = 'Password cannot contain special characters like ", \', ;, or `';
     }
+
     if (!passwordConfirmation.trim()) {
       errors.passwordConfirmation = 'Password confirmation is required';
     } else if (password !== passwordConfirmation) {
@@ -34,13 +44,28 @@ export default function SignUpPage() {
     setFormErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      // Handle login logic here (e.g., send data to an API)
-      console.log('Form submitted successfully!', { name, email, password });
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, passwordConfirmation, name }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Register successful!', data);
+        localStorage.setItem('token', data.token);
+        onLogin();
+        navigate('/');
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again later.');
+      });
+    
       // Reset form fields
-      setName('');
       setEmail('');
       setPassword('');
-      setPasswordConfirmation('');
     }
   };
 
