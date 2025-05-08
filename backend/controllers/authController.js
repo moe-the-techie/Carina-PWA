@@ -23,7 +23,6 @@ export async function register(req, res) {
         if (existingUser) {
             return res.status(400).json({ message: `User with the email ${email} already exists` });
         }
-        // TODO: encrypt password, generate token, and save useer to db
 
         const salt = await bcrypt.genSalt(10);
 
