@@ -139,7 +139,7 @@ export default function LoginPage({ onLogin }) {
             type="submit"
             className={`
               w-full bg-lime-400 text-gray-800 py-3 rounded-md
-              hover:bg-lime-600 transition duration-200 font-semibold
+              hover:bg-lime-500 transition duration-200 font-semibold
               shadow-md
             `}
           >

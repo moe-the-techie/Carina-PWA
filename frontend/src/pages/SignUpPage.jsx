@@ -68,9 +68,6 @@ export default function SignUpPage({ onLogin }) {
           return;
         }
 
-        // Print whatever the API returns
-        console.log(data);
-
         // Successful registration
         if (data.token) {
           localStorage.setItem('token', data.token);
@@ -176,7 +173,7 @@ export default function SignUpPage({ onLogin }) {
         <div className="mt-10">
           <button
             type="submit"
-            className="w-full bg-lime-400 text-gray-800 py-3 rounded-md hover:bg-lime-600 transition duration-200 font-semibold shadow-md"
+            className="w-full bg-lime-400 text-gray-800 py-3 rounded-md hover:bg-lime-500 transition duration-200 font-semibold shadow-md"
           >
             Sign Up
           </button>
