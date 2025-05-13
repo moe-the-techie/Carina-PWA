@@ -73,7 +73,7 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-6 text-center">
+    <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center">
       <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8" />
 
       <h1 className="text-3xl font-semibold text-gray-800 mb-8">
