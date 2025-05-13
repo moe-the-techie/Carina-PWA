@@ -13,15 +13,11 @@ export async function register(req, res) {
     try {
         const { email, password, name } = req.body;
 
-        if (!email || !password || !name) {
-            res.status(400).json({ error: 'Please add all fields' });
-        }
-
         // Check if user already exists
         const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
-            return res.status(400).json({ error: `User with the email ${email} already exists` });
+            return res.status(400).json({ error: `The email ${email} is already registered. Try logging in!` });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -46,22 +42,18 @@ export async function register(req, res) {
 
 export async function login(req, res) {
     try {
-        const { email, password } = req.body;
+        const { email } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Please add all fields' });
-        }
-
-        const user = await User.findOne({ email : req.body.email });
+        const user = await User.findOne({ email : email });
 
         if (!user) {
-            return res.status(404).json({error : `Incorrect Email!`});
+            return res.status(404).json({error : `Email is not recognized. Please register first!`});
         }
 
         const correctPassword = await bcrypt.compare(req.body.password, user.password);
 
         if (!correctPassword) {
-            return res.status(401).json({error: 'Incorrect password!'});
+            return res.status(401).json({error: 'Password is incorrect. Please try again!'});
         }
 
         res.status(200).json({message: 'Login successful!', user: user, token: generateToken(user._id)});

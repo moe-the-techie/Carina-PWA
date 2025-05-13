@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import LandingButton from '../components/LandingButton.jsx';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginPage({ onLogin }) {
@@ -7,7 +8,7 @@ export default function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [backendError, setBackendError] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,8 +25,6 @@ export default function LoginPage({ onLogin }) {
 
     if (!password.trim()) {
       errors.password = 'Password is required';
-    } else if (password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
     } else if (password.includes('"') || password.includes("'") || password.includes(';') || password.includes('`')) {
       errors.password = 'Password cannot contain special characters like ", \', ;, or `';
     }
@@ -131,20 +130,17 @@ export default function LoginPage({ onLogin }) {
             <p className="text-red-500 text-sm text-left">{formErrors.password}</p>
           )}
         </div>
-        {backendError && (
-          <p className="text-red-500 text-sm text-left">{backendError}</p>
-        )}
-        <div className="mt-20">
-          <button
-            type="submit"
-            className={`
-              w-full bg-lime-400 text-gray-800 py-3 rounded-md
-              hover:bg-lime-500 transition duration-200 font-semibold
-              shadow-md
-            `}
-          >
+        <div className="h-5">
+          {backendError && (
+            <p className="text-red-600 text-base font-light py-1 inline-block">
+              {backendError}
+            </p>
+          )}
+        </div>
+        <div className="mt-10">
+          <LandingButton type="submit">
             Log In
-          </button>
+          </LandingButton>
         </div>
         <div className="text-gray-600 text-base">
           Don't have an account?{' '}

@@ -27,7 +27,7 @@ function App() {
                     }
                     throw new Error('Invalid token');
                 })
-                .then(() => { // Removed the unused 'data' parameter
+                .then(() => {
                     setIsLoggedIn(true);
                 })
                 .catch(error => {

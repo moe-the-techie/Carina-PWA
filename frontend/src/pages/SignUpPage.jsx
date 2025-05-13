@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import LandingButton from '../components/LandingButton.jsx';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function SignUpPage({ onLogin }) {
@@ -167,16 +168,15 @@ export default function SignUpPage({ onLogin }) {
           </div>
           {formErrors.passwordConfirmation && <p className="text-red-500 text-sm text-left">{formErrors.passwordConfirmation}</p>}
         </div>
-        {backendError && (
-          <p className="text-red-500 text-sm text-left">{backendError}</p>
-        )}
+        <div className="h-5">
+          {backendError && (
+            <p className="text-red-600 text-base font-light py-1 inline-block">
+              {backendError}
+            </p>
+          )}
+        </div>
         <div className="mt-10">
-          <button
-            type="submit"
-            className="w-full bg-lime-400 text-gray-800 py-3 rounded-md hover:bg-lime-500 transition duration-200 font-semibold shadow-md"
-          >
-            Sign Up
-          </button>
+          <LandingButton type="submit">Sign Up</LandingButton>
         </div>
         <div className="text-gray-600 text-base">
           Already Registered?{' '}

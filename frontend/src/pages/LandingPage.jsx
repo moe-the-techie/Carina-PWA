@@ -1,24 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Button from '@mui/material/Button';
-import { styled } from '@mui/material/styles';
-
-// TODO: Make the styled button a separate component and make sure it uses theme elements
-// TODO: create theme element to use for all components moving forward
-
-const StyledButton = styled(Button)(() => ({
-  backgroundColor: '#91eb4e',
-  color: '#000',
-  padding: '12px 16px',
-  borderRadius: '0.375rem',
-  fontWeight: '600',
-  transition: 'background-color 0.2s',
-  width: '100%',
-
-  '&:hover': {
-    backgroundColor: '#65a30d',
-  },
-}));
+import LandingButton from '../components/LandingButton.jsx';
 
 export default function LandingPage() {
   return (
@@ -34,12 +16,10 @@ export default function LandingPage() {
 
       <div className="flex flex-col gap-4 w-full max-w-md relative z-10">
         <Link to="/login" className="w-full">
-          <StyledButton variant="contained">
-            Login
-          </StyledButton>
+          <LandingButton>Login</LandingButton>
         </Link>
         <Link to="/register" className="w-full">
-          <StyledButton variant="contained">Sign Up</StyledButton>
+          <LandingButton>Sign Up</LandingButton>
         </Link>
       </div>
     </div>

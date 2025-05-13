@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import LandingButton from '../components/LandingButton.jsx';
 
 export default function HomePage({ onLogin }) {
   const navigate = useNavigate();
@@ -17,12 +18,7 @@ export default function HomePage({ onLogin }) {
           Welcome to the Home Page! This page is still under development.
         </h1>
         <p className="text-gray-700 mb-6">You are now logged in!</p>
-        <button
-          onClick={handleLogout}
-          className="bg-lime-400 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-        >
-          Logout
-        </button>
+        <LandingButton onClick={handleLogout}>Logout</LandingButton>
       </div>
     </div>
   );
