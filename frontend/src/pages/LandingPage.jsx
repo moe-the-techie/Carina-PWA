@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import LandingButton from '../components/LandingButton.jsx';
+import PageFade from '../components/PageFade';
 
 export default function LandingPage() {
   return (
+    <PageFade>
     <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center overflow-hidden relative h-full w-full bg-grey-50">
       <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8 relative z-10" />
 
@@ -23,5 +25,6 @@ export default function LandingPage() {
         </Link>
       </div>
     </div>
+    </PageFade>
   );
 }

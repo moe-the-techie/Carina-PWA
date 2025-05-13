@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingButton from '../components/LandingButton.jsx';
+import PageFade from '../components/PageFade';
 
 export default function HomePage({ onLogin }) {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function HomePage({ onLogin }) {
   };
 
   return (
+    <PageFade>
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
         <h1 className="text-3xl font-semibold text-blue-600 mb-4">
@@ -21,5 +23,6 @@ export default function HomePage({ onLogin }) {
         <LandingButton onClick={handleLogout}>Logout</LandingButton>
       </div>
     </div>
+    </PageFade>
   );
 }

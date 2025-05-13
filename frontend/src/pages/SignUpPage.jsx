@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingButton from '../components/LandingButton.jsx';
+import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function SignUpPage({ onLogin }) {
@@ -12,6 +14,7 @@ export default function SignUpPage({ onLogin }) {
   const [backendError, setBackendError] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false); // State for password confirmation visibility
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -51,6 +54,7 @@ export default function SignUpPage({ onLogin }) {
 
     if (Object.keys(errors).length === 0) {
       try {
+        setSubmitting(true);
         const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -81,6 +85,8 @@ export default function SignUpPage({ onLogin }) {
       } catch (error) {
         console.error('Network error:', error);
         setBackendError('Network error: ' + error.message);
+      } finally {
+        setSubmitting(false);
       }
 
       // Clear form only if no backend/network error
@@ -91,6 +97,8 @@ export default function SignUpPage({ onLogin }) {
   };
 
   return (
+    <PageFade>
+      <LoadingBackdrop open={submitting} />
     <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center">
       <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8" />
       
@@ -186,5 +194,6 @@ export default function SignUpPage({ onLogin }) {
         </div>
       </form>
     </div>
+    </PageFade>
   );
 }
