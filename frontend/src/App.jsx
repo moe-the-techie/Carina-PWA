@@ -4,11 +4,13 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage'
 import SignUpPage from './pages/SignUpPage';
+import AuthenticatedLayout from './components/AuthenticatedLayout';
+import SettingsPage from './pages/SettingsPage';
+import ChatPage from './pages/ChatPage';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
 
     useEffect(() => {
@@ -35,10 +37,8 @@ function App() {
                     localStorage.removeItem('token');
                     setIsLoggedIn(false);
                 })
-                .finally(() => setLoading(false));
         } else {
             setIsLoggedIn(false);
-            setLoading(false);
         }
     }, [update]);
 
@@ -46,17 +46,15 @@ function App() {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
     return (
         <Router>
             <Routes>
                 <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <LoginPage onLogin={handleLogin} />} />
                 <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <SignUpPage onLogin={handleLogin} />} />
-                <Route path="/home" element={isLoggedIn ? <HomePage onLogin={handleLogin} /> : <Navigate to="/" replace/>} />
+                <Route path="/home" element={isLoggedIn ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
             </Routes>
         </Router>
     );

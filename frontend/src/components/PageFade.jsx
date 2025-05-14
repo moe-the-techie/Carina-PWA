@@ -11,8 +11,8 @@ export default function PageFade({ children }) {
   }, []);
 
   return (
-    <Fade in={inProp} timeout={100}>
-      <div>{children}</div>
+    <Fade in={inProp} timeout={200}>
+      <div className="flex flex-col">{children}</div>
     </Fade>
   );
 }
