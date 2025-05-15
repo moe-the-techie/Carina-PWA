@@ -56,6 +56,7 @@ export async function searchByEmail(req, res) {
     }
 };
 
+// GET user by name (search)
 export async function searchByName(req, res) {
     try {
         const name = req.params.name;
@@ -73,6 +74,28 @@ export async function searchByName(req, res) {
         }
 
         res.status(200).json({users: users});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({error: error.message});
+    }
+};
+
+// DELETE user by ID
+export async function deleteUserById(req, res) {
+    try {
+        const id = req.params.id;
+
+        if (!id || id.trim() === '') {
+            return res.status(400).json({ error: '400: ID parameter is required' });
+        }
+
+        const user = await User.findByIdAndDelete(id);
+
+        if (!user) {
+            return res.status(404).json({error: `404: User with ID ${id} not found`});
+        }
+
+        res.status(200).json({message: `User with ID ${id} deleted successfully!`});
     } catch (error) {
         console.error(error);
         res.status(500).json({error: error.message});
