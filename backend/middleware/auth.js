@@ -5,12 +5,12 @@ import User from '../models/User.js';
 
 // Function to verify the JWT token (for login)
 export async function verifyToken(token) {
-  try {
-    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-    return decoded; // Return the decoded payload
-  } catch (error) {
-    throw error; // Re-throw the error to be caught by the caller
-  }
+  return new Promise ((resolve, reject) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) return reject(err);
+      return resolve(decoded);
+    });
+  });
 };
 
 export async function protect(req, res, next) {

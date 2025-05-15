@@ -41,7 +41,7 @@ export default defineConfig({
               }
           ],
           "theme_color": "#000000",
-          "background_color": "#FFFFFF",
+          "background_color": "#E6E1B4",
           "display": "fullscreen",
           "orientation": "portrait"
       }

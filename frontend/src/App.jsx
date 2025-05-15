@@ -11,6 +11,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // State variable to track loading status
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
 
     useEffect(() => {
@@ -22,29 +23,28 @@ function App() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-            })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error('Invalid token');
-                })
-                .then(() => {
-                    setIsLoggedIn(true);
-                })
-                .catch(error => {
-                    console.error('Token validation failed:', error);
-                    localStorage.removeItem('token');
-                    setIsLoggedIn(false);
-                })
+            }).then(response => {
+                if (response.ok) {
+                    console.log('isloading: ', isLoading);
+                    return response.json();
+                }
+                throw new Error('Invalid token');
+            }).then(() => setIsLoggedIn(true))
+              .catch(error => {
+                console.error('Token validation failed:', error);
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+            }).finally( () => setIsLoading(false));
         } else {
             setIsLoggedIn(false);
         }
-    }, [update]);
+    }, [isLoading, update]);
 
     const handleLogin = () => {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
+
+    if (isLoading) return <div>Loading...</div>; // TODO: Show loading screen here instead
 
     return (
         <Router>
