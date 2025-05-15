@@ -32,7 +32,7 @@ export default function NavigationBar() {
         component="ul"
         sx={{
             display: 'flex',
-            justifyContent: 'space-around',
+            justifyContent: 'space-around', // evenly spaced
             alignItems: 'center',
             width: '100%',
             height: '100%',
@@ -50,13 +50,13 @@ export default function NavigationBar() {
                     color="inherit"
                     aria-label={label}
                     sx={{
-                        width: '8vh', 
+                        width: '8vh', // match nav bar height
                         height: '8vh',
-                        padding: 0, 
+                        padding: 0, // remove default padding
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderRadius: 15,
+                        borderRadius: 15, // optional: square background
                         color: '#000',
                         backgroundColor: isActive ? theme.palette.primary.darker : 'transparent',
                         '&:hover': {
@@ -66,7 +66,7 @@ export default function NavigationBar() {
                 >
                     {React.cloneElement(icon, {
                         fontSize: 'inherit',
-                        sx: { fontSize: '5vh' },
+                        sx: { fontSize: '5vh' }, // or larger if you like
                     })}
                 </IconButton>
 
