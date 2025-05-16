@@ -23,7 +23,7 @@ export async function protect(req, res, next) {
     }
 
     if (!token) {
-      return res.status(401).json({ message: 'Not authorized, no token' });
+      return res.status(401).json({ error: '401: Not authorized, no token' });
     }
 
     // Verify the token
@@ -32,7 +32,7 @@ export async function protect(req, res, next) {
     // Get the user (and check if they exist)
     const user = await User.findById(decoded.userId).select('-password');
     if (!user) {
-      return res.status(401).json({ message: 'Not authorized, invalid token' }); // Or a more specific message
+      return res.status(401).json({ error: '401: Not authorized, invalid token' }); // Or a more specific message
     }
 
     req.user = user; // Store user in request
@@ -40,6 +40,6 @@ export async function protect(req, res, next) {
   } catch (error) {
     // Handle all errors (token verification, user lookup) in one place
     console.error(error);
-    return res.status(401).json({ message: 'Not authorized, token failed' });
+    return res.status(401).json({ error: '401: Not authorized, token failed' });
   }
 };

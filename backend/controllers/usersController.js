@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import bcrypt from 'bcrypt';
 
 // GET all users
 export async function getAllUsers(req, res) {
@@ -101,3 +102,24 @@ export async function deleteUserById(req, res) {
         res.status(500).json({error: error.message});
     }
 };
+
+export async function updateUserById(req, res) {
+    try {
+        const changes = req.body;
+
+        if (changes.password) {
+            const salt = await bcrypt.genSalt(10);
+            changes.password = await bcrypt.hash(changes.password, salt);
+        }
+
+        const user = await User.findByIdAndUpdate(req.params.id, changes, {new: true});
+
+        if (!user) {
+            return res.status(404).json({error: `404: User not found`});
+        }
+
+        res.status(200).json({message: `User with ID ${req.params.id} updated successfully!`, user: user});
+    } catch (error) {
+        res.status(500).json({error: error.message});
+    }
+}
