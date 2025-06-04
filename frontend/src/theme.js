@@ -4,16 +4,19 @@ export const theme = createTheme ({
     palette: {
         primary: {
             main: '#91EB4E',
-            darker: '#78D235',
+            darker: '#65A436',
+            lighter: '#A7EF71',
             contrastText: '#000',
         },
         Secondary: {
-            main: '#FFFACD',
-            darker: '#E6E1B4',
+            main: '#6E14B1',
+            darker: '#4D0E7B',
+            lighter: '#8B43C0',
             contrastText: '#000',
         },
         background: {
-            default: '#ffffe0',
+            // Surface
+            default: '#FFFFFF',
         }
     },
     typography: {

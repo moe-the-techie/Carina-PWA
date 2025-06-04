@@ -17,7 +17,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 export default function LandingButton ({ children, onClick, type }) {
     return (
-        <StyledButton variant='contained' onClick={onClick} type={type}>
+        <StyledButton variant='contained' onClick={onClick} type={type} disableElevation>
             {children}
         </StyledButton>
     )

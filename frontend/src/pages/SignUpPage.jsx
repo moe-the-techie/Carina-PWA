@@ -100,7 +100,7 @@ export default function SignUpPage({ onLogin }) {
     <PageFade>
       <LoadingBackdrop open={submitting} />
     <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center">
-      <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8" />
+      <img src="/logo.PNG" alt="App Logo" className="w-40 h-40 mb-8" />
       
       <h1 className="text-3xl font-semibold text-gray-800 mb-8">
         Create an Account

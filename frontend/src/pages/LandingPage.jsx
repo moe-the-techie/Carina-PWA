@@ -7,7 +7,7 @@ export default function LandingPage() {
   return (
     <PageFade>
     <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center overflow-hidden relative h-full w-full bg-grey-50">
-      <img src="/logo.PNG" alt="App Logo" className="w-50 h-50 mb-8 relative z-10" />
+      <img src="/logo.PNG" alt="App Logo" className="w-40 h-40 mb-8 relative z-10" />
 
       <h1 className="text-3xl font-semibold text-gray-800 mb-4 relative z-10">
         Welcome!
