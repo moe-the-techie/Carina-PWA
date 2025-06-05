@@ -26,6 +26,17 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         default: []
     }],
+    dateOfBirth: {
+        type: Date,
+        default: null
+    },
+    isMother: {
+        type: Boolean,
+        default: false
+    },
+    gender: {
+        type: String,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
