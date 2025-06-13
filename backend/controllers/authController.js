@@ -11,7 +11,7 @@ const generateToken = (userId) => {
 
 export async function register(req, res) {
     try {
-        const { email, password, name, dateOfBirth, isMother, gender } = req.body;
+        let { email, password, name, dateOfBirth, isMother, gender } = req.body;
         email = email.trim().toLowerCase();
 
         // Check if user already exists
