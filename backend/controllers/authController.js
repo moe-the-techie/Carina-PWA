@@ -46,7 +46,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
     try {
-        const { email } = req.body;
+        let { email } = req.body;
         email = email.trim().toLowerCase();
 
         const user = await User.findOne({ email : email });

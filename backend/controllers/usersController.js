@@ -36,9 +36,9 @@ export async function getUserById(req, res) {
 // GET user by Email (search)
 export async function searchByEmail(req, res) {
     try {
-        const email = req.params.email;
+        const email = req.params.email.toLowerCase().trim();
 
-        if (!email || email.trim() === '') {
+        if (!email) {
             return res.status(400).json({ error: '400: Email parameter is required' });
           }
         
