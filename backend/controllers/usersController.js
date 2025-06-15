@@ -1,8 +1,8 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 
-// GET all users
 export async function getAllUsers(req, res) {
+    // TODO: protect this route for admins only
     try {
         const users = await User.find();
         if (!users){
@@ -16,8 +16,8 @@ export async function getAllUsers(req, res) {
     }
 };
 
-// Get user by ID
 export async function getUserById(req, res) {
+    // TODO: protect this route for admins only
     try {
         const id = req.params.id;
         const user = await User.findById(id);
@@ -33,8 +33,8 @@ export async function getUserById(req, res) {
     }
 };
 
-// GET user by Email (search)
 export async function searchByEmail(req, res) {
+    // TODO: protect this route for admins only
     try {
         const email = req.params.email.toLowerCase().trim();
 
@@ -57,8 +57,8 @@ export async function searchByEmail(req, res) {
     }
 };
 
-// GET user by name (search)
 export async function searchByName(req, res) {
+    // TODO: protect this route for admins only
     try {
         const name = req.params.name;
 
@@ -81,7 +81,6 @@ export async function searchByName(req, res) {
     }
 };
 
-// DELETE user by ID
 export async function deleteUserById(req, res) {
     try {
         const id = req.params.id;

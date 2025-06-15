@@ -7,6 +7,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import profileRoutes from './routes/profile.js';
+import formsRoutes from './routes/forms.js';
 
 dotenv.config();
 connectDB();
@@ -35,6 +36,7 @@ app.use(cors({
 app.use('/api', authRoutes);
 app.use('/api', usersRoutes);
 app.use('/api', profileRoutes);
+app.use('/api', formsRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 5000;

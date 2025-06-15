@@ -24,6 +24,7 @@ const userSchema = new Schema({
     }],
     forms: [{
         type: Schema.Types.ObjectId,
+        ref: 'Form',
         default: []
     }],
     dateOfBirth: {

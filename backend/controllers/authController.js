@@ -36,7 +36,7 @@ export async function register(req, res) {
 
         await newUser.save();
 
-        res.status(200).json({message: 'User created successfully!', user: newUser, token: generateToken(newUser._id)});
+        res.status(201).json({message: 'User created successfully!', user: newUser, token: generateToken(newUser._id)});
         
     } catch (error) {
         console.error(error);
