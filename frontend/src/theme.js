@@ -17,6 +17,12 @@ export const theme = createTheme ({
         background: {
             // Surface
             default: '#FFFFFF',
+            // Surface Container
+            darker: `#EDEDED`
+        },
+        contrastText: {
+            primary: '#000',
+            secondary: '#000',
         }
     },
     typography: {
@@ -28,6 +34,17 @@ export const theme = createTheme ({
             styleOverrides: {
                 root: {
                     fontWeight: 'bold',
+                },
+                defaultProps: {
+                    disableElevation: true,
+                }
+            }
+        },
+        Box: {
+            styleOverrides: {
+                defaultProps: {
+                    boxShadow: '0px',
+                    disableElevation: true,
                 }
             }
         }

@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage'
 import SignUpPage from './pages/SignUpPage';
+import AddFormPage from './pages/NewForm';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
@@ -46,6 +47,8 @@ function App() {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
 
+   // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
+
     return (
         <Router>
             <Routes>
@@ -55,6 +58,7 @@ function App() {
                 <Route path="/home" element={isLoggedIn ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
             </Routes>
         </Router>
     );
