@@ -80,6 +80,12 @@ export default function NewForm () {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setBackendError('');
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            setBackendError('You must be logged in to submit a form.');
+            return;
+        }
 
         if (!validateForm()) return;
 
@@ -88,7 +94,7 @@ export default function NewForm () {
 
             const response = await fetch(`${apiBaseUrl}/api/forms`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify(formData),
             });
 
@@ -130,7 +136,7 @@ export default function NewForm () {
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
 
                             {/* Section 1 - Weight data */}
-                            <Box sx={{ backgroundColor: theme.palette.background.darker, p: 2, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
+                            <Box sx={{ backgroundColor: theme.palette.background.container, p: 2, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
                                 <Typography variant="h5" sx={{ textAlign: 'left', mb: 2 }}>Weight data</Typography>
                                 <TextField fullWidth name="currentWeight" label="Current Weight" value={formData.currentWeight} onChange={handleChange} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="standard" sx={{ mb: 2 }} />
                                 <TextField fullWidth name="minWeight" label="Min Weight" value={formData.minWeight} onChange={handleChange} error={!!formErrors.minWeight} helperText={formErrors.minWeight} variant="standard" sx={{ mb: 2 }} />
@@ -139,7 +145,7 @@ export default function NewForm () {
                             </Box>
 
                             {/* Section 2 - Meal Recall */}
-                            <Box sx={{ backgroundColor: theme.palette.background.darker, p: 2, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
+                            <Box sx={{ backgroundColor: theme.palette.background.container, p: 2, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
                                 <Typography variant="h5" sx={{ textAlign: 'left', mb: 2 }}>Meal Recall</Typography>
                                 <TextField select fullWidth name="breakfast" label="Breakfast" value={formData.breakfast} onChange={handleChange} error={!!formErrors.breakfast} helperText={formErrors.breakfast} variant="standard" sx={{ mb: 2 }}>
                                     <MenuItem value="Always">Always</MenuItem>
@@ -154,8 +160,8 @@ export default function NewForm () {
                             </Box>
 
                             {/* Section 3 - Check all that apply */}
-                            <Box sx={{ backgroundColor: theme.palette.background.darker, p: 1, pb: 0, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
-                                <Typography variant="h5" sx={{ mt: 1, mb: 2, textAlign: 'left' }}>Check all that apply</Typography>
+                            <Box sx={{ backgroundColor: theme.palette.background.container, p: 2, pb: 0, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
+                                <Typography variant="h5" sx={{ textAlign: 'left', mb: 2 }}>Check all that apply</Typography>
                                 <FormGroup sx={{ ml: 1 }}>
                                     <FormCheckBox checked={formData.currentSmoker} onChange={handleChange} name="currentSmoker" label="I currently Smoke." />
                                     <FormCheckBox checked={formData.obesityHistory} onChange={handleChange} name="obesityHistory" label="I have a history of Obesity." />

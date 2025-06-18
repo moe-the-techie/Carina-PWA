@@ -9,9 +9,9 @@ export default function FormCheckBox({ label, name, checked, onChange }) {
         <Box
             sx={{
                 backgroundColor: checked
-                ? theme.palette.secondary.main
+                ? theme.palette.primary.main
                 : theme.palette.background.darker,
-                borderRadius: 3,
+                borderRadius: 20,
                 py: 1,
                 px: 2,
                 mb: 2,
@@ -31,11 +31,12 @@ export default function FormCheckBox({ label, name, checked, onChange }) {
                         '&.Mui-checked': {
                         color: theme.palette.grey[700],
                         },
+                        transform: 'scale(1.2)',
                     }}
                     />
                 }
                 label={
-                    <Typography sx={{ fontStyle: 'italic' }}>
+                    <Typography sx={{ fontStyle: 'italic', fontSize: '1.2rem' }}>
                     {label}
                     </Typography>
                 }

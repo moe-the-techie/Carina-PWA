@@ -18,7 +18,7 @@ export const theme = createTheme ({
             // Surface
             default: '#FFFFFF',
             // Surface Container
-            darker: `#EDEDED`
+            container: `#EDEDED`
         },
         contrastText: {
             primary: '#000',

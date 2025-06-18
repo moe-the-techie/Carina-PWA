@@ -46,9 +46,10 @@ export async function getUserForms (req, res) {
     }
 }
 
-export async function newForm (req, res) {
+export async function newForm(req, res) {
     try {
-        const formData = req.body;
+        const formData = { ...req.body, user: req.user._id };
+
         const newForm = new Form(formData);
         await newForm.save();
 
@@ -57,3 +58,4 @@ export async function newForm (req, res) {
         res.status(500).json({ error: error.message });
     }
 }
+

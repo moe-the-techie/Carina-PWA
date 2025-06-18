@@ -1,16 +1,19 @@
 import React from 'react';
+import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 
 export default function HomePage() {
+  const theme = useTheme();
 
   return (
     <PageFade>
     <div className="h-[90vh] flex flex-col items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
-        <h1 className="text-3xl font-semibold text-blue-600 mb-4">
+      <Box sx= {{ backgroundColor: theme.palette.background.container, p: 4, borderRadius: 2 }}>
+        <h1 className="text-3xl font-semibold text-blue-600">
           Chat Page. (Under Construction)
         </h1>
-      </div>
+      </Box>
     </div>
     </PageFade>
   );
