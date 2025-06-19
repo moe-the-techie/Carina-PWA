@@ -19,7 +19,7 @@ export default function SettingsPage({ onLogin }) {
     <PageFade>
     <div className="h-[90vh] flex flex-col items-center justify-center">
       <Box sx={{ backgroundColor: theme.palette.background.container, p: 4, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h1 className="text-3xl font-semibold text-blue-600 mb-4">
+        <h1 className="text-3xl font-semibold text-blue-600 mb-4 text-center">
           Settings Page. (Under Construction)
         </h1>
         <p className="text-gray-700 mb-6">You are currently logged in!</p>

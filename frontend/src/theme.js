@@ -5,24 +5,22 @@ export const theme = createTheme ({
         primary: {
             main: '#91EB4E',
             darker: '#65A436',
-            lighter: '#A7EF71',
-            contrastText: '#000',
+            lighter: '#A7EF71'
         },
-        Secondary: {
+        secondary: {
             main: '#6E14B1',
             darker: '#4D0E7B',
-            lighter: '#8B43C0',
-            contrastText: '#000',
+            lighter: '#8B43C0'
         },
         background: {
             // Surface
             default: '#FFFFFF',
             // Surface Container
-            container: `#EDEDED`
+            container: `#f7f2fa`
         },
         contrastText: {
             primary: '#000',
-            secondary: '#000',
+            secondary: '#828282',
         }
     },
     typography: {
@@ -35,9 +33,10 @@ export const theme = createTheme ({
                 root: {
                     fontWeight: 'bold',
                 },
-                defaultProps: {
-                    disableElevation: true,
-                }
+            },
+            defaultProps: {
+                disableElevation: true,
+                disableRipple: true
             }
         },
         Box: {

@@ -4,7 +4,8 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import LandingPage from './pages/LandingPage'
 import SignUpPage from './pages/SignUpPage';
-import AddFormPage from './pages/NewForm';
+import AddFormPage from './pages/NewFormPage';
+import FormSuccessPage from './pages/FormSuccessPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
@@ -59,6 +60,7 @@ function App() {
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
+                <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
             </Routes>
         </Router>
     );

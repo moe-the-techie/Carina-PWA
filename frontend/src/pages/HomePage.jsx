@@ -12,8 +12,8 @@ export default function HomePage() {
   return (
     <PageFade>
     <div className="h-[90vh] flex flex-col items-center justify-center">
-      <Box sx={{ backgroundColor: theme.palette.background.container, p: 4, borderRadius: 2 }}>
-        <h1 className="text-3xl font-semibold text-blue-600 mb-4">
+      <Box sx={{ backgroundColor: theme.palette.background.container, p: 4, borderRadius: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h1 className="text-3xl font-semibold text-blue-600 mb-4 text-center">
           Plans Page. (Under Construction)
         </h1>
         <Button onClick={() => navigate('/new-form')} variant="contained" color="primary" className="w-full" disableElevation>

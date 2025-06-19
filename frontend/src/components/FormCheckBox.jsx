@@ -27,9 +27,9 @@ export default function FormCheckBox({ label, name, checked, onChange }) {
                     name={name}
                     disableRipple
                     sx={{
-                        color: theme.palette.grey[500],
+                        color: theme.palette.grey[400],
                         '&.Mui-checked': {
-                        color: theme.palette.grey[700],
+                        color: theme.palette.grey[200],
                         },
                         transform: 'scale(1.2)',
                     }}

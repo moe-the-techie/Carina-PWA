@@ -10,7 +10,7 @@ export default function HomePage() {
     <PageFade>
     <div className="h-[90vh] flex flex-col items-center justify-center">
       <Box sx= {{ backgroundColor: theme.palette.background.container, p: 4, borderRadius: 2 }}>
-        <h1 className="text-3xl font-semibold text-blue-600">
+        <h1 className="text-3xl font-semibold text-blue-600 text-center">
           Chat Page. (Under Construction)
         </h1>
       </Box>
