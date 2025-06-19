@@ -1,9 +1,11 @@
 import Form from '../models/Form.js';
 
+// TODO: Add route for admin to get all forms that were not reviewed
+
 export async function getAllForms (req, res) {
     // TODO: protect this route for admin only
     try {
-        const forms = await Form.find();
+        const forms = await Form.find().populate('user', 'name email dateOfBirth isMother gender');
 
         if (!forms || forms.length === 0) {
             return res.status(404).json({ error: '404: No forms found' });
@@ -16,10 +18,9 @@ export async function getAllForms (req, res) {
 }
 
 export async function getMyForms (req, res) {
-    // TODO: make sure this defaults to the logged-in user except if an admin is logged in
     try {
         const userId = req.user._id;
-        const forms = await Form.find({ user: userId });
+        const forms = await Form.find({ user: userId }).populate('user', 'name email dateOfBirth isMother gender');
 
         if (!forms || forms.length === 0) {
             return res.status(404).json({ error: 'No forms found for this user' });
@@ -34,7 +35,7 @@ export async function getMyForms (req, res) {
 export async function getUserForms (req, res) {
     try {
         const userId = req.params.id;
-        const forms = await Form.find({ user: userId });
+        const forms = await Form.find({ user: userId }).populate('user', 'name email dateOfBirth isMother gender');
 
         if (!forms || forms.length === 0) {
             return res.status(404).json({ error: `404: No forms found for user with ID ${userId}` });
