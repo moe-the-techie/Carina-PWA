@@ -1,6 +1,7 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Box, Typography, Paper, Divider, useTheme } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Typography, Paper, Divider, Button, useTheme } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import PageFade from '../components/PageFade';
 
 // TODO: add the plan details above form
@@ -8,6 +9,7 @@ import PageFade from '../components/PageFade';
 export default function ViewPlanPage () {
     const theme = useTheme();
     const location = useLocation();
+    const navigate = useNavigate();
     const form = location.state?.form;
 
     if (!form) {
@@ -33,9 +35,20 @@ export default function ViewPlanPage () {
                 gap: 2,
             }}
             >
-            <Typography variant="h4" gutterBottom>
-                Form Details
-            </Typography>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <Button onClick={() => navigate(-1)} sx={{ position: 'absolute', top: 12, left: 10, minWidth: 0, padding: 1 }}>
+                    <ArrowBackIcon sx={{ fontSize: 32, color: 'black' }} />
+                </Button>
+                <Typography variant="h4">
+                    Form Details
+                </Typography>
+            </Box>
 
             <Paper elevation={2} sx={{ p: 2, backgroundColor: theme.palette.background.container }}>
                 <Typography variant="h6" gutterBottom>Weight Data</Typography>
