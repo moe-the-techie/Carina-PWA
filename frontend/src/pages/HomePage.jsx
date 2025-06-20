@@ -77,7 +77,7 @@ export default function HomePage() {
         )}
 
         {forms.map((form) => (
-          <PlanListItem key={form._id} form={form} onClick={() => navigate(`/view-form/${form._id}`)} />
+          <PlanListItem key={form._id} form={form} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
         ))}
 
         <Button
