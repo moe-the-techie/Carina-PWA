@@ -5,15 +5,9 @@ import { useTheme } from '@mui/material/styles';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
 
-export default function SettingsPage({ onLogin }) {
-  const navigate = useNavigate();
+export default function SettingsPage({ onLogout }) {
   const theme = useTheme();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    onLogin();
-    navigate('/');
-  };
+  const navigate = useNavigate();
 
   return (
     <PageFade>
@@ -23,7 +17,7 @@ export default function SettingsPage({ onLogin }) {
           Settings Page. (Under Construction)
         </h1>
         <p className="text-gray-700 mb-6">You are currently logged in!</p>
-        <LandingButton onClick={handleLogout}>Logout</LandingButton>
+        <LandingButton onClick={ () => { onLogout(); navigate('/'); }}>Logout</LandingButton>
       </Box>
     </div>
     </PageFade>

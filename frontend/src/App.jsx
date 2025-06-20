@@ -8,16 +8,21 @@ import AddFormPage from './pages/NewFormPage';
 import ViewPlanPage from './pages/ViewPlanPage';
 import FormSuccessPage from './pages/FormSuccessPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
+import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(() => {
+        return localStorage.getItem('token') ? true : false;
+    });
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
 
     useEffect(() => {
         const token = localStorage.getItem('token');
+        if (!token) return;
+
         if (token) {
             fetch(`${apiBaseUrl}/api/auth/validateToken`, {
                 method: 'POST',
@@ -49,16 +54,22 @@ function App() {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
 
+   const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+   }
+
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
 
     return (
         <Router>
+            <ScrollToTop />
             <Routes>
                 <Route path="/" element={isLoggedIn ? <Navigate to="/home" replace /> : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? <Navigate to="/home" replace /> : <LoginPage onLogin={handleLogin} />} />
                 <Route path="/register" element={isLoggedIn ? <Navigate to="/home" replace /> : <SignUpPage onLogin={handleLogin} />} />
                 <Route path="/home" element={isLoggedIn ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogout={handleLogout} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
                 <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
