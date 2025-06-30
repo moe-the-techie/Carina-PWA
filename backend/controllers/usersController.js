@@ -104,7 +104,7 @@ export async function deleteUserById(req, res) {
 
 export async function updateUserById(req, res) {
     try {
-        const changes = req.body;
+        let changes = req.body;
 
         if (changes.password) {
             const salt = await bcrypt.genSalt(10);
