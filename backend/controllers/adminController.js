@@ -83,3 +83,57 @@ export async function getUserDetails(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
+
+export async function getAllFormsAdmin(req, res) {
+    try {
+        const { page = 1, limit = 10, reviewed, userId } = req.query;
+        const query = {};
+        
+        if (reviewed !== undefined) {
+            query.reviewed = reviewed === 'true';
+        }
+        
+        if (userId) {
+            query.user = userId;
+        }
+
+        const forms = await Form.find(query)
+            .populate('user', 'name email dateOfBirth gender')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Form.countDocuments(query);
+
+        res.status(200).json({
+            forms,
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            total
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+export async function markFormReviewed(req, res) {
+    try {
+        const { formId } = req.params;
+        
+        const form = await Form.findByIdAndUpdate(
+            formId,
+            { reviewed: true },
+            { new: true }
+        ).populate('user', 'name email');
+
+        if (!form) {
+            return res.status(404).json({ error: 'Form not found' });
+        }
+
+        res.status(200).json({ message: 'Form marked as reviewed', form });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+}
