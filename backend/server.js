@@ -9,6 +9,7 @@ import usersRoutes from './routes/users.js';
 import profileRoutes from './routes/profile.js';
 import formsRoutes from './routes/forms.js';
 import adminRoutes from './routes/admin.js';
+import planRoutes from './routes/plan.js';
 
 dotenv.config();
 connectDB();
@@ -49,6 +50,7 @@ app.use('/api', usersRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', formsRoutes);
 app.use('/api', adminRoutes);
+app.use('/api', planRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 
