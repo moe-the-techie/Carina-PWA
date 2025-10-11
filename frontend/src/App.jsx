@@ -9,6 +9,7 @@ import ViewPlanPage from './pages/ViewPlanPage';
 import FormSuccessPage from './pages/FormSuccessPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminLayout from './components/AdminLayout';
+import AdminUsersPage from './pages/AdminUsersPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
@@ -83,6 +84,7 @@ function App() {
                 
                 {/* Admin*/}
                 <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminUsersPage /></AdminLayout> : <Navigate to="/" replace/>} />
             </Routes>
         </Router>
     );

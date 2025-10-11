@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import Form from '../models/Form.js';
-
+import Plan from '../models/Plan.js';
 export async function getDashboardStats(req, res) {
     try {
         const totalUsers = await User.countDocuments({ role: 'user' });
@@ -72,9 +72,11 @@ export async function getUserDetails(req, res) {
         }
 
         const forms = await Form.find({ user: userId }).sort({ createdAt: -1 });
+        const plans = await Plan.find({ user: userId }).sort({ createdAt: -1 });
         res.status(200).json({
             user,
             forms,
+            plans
         });
     } catch (error) {
         console.error(error);
