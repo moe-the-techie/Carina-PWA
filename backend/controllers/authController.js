@@ -81,7 +81,7 @@ export async function validateToken(req, res) {
         if(!user){
         return res.status(401).json({error: 'Invalid Token'})
         }
-        res.status(200).json({ message: 'Token is valid', userId: decoded.userId });
+        res.status(200).json({ message: 'Token is valid', userId: decoded.userId , isAdmin: user.role === 'admin'});
     } catch (error) {
         return res.status(401).json({ error: 'Invalid token' });
     }
