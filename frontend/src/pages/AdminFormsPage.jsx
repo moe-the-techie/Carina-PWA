@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -32,6 +33,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminFormsPage() {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [forms, setForms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -96,6 +98,17 @@ export default function AdminFormsPage() {
             console.error('Error marking form as reviewed:', error);
             setError(error.message);
         }
+    };
+
+    const sendPlan = (form) => {
+        // Navigate to plan builder with form data
+        navigate('/admin/plan-builder', { 
+            state: { 
+                selectedUser: form.user._id,
+                selectedForm: form._id,
+                formData: form
+            }
+        });
     };
 
     const handleFilterChange = (event) => {
@@ -198,14 +211,32 @@ export default function AdminFormsPage() {
                                             View Details
                                         </Button>
                                         {!form.reviewed && (
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                color="success"
-                                                onClick={() => markFormAsReviewed(form._id)}
-                                            >
-                                                Mark Reviewed
-                                            </Button>
+                                            <>
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={() => sendPlan(form)}
+                                                    sx={{ mr: 1 }}
+                                                >
+                                                    Send Plan
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="success"
+                                                    onClick={() => markFormAsReviewed(form._id)}
+                                                >
+                                                    Mark Reviewed
+                                                </Button>
+                                            </>
+                                        )}
+                                        {form.reviewed && form.planSent && (
+                                            <Chip 
+                                                label="Plan Sent" 
+                                                color="success" 
+                                                size="small" 
+                                            />
                                         )}
                                     </TableCell>
                                 </TableRow>
@@ -315,13 +346,26 @@ export default function AdminFormsPage() {
                     </DialogContent>
                     <DialogActions>
                         {selectedForm && !selectedForm.reviewed && (
-                            <Button 
-                                variant="contained" 
-                                color="success"
-                                onClick={() => markFormAsReviewed(selectedForm._id)}
-                            >
-                                Mark as Reviewed
-                            </Button>
+                            <>
+                                <Button 
+                                    variant="contained" 
+                                    color="primary"
+                                    onClick={() => {
+                                        sendPlan(selectedForm);
+                                        setFormDetailsOpen(false);
+                                    }}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Send Plan
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    color="success"
+                                    onClick={() => markFormAsReviewed(selectedForm._id)}
+                                >
+                                    Mark as Reviewed
+                                </Button>
+                            </>
                         )}
                         <Button onClick={() => setFormDetailsOpen(false)}>Close</Button>
                     </DialogActions>

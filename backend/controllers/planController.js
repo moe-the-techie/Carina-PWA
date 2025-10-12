@@ -12,7 +12,8 @@ export async function createPlan(req, res) {
             description, 
             duration, 
             weeklyPlans, 
-            goals 
+            goals,
+            templateId 
         } = req.body;
 
         // Verify the form exists and belongs to the user
@@ -40,6 +41,18 @@ export async function createPlan(req, res) {
         });
 
         await newPlan.save();
+
+        await Form.findByIdAndUpdate(formId, { 
+            reviewed: true, 
+            planSent: true 
+        });
+
+        if (templateId) {
+            const PlanTemplate = (await import('../models/PlanTemplate.js')).default;
+            await PlanTemplate.findByIdAndUpdate(templateId, { 
+                $inc: { usageCount: 1 } 
+            });
+        }
 
         const populatedPlan = await Plan.findById(newPlan._id)
             .populate('user', 'name email')

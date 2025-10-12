@@ -10,6 +10,7 @@ import profileRoutes from './routes/profile.js';
 import formsRoutes from './routes/forms.js';
 import adminRoutes from './routes/admin.js';
 import planRoutes from './routes/plan.js';
+import templateRoutes from './routes/templates.js';
 
 dotenv.config();
 connectDB();
@@ -51,6 +52,7 @@ app.use('/api', profileRoutes);
 app.use('/api', formsRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', planRoutes);
+app.use('/api', templateRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 
