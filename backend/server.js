@@ -8,6 +8,9 @@ import authRoutes from './routes/auth.js';
 import usersRoutes from './routes/users.js';
 import profileRoutes from './routes/profile.js';
 import formsRoutes from './routes/forms.js';
+import adminRoutes from './routes/admin.js';
+import planRoutes from './routes/plan.js';
+import templateRoutes from './routes/templates.js';
 
 dotenv.config();
 connectDB();
@@ -15,8 +18,18 @@ connectDB();
 const app = express();
 app.use(express.json());
 
-const allowedOrigins = [
+const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+
+const allowedOrigins = isDevelopment ? [
+  'http://localhost:3000',
   'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  //for philo's enviroment
+  /^https:\/\/.*\.app\.github\.dev$/,
+  /^https:\/\/.*\.github\.dev$/,
+  'https://carina-pwa-1.vercel.app'
+] : [
   'https://carina-pwa-1.vercel.app'
 ];
 
@@ -37,7 +50,9 @@ app.use('/api', authRoutes);
 app.use('/api', usersRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', formsRoutes);
-
+app.use('/api', adminRoutes);
+app.use('/api', planRoutes);
+app.use('/api', templateRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 

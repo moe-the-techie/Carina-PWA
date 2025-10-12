@@ -79,6 +79,10 @@ const formSchema = new Schema ({
         type: Boolean,
         default: false
     },
+    planSent: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
