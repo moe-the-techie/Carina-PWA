@@ -43,6 +43,8 @@ export default function AdminPlanBuilderPage() {
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isEditingPlan, setIsEditingPlan] = useState(false);
+    const [editingPlanId, setEditingPlanId] = useState(null);
     
     // Template editing mode
     const [isEditingTemplate, setIsEditingTemplate] = useState(false);
@@ -99,10 +101,13 @@ export default function AdminPlanBuilderPage() {
         if (location.state) {
             const { selectedUser: userId, selectedForm: formId, formData, templateId, templateData, editTemplateId } = location.state;
             
-            // Handle form-based plan creation
+            // Handle form-based plan creation/editing
             if (userId && formId) {
                 setSelectedUser(userId);
                 setSelectedForm(formId);
+                
+                // Check if there's an existing plan for this form
+                loadExistingPlan(formId, formData);
                 
                 // Pre-populate plan data based on form
                 if (formData) {
@@ -179,6 +184,56 @@ export default function AdminPlanBuilderPage() {
             fetchUserForms();
         }
     }, [selectedUser]);
+
+    const loadExistingPlan = async (formId, formData) => {
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/forms/${formId}/plan`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const existingPlan = data.plan;
+                
+                // Set editing state
+                setIsEditingPlan(true);
+                setEditingPlanId(existingPlan._id);
+                
+                // Load existing plan data
+                setPlanData({
+                    title: existingPlan.title,
+                    description: existingPlan.description,
+                    duration: existingPlan.duration,
+                    goals: existingPlan.goals || {
+                        targetWeight: '',
+                        targetCalories: '',
+                        targetProtein: '',
+                        targetCarbs: '',
+                        targetFats: ''
+                    },
+                    weeklyPlans: existingPlan.weeklyPlans || []
+                });
+                
+                setError(`Editing existing plan: ${existingPlan.title}`);
+                setTimeout(() => setError(''), 3000);
+            } else if (response.status === 404) {
+                // No existing plan - this is normal for new plans
+                setIsEditingPlan(false);
+                setEditingPlanId(null);
+                console.log('No existing plan found, creating new one');
+            } else {
+                throw new Error('Failed to load existing plan');
+            }
+        } catch (error) {
+            console.error('Error loading existing plan:', error);
+            // Don't show error for 404s as they're expected for new plans
+            if (!error.message.includes('404')) {
+                setError(error.message);
+            }
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -554,26 +609,39 @@ export default function AdminPlanBuilderPage() {
 
         try {
             setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/admin/plans`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
+            
+            const url = isEditingPlan 
+                ? `${apiBaseUrl}/api/admin/plans/${editingPlanId}`
+                : `${apiBaseUrl}/api/admin/plans`;
+                
+            const method = isEditingPlan ? 'PUT' : 'POST';
+            
+            const requestBody = isEditingPlan
+                ? { ...planData } // For updates, only send plan data
+                : { // For new plans, include user and form IDs
                     userId: selectedUser,
                     formId: selectedForm,
                     templateId: selectedTemplate || null,
                     ...planData
-                })
+                };
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                throw new Error('Failed to create plan');
+                throw new Error(`Failed to ${isEditingPlan ? 'update' : 'create'} plan`);
             }
 
             const data = await response.json();
-            console.log('Plan created:', data);
+            console.log(`Plan ${isEditingPlan ? 'updated' : 'created'}:`, data);
+            
+            const wasEditing = isEditingPlan;
             
             // Reset form
             setPlanData({
@@ -592,8 +660,10 @@ export default function AdminPlanBuilderPage() {
             setSelectedUser('');
             setSelectedForm('');
             setUserForms([]);
+            setIsEditingPlan(false);
+            setEditingPlanId(null);
             
-            alert('Plan created successfully! The form has been marked as reviewed.');
+            alert(`Plan ${wasEditing ? 'updated' : 'created'} successfully! The form has been marked as reviewed.`);
             
             // Clear location state to prevent re-population
             window.history.replaceState({}, document.title);
@@ -1131,7 +1201,10 @@ export default function AdminPlanBuilderPage() {
                                         onClick={createPlan}
                                         disabled={loading || !selectedUser || !selectedForm || !planData.title}
                                     >
-                                        {loading ? 'Creating Plan...' : 'Create Plan'}
+                                        {loading 
+                                            ? (isEditingPlan ? 'Saving Plan...' : 'Creating Plan...') 
+                                            : (isEditingPlan ? 'Save Plan' : 'Create Plan')
+                                        }
                                     </Button>
                                 </>
                             )}

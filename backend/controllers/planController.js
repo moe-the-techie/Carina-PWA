@@ -28,6 +28,38 @@ export async function createPlan(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        let existingPlan = await Plan.findOne({ form: formId });
+        
+        if (existingPlan) {
+            // Update the existing plan instead of creating a new one
+            existingPlan.title = title;
+            existingPlan.description = description;
+            existingPlan.duration = duration;
+            existingPlan.weeklyPlans = weeklyPlans || [];
+            existingPlan.goals = goals || {};
+            existingPlan.status = 'draft'; // Reset to draft when updated
+            
+            await existingPlan.save();
+            
+            // Populate the response
+            const updatedPlan = await Plan.findById(existingPlan._id)
+                .populate('user', 'name email')
+                .populate('form')
+                .populate('createdBy', 'name');
+
+            await Form.findByIdAndUpdate(formId, { 
+                reviewed: true, 
+                planSent: true 
+            });
+
+            return res.status(200).json({ 
+                message: 'Plan updated successfully', 
+                plan: updatedPlan,
+                isUpdate: true
+            });
+        }
+
+        // Create new plan if none exists
         const newPlan = new Plan({
             user: userId,
             form: formId,
@@ -210,6 +242,27 @@ export async function getPlansForUser(req, res) {
             .sort({ createdAt: -1 });
 
         res.status(200).json({ plans });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+// Get plan associated with a specific form
+export async function getPlanByForm(req, res) {
+    try {
+        const { formId } = req.params;
+        
+        const plan = await Plan.findOne({ form: formId })
+            .populate('user', 'name email')
+            .populate('form', 'currentWeight desiredWeight createdAt')
+            .populate('createdBy', 'name email');
+
+        if (!plan) {
+            return res.status(404).json({ error: 'No plan found for this form' });
+        }
+
+        res.status(200).json({ plan });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });

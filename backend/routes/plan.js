@@ -8,7 +8,8 @@ import {
     updatePlan,
     activatePlan,
     deletePlan,
-    getPlansForUser
+    getPlansForUser,
+    getPlanByForm
 } from '../controllers/planController.js';
 
 router.post('/admin/plans', adminOnly, createPlan);
@@ -18,6 +19,7 @@ router.put('/admin/plans/:planId', adminOnly, updatePlan);
 router.put('/admin/plans/:planId/activate', adminOnly, activatePlan);
 router.delete('/admin/plans/:planId', adminOnly, deletePlan);
 router.get('/admin/users/:userId/plans', adminOnly, getPlansForUser);
+router.get('/admin/forms/:formId/plan', adminOnly, getPlanByForm);
 
 router.get('/plans/my', protect, async (req, res) => {
     try {

@@ -42,6 +42,9 @@ export default function AdminFormsPage() {
     const [reviewedFilter, setReviewedFilter] = useState('');
     const [selectedForm, setSelectedForm] = useState(null);
     const [formDetailsOpen, setFormDetailsOpen] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [planDetailsOpen, setPlanDetailsOpen] = useState(false);
+    const [planLoading, setPlanLoading] = useState(false);
 
     useEffect(() => {
         fetchForms();
@@ -123,6 +126,36 @@ export default function AdminFormsPage() {
     const openFormDetails = (form) => {
         setSelectedForm(form);
         setFormDetailsOpen(true);
+    };
+
+    const viewPlan = async (form) => {
+        try {
+            setPlanLoading(true);
+            setError('');
+            
+            const response = await fetch(`${apiBaseUrl}/api/admin/forms/${form._id}/plan`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    setError('No plan found for this form');
+                    return;
+                }
+                throw new Error('Failed to fetch plan');
+            }
+
+            const data = await response.json();
+            setSelectedPlan(data.plan);
+            setPlanDetailsOpen(true);
+        } catch (error) {
+            console.error('Error fetching plan:', error);
+            setError(error.message);
+        } finally {
+            setPlanLoading(false);
+        }
     };
 
     if (loading && forms.length === 0) {
@@ -232,11 +265,32 @@ export default function AdminFormsPage() {
                                             </>
                                         )}
                                         {form.reviewed && form.planSent && (
-                                            <Chip 
-                                                label="Plan Sent" 
-                                                color="success" 
-                                                size="small" 
-                                            />
+                                            <>
+                                                <Button
+                                                    size="small"
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    onClick={() => viewPlan(form)}
+                                                    disabled={planLoading}
+                                                    sx={{ mr: 1 }}
+                                                >
+                                                    {planLoading ? 'Loading...' : 'View Plan'}
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="secondary"
+                                                    onClick={() => sendPlan(form)}
+                                                    sx={{ mr: 1 }}
+                                                >
+                                                    Edit Plan
+                                                </Button>
+                                                <Chip 
+                                                    label="Plan Sent" 
+                                                    color="success" 
+                                                    size="small" 
+                                                />
+                                            </>
                                         )}
                                     </TableCell>
                                 </TableRow>
@@ -368,6 +422,169 @@ export default function AdminFormsPage() {
                             </>
                         )}
                         <Button onClick={() => setFormDetailsOpen(false)}>Close</Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Plan Details Dialog */}
+                <Dialog 
+                    open={planDetailsOpen} 
+                    onClose={() => setPlanDetailsOpen(false)}
+                    maxWidth="lg"
+                    fullWidth
+                >
+                    <DialogTitle>Plan Details</DialogTitle>
+                    <DialogContent>
+                        {selectedPlan && (
+                            <Grid container spacing={3}>
+                                {/* Plan Overview */}
+                                <Grid item xs={12}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom>
+                                                Plan Overview
+                                            </Typography>
+                                            <Typography><strong>Title:</strong> {selectedPlan.title}</Typography>
+                                            <Typography><strong>Description:</strong> {selectedPlan.description || 'No description'}</Typography>
+                                            <Typography><strong>Duration:</strong> {selectedPlan.duration} week(s)</Typography>
+                                            <Typography><strong>Status:</strong> 
+                                                <Chip 
+                                                    label={selectedPlan.status} 
+                                                    color={selectedPlan.status === 'active' ? 'success' : 'default'}
+                                                    size="small"
+                                                    sx={{ ml: 1 }}
+                                                />
+                                            </Typography>
+                                            <Typography><strong>Created by:</strong> {selectedPlan.createdBy?.name}</Typography>
+                                            <Typography><strong>Created:</strong> {new Date(selectedPlan.createdAt).toLocaleDateString()}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Goals */}
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom>
+                                                Goals
+                                            </Typography>
+                                            <Typography><strong>Target Weight:</strong> {selectedPlan.goals?.targetWeight || 'Not set'}kg</Typography>
+                                            <Typography><strong>Target Calories:</strong> {selectedPlan.goals?.targetCalories || 'Not set'}</Typography>
+                                            <Typography><strong>Target Protein:</strong> {selectedPlan.goals?.targetProtein || 'Not set'}g</Typography>
+                                            <Typography><strong>Target Carbs:</strong> {selectedPlan.goals?.targetCarbs || 'Not set'}g</Typography>
+                                            <Typography><strong>Target Fats:</strong> {selectedPlan.goals?.targetFats || 'Not set'}g</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* User Info */}
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom>
+                                                User Information
+                                            </Typography>
+                                            <Typography><strong>Name:</strong> {selectedPlan.user?.name}</Typography>
+                                            <Typography><strong>Email:</strong> {selectedPlan.user?.email}</Typography>
+                                            <Typography><strong>Current Weight:</strong> {selectedPlan.form?.currentWeight}kg</Typography>
+                                            <Typography><strong>Desired Weight:</strong> {selectedPlan.form?.desiredWeight}kg</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Weekly Plans */}
+                                {selectedPlan.weeklyPlans && selectedPlan.weeklyPlans.length > 0 && (
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent>
+                                                <Typography variant="h6" gutterBottom>
+                                                    Weekly Meal Plans
+                                                </Typography>
+                                                {selectedPlan.weeklyPlans.map((day, index) => (
+                                                    <Box key={index} sx={{ mb: 2 }}>
+                                                        <Typography variant="subtitle1" fontWeight="bold">
+                                                            Day {day.day}
+                                                        </Typography>
+                                                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                                                            {day.breakfast && (
+                                                                <Grid item xs={12} sm={6} md={3}>
+                                                                    <Paper sx={{ p: 2 }}>
+                                                                        <Typography variant="subtitle2" color="primary">Breakfast</Typography>
+                                                                        <Typography variant="body2">{day.breakfast.name}</Typography>
+                                                                        <Typography variant="caption">{day.breakfast.calories} cal</Typography>
+                                                                    </Paper>
+                                                                </Grid>
+                                                            )}
+                                                            {day.lunch && (
+                                                                <Grid item xs={12} sm={6} md={3}>
+                                                                    <Paper sx={{ p: 2 }}>
+                                                                        <Typography variant="subtitle2" color="primary">Lunch</Typography>
+                                                                        <Typography variant="body2">{day.lunch.name}</Typography>
+                                                                        <Typography variant="caption">{day.lunch.calories} cal</Typography>
+                                                                    </Paper>
+                                                                </Grid>
+                                                            )}
+                                                            {day.dinner && (
+                                                                <Grid item xs={12} sm={6} md={3}>
+                                                                    <Paper sx={{ p: 2 }}>
+                                                                        <Typography variant="subtitle2" color="primary">Dinner</Typography>
+                                                                        <Typography variant="body2">{day.dinner.name}</Typography>
+                                                                        <Typography variant="caption">{day.dinner.calories} cal</Typography>
+                                                                    </Paper>
+                                                                </Grid>
+                                                            )}
+                                                            {day.snacks && day.snacks.length > 0 && (
+                                                                <Grid item xs={12} sm={6} md={3}>
+                                                                    <Paper sx={{ p: 2 }}>
+                                                                        <Typography variant="subtitle2" color="primary">Snacks</Typography>
+                                                                        {day.snacks.map((snack, snackIndex) => (
+                                                                            <Box key={snackIndex}>
+                                                                                <Typography variant="body2">{snack.name}</Typography>
+                                                                                <Typography variant="caption">{snack.calories} cal</Typography>
+                                                                            </Box>
+                                                                        ))}
+                                                                    </Paper>
+                                                                </Grid>
+                                                            )}
+                                                        </Grid>
+                                                        {day.totalCalories && (
+                                                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                                                                Total Daily Calories: {day.totalCalories}
+                                                            </Typography>
+                                                        )}
+                                                        {day.notes && (
+                                                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                                                                Notes: {day.notes}
+                                                            </Typography>
+                                                        )}
+                                                        <Divider sx={{ my: 2 }} />
+                                                    </Box>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        {selectedPlan && (
+                            <Button 
+                                variant="contained" 
+                                color="primary"
+                                onClick={() => {
+                                    // Find the form associated with this plan
+                                    const associatedForm = forms.find(form => form._id === selectedPlan.form._id || form._id === selectedPlan.form);
+                                    if (associatedForm) {
+                                        sendPlan(associatedForm);
+                                        setPlanDetailsOpen(false);
+                                    }
+                                }}
+                                sx={{ mr: 1 }}
+                            >
+                                Edit Plan
+                            </Button>
+                        )}
+                        <Button onClick={() => setPlanDetailsOpen(false)}>Close</Button>
                     </DialogActions>
                 </Dialog>
             </Box>
