@@ -107,18 +107,6 @@ const planSchema = new Schema({
     }
 });
 
-// Calculate total calories for each day
-dayPlanSchema.pre('save', function(next) {
-    let total = 0;
-    if (this.breakfast) total += this.breakfast.calories || 0;
-    if (this.lunch) total += this.lunch.calories || 0;
-    if (this.dinner) total += this.dinner.calories || 0;
-    if (this.snacks) {
-        this.snacks.forEach(snack => total += snack.calories || 0);
-    }
-    this.totalCalories = total;
-    next();
-});
 
 const Plan = mongoose.model('Plan', planSchema);
 

@@ -610,6 +610,33 @@ export default function AdminPlanBuilderPage() {
         return days[dayNumber - 1];
     };
 
+    // Calculate total calories for a day
+    const calculateDayCalories = (day) => {
+        let total = 0;
+        if (day.breakfast) total += day.breakfast.calories || 0;
+        if (day.lunch) total += day.lunch.calories || 0;
+        if (day.dinner) total += day.dinner.calories || 0;
+        if (day.snacks) {
+            day.snacks.forEach(snack => total += snack.calories || 0);
+        }
+        return total;
+    };
+
+    // Calculate weekly total and average calories
+    const calculateWeeklyStats = () => {
+        if (!planData.weeklyPlans || planData.weeklyPlans.length === 0) {
+            return { total: 0, average: 0 };
+        }
+        
+        const totalCalories = planData.weeklyPlans.reduce((sum, day) => {
+            return sum + calculateDayCalories(day);
+        }, 0);
+        
+        const averageCalories = Math.round(totalCalories / planData.weeklyPlans.length);
+        
+        return { total: totalCalories, average: averageCalories };
+    };
+
     return (
         <PageFade>
             <Box sx={{ p: 3 }}>
@@ -877,20 +904,45 @@ export default function AdminPlanBuilderPage() {
                                     <Typography variant="h6">
                                         Weekly Meal Plan
                                     </Typography>
-                                    {planData.weeklyPlans.length === 0 && (
-                                        <Button variant="contained" onClick={initializePlan}>
-                                            Initialize 7-Day Plan
-                                        </Button>
-                                    )}
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        {planData.weeklyPlans.length > 0 && (
+                                            <>
+                                                <Chip 
+                                                    label={`Weekly Total: ${calculateWeeklyStats().total} kcal`}
+                                                    color="secondary"
+                                                    size="small"
+                                                />
+                                                <Chip 
+                                                    label={`Daily Avg: ${calculateWeeklyStats().average} kcal`}
+                                                    color="primary"
+                                                    size="small"
+                                                />
+                                            </>
+                                        )}
+                                        {planData.weeklyPlans.length === 0 && (
+                                            <Button variant="contained" onClick={initializePlan}>
+                                                Initialize 7-Day Plan
+                                            </Button>
+                                        )}
+                                    </Box>
                                 </Box>
 
-                                {planData.weeklyPlans.map((day, dayIndex) => (
-                                    <Accordion key={dayIndex}>
-                                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                            <Typography variant="h6">
-                                                Day {day.day} - {getDayName(day.day)}
-                                            </Typography>
-                                        </AccordionSummary>
+                                {planData.weeklyPlans.map((day, dayIndex) => {
+                                    const dayCalories = calculateDayCalories(day);
+                                    return (
+                                        <Accordion key={dayIndex}>
+                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mr: 2 }}>
+                                                    <Typography variant="h6">
+                                                        Day {day.day} - {getDayName(day.day)}
+                                                    </Typography>
+                                                    <Chip 
+                                                        label={`${dayCalories} kcal`}
+                                                        color="primary"
+                                                        size="small"
+                                                    />
+                                                </Box>
+                                            </AccordionSummary>
                                         <AccordionDetails>
                                             <Grid container spacing={2}>
                                                 {/* Breakfast */}
@@ -1010,7 +1062,8 @@ export default function AdminPlanBuilderPage() {
                                             </Grid>
                                         </AccordionDetails>
                                     </Accordion>
-                                ))}
+                                    );
+                                })}
                             </CardContent>
                         </Card>
                     </Grid>
