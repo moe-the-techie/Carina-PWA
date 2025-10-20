@@ -20,6 +20,9 @@ export default function LoginPage({ onLogin }) {
   const [backendError, setBackendError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showResendButton, setShowResendButton] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -42,6 +45,8 @@ export default function LoginPage({ onLogin }) {
 
     setFormErrors(errors);
     setBackendError('');
+    setShowResendButton(false);
+    setResendSuccess('');
 
     if (Object.keys(errors).length === 0) {
       try {
@@ -57,6 +62,11 @@ export default function LoginPage({ onLogin }) {
         if (!response.ok) {
           if (data && data.error) {
             setBackendError(data.error);
+            
+            // Show resend button if email is not verified
+            if (data.email_verified === false && data.canResendVerification) {
+              setShowResendButton(true);
+            }
           } else {
             setBackendError(`Login failed: ${response.status}`);
           }
@@ -76,9 +86,47 @@ export default function LoginPage({ onLogin }) {
       } finally {
         setSubmitting(false);
       }
+    }
+  };
 
-      setEmail('');
-      setPassword('');
+  const handleResendVerification = async () => {
+    try {
+      setResendingEmail(true);
+      setBackendError('');
+      setResendSuccess('');
+
+      const response = await fetch(`${apiBaseUrl}/api/auth/resend-verification-with-auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data && data.error) {
+          setBackendError(data.error);
+          
+          // If email is already verified, hide the resend button
+          if (data.emailVerified) {
+            setShowResendButton(false);
+          }
+        } else {
+          setBackendError(`Failed to resend verification email: ${response.status}`);
+        }
+        return;
+      }
+
+      // Success
+      setResendSuccess(data.message || 'Verification email sent successfully!');
+      setShowResendButton(false);
+      setBackendError('');
+      
+    } catch (error) {
+      console.error('Resend verification error:', error);
+      setBackendError('Network error: ' + error.message);
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -123,16 +171,40 @@ export default function LoginPage({ onLogin }) {
 
           </div>
 
-          <div className="h-5">
+          <div className="min-h-8">
             {backendError && (
               <p className="text-red-600 text-base font-light py-1 inline-block">
                 {backendError}
               </p>
             )}
+            {resendSuccess && (
+              <p className="text-green-600 text-base font-light py-1 inline-block">
+                {resendSuccess}
+              </p>
+            )}
           </div>
+
+          {showResendButton && (
+            <div className="mb-4">
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="w-full py-2 px-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
+              >
+                {resendingEmail ? 'Sending...' : 'Resend Verification Email'}
+              </button>
+            </div>
+          )}
 
           <div className="mt-10">
             <LandingButton type="submit">Log In</LandingButton>
+          </div>
+
+          <div className="text-gray-600 text-base">
+            <Link to="/forgot-password" className="text-lime-400 font-semibold hover:underline">
+              Forgot Password?
+            </Link>
           </div>
 
           <div className="text-gray-600 text-base">

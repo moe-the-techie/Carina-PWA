@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import bcrypt from 'bcrypt';
 
 export async function getAllUsers(req, res) {
     // TODO: protect this route for admins only
