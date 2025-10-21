@@ -2,15 +2,16 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-    email: {
+    firebaseUid: {
         type: String,
         required: true,
         unique: true,
         trim: true,
     },
-    password: {
+    email: {
         type: String,
         required: true,
+        unique: true,
         trim: true,
     },
     name: {
@@ -43,6 +44,14 @@ const userSchema = new Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    lastVerificationEmailSentAt: {
+        type: Date,
+        default: null
+    },
+    lastPasswordResetEmailSentAt: {
+        type: Date,
+        default: null
     },
     createdAt: {
         type: Date,
