@@ -4,8 +4,11 @@ const { Schema } = mongoose;
 const userSchema = new Schema({
     firebaseUid: {
         type: String,
-        required: true,
+        required: function() {
+            return this.isFirebaseUser !== false;
+        },
         unique: true,
+        sparse: true,
         trim: true,
     },
     email: {
@@ -13,6 +16,17 @@ const userSchema = new Schema({
         required: true,
         unique: true,
         trim: true,
+    },
+    password: {
+        type: String,
+        required: function() {
+            return this.isFirebaseUser === false;
+        },
+        select: false
+    },
+    isFirebaseUser: {
+        type: Boolean,
+        default: true
     },
     name: {
         type: String,

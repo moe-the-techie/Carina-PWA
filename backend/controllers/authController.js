@@ -1,5 +1,6 @@
 import User from'../models/User.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { verifyToken } from '../middleware/auth.js';
 import { auth, adminAuth } from '../config/firebase.js';
 import {
@@ -84,6 +85,45 @@ export async function login(req, res) {
             return res.status(400).json({ error: 'Email and password are required.' });
         }
 
+        const adminUser = await User.findOne({ 
+            email: email, 
+            isFirebaseUser: false,
+            role: 'admin' 
+        }).select('+password');
+
+        if (adminUser) {
+            console.log('Admin login attempt for:', email);
+            
+            const isPasswordValid = await bcrypt.compare(password, adminUser.password);
+            
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: 'Invalid credentials.' });
+            }
+
+            const token = generateToken(adminUser._id);
+
+            console.log('Admin logged in successfully:', adminUser._id);
+
+            return res.status(200).json({
+                message: 'Admin login successful.',
+                user: {
+                    _id: adminUser._id,
+                    firebaseUid: null,
+                    name: adminUser.name,
+                    email: adminUser.email,
+                    dateOfBirth: adminUser.dateOfBirth,
+                    isMother: adminUser.isMother,
+                    gender: adminUser.gender,
+                    role: adminUser.role
+                },
+                token: token,
+                firebase_uid: null,
+                email_verified: true,
+                isLocalAuth: true
+            });
+        }
+
+        // If not admin user, proceed with Firebase authentication
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         console.log('User logged in:', userCredential.user.uid);
@@ -120,7 +160,8 @@ export async function login(req, res) {
             },
             token: token,
             firebase_uid: userCredential.user.uid,
-            email_verified: userCredential.user.emailVerified
+            email_verified: userCredential.user.emailVerified,
+            isLocalAuth: false
         });
 
     } catch (error) {
