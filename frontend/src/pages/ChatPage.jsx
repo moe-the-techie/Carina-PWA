@@ -19,6 +19,7 @@ import {
     sendMessage,
     markMessagesAsRead
 } from '../services/chatService';
+import { subscribeToChat, unsubscribeFromChannel, disconnectAbly } from '../services/ablyService';
 
 export default function ChatPage() {
     const theme = useTheme();
@@ -28,7 +29,7 @@ export default function ChatPage() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
-    const pollingIntervalRef = useRef(null);
+    const hasSubscribed = useRef(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,7 +63,11 @@ export default function ChatPage() {
         setSending(true);
         try {
             const response = await sendMessage(chat.chatId, newMessage.trim());
-            setMessages(prev => [...prev, response]);
+            setMessages(prev => {
+                const exists = prev.some(m => m.messageId === response.messageId);
+                if (exists) return prev;
+                return [...prev, response];
+            });
             setNewMessage('');
         } catch (error) {
             console.error('Error sending message:', error);
@@ -72,26 +77,40 @@ export default function ChatPage() {
     };
 
     useEffect(() => {
-        if (chat?.chatId) {
-            pollingIntervalRef.current = setInterval(async () => {
-                try {
-                    const response = await getMessages(chat.chatId);
-                    if (response.messages.length !== messages.length) {
-                        setMessages(response.messages);
-                        await markMessagesAsRead(chat.chatId);
-                    }
-                } catch (error) {
-                    console.error('Error polling messages:', error);
-                }
-            }, 3000);
+        if (chat?.userId && !hasSubscribed.current) {
+            hasSubscribed.current = true;
 
-            return () => {
-                if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current);
+            const handleNewMessage = (messageData) => {
+                setMessages(prev => {
+                    const exists = prev.some(m => m.messageId === messageData.messageId);
+                    if (exists) return prev;
+                    
+                    return [...prev, messageData];
+                });
+
+                if (messageData.senderRole !== 'user') {
+                    markMessagesAsRead(chat.chatId).catch(err => 
+                        console.error('Error marking messages as read:', err)
+                    );
                 }
             };
+
+            subscribeToChat(chat.userId, handleNewMessage).catch(error => {
+                console.error('Error subscribing to chat:', error);
+            });
+
+            return () => {
+                unsubscribeFromChannel(`chat:${chat.userId}:messages`);
+                hasSubscribed.current = false;
+            };
         }
-    }, [chat, messages.length]);
+    }, [chat]);
+
+    useEffect(() => {
+        return () => {
+            disconnectAbly();
+        };
+    }, []);
 
     useEffect(() => {
         loadChat();

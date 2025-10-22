@@ -31,6 +31,7 @@ import {
     markMessagesAsRead,
     getOrCreateChatByUserId
 } from '../services/chatService';
+import { subscribeToAdminChats, unsubscribeFromChannel, disconnectAbly } from '../services/ablyService';
 
 export default function AdminChatsPage() {
     const theme = useTheme();
@@ -46,8 +47,8 @@ export default function AdminChatsPage() {
     const [hasMoreChats, setHasMoreChats] = useState(false);
     const [loadingMoreChats, setLoadingMoreChats] = useState(false);
     const messagesEndRef = useRef(null);
-    const pollingIntervalRef = useRef(null);
     const hasInitializedChat = useRef(false);
+    const hasSubscribed = useRef(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -167,9 +168,15 @@ export default function AdminChatsPage() {
         setSending(true);
         try {
             const response = await sendMessage(selectedChat.chatId, newMessage.trim());
-            setMessages(prev => [...prev, response]);
+            // Message will be added via Ably subscription, but add it locally for immediate feedback
+            setMessages(prev => {
+                const exists = prev.some(m => m.messageId === response.messageId);
+                if (exists) return prev;
+                return [...prev, response];
+            });
             setNewMessage('');
             
+            // Update chats list
             setChats(prevChats => {
                 const updatedChats = prevChats.map(chat =>
                     chat.chatId === selectedChat.chatId
@@ -208,34 +215,73 @@ export default function AdminChatsPage() {
         }
     };
 
+    // Subscribe to real-time admin chat updates using Ably
     useEffect(() => {
-        if (selectedChat) {
-            pollingIntervalRef.current = setInterval(async () => {
-                try {
-                    const response = await getMessages(selectedChat.chatId);
-                    if (response.messages.length !== messages.length) {
-                        setMessages(response.messages);
-                        await markMessagesAsRead(selectedChat.chatId);
-                    }
-                } catch (error) {
-                    console.error('Error polling messages:', error);
-                }
-            }, 3000);
+        if (!hasSubscribed.current) {
+            hasSubscribed.current = true;
 
-            return () => {
-                if (pollingIntervalRef.current) {
-                    clearInterval(pollingIntervalRef.current);
+            const handleNewMessage = (messageData) => {
+                // Update messages if this is the selected chat
+                if (selectedChat && messageData.chatId === selectedChat.chatId) {
+                    setMessages(prev => {
+                        const exists = prev.some(m => m.messageId === messageData.messageId);
+                        if (exists) return prev;
+                        return [...prev, messageData];
+                    });
+
+                    // Mark as read if viewing this chat
+                    markMessagesAsRead(selectedChat.chatId).catch(err => 
+                        console.error('Error marking messages as read:', err)
+                    );
                 }
+
+                // Update chat list
+                setChats(prevChats => {
+                    const updatedChats = prevChats.map(chat =>
+                        chat.chatId === messageData.chatId
+                            ? {
+                                ...chat,
+                                lastMessage: {
+                                    content: messageData.content,
+                                    senderId: messageData.senderId,
+                                    senderRole: messageData.senderRole,
+                                    createdAt: messageData.createdAt
+                                },
+                                lastMessageAt: messageData.createdAt,
+                                unreadByAdmins: messageData.senderRole === 'user' 
+                                    ? (chat.unreadByAdmins || 0) + 1 
+                                    : chat.unreadByAdmins
+                            }
+                            : chat
+                    );
+                    
+                    return updatedChats.sort((a, b) => 
+                        new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+                    );
+                });
+            };
+
+            subscribeToAdminChats(handleNewMessage).catch(error => {
+                console.error('Error subscribing to admin chats:', error);
+            });
+
+            // Cleanup function
+            return () => {
+                unsubscribeFromChannel('admin:chats');
+                hasSubscribed.current = false;
             };
         }
-    }, [selectedChat, messages.length]);
+    }, [selectedChat]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            disconnectAbly();
+        };
+    }, []);
 
     useEffect(() => {
         loadChats();
-        const chatListInterval = setInterval(() => {
-            loadChats();
-        }, 5000);
-        return () => clearInterval(chatListInterval);
     }, []);
 
     // Handle userId from navigation state (when coming from users page)

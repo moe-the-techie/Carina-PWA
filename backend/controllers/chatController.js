@@ -1,6 +1,7 @@
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
+import { publishMessage, generateAblyToken, generateAdminAblyToken } from '../config/ably.js';
 
 // Get or create a chat for the current user
 export const getOrCreateChat = async (req, res) => {
@@ -68,7 +69,8 @@ export const sendMessage = async (req, res) => {
 
         await message.populate('senderId', 'name email');
 
-        res.status(201).json({
+        // Publish message to Ably for real-time updates
+        const messageData = {
             messageId: message._id,
             chatId: message.chatId,
             senderId: message.senderId,
@@ -77,7 +79,17 @@ export const sendMessage = async (req, res) => {
             createdAt: message.createdAt,
             readByAdmins: message.readByAdmins,
             readByUser: message.readByUser
+        };
+        
+        await publishMessage(`chat:${chat.userId}:messages`, 'new-message', messageData);
+        
+        await publishMessage('admin:chats', 'new-message', {
+            ...messageData,
+            chatId: chat._id,
+            userId: chat.userId
         });
+
+        res.status(201).json(messageData);
     } catch (error) {
         console.error('Error in sendMessage:', error);
         res.status(500).json({ error: 'Failed to send message' });
@@ -345,5 +357,25 @@ export const getAdminUnreadCount = async (req, res) => {
     } catch (error) {
         console.error('Error in getAdminUnreadCount:', error);
         res.status(500).json({ error: 'Failed to get unread count' });
+    }
+};
+
+// Get Ably authentication token
+export const getAblyAuthToken = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const userRole = req.user.role;
+
+        let tokenRequest;
+        if (userRole === 'admin') {
+            tokenRequest = await generateAdminAblyToken(userId);
+        } else {
+            tokenRequest = await generateAblyToken(userId);
+        }
+
+        res.status(200).json(tokenRequest);
+    } catch (error) {
+        console.error('Error in getAblyAuthToken:', error);
+        res.status(500).json({ error: 'Failed to generate Ably token' });
     }
 };
