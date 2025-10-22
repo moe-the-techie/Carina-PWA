@@ -10,6 +10,7 @@ import {
     getAllChats,
     getChatById,
     getChatByUserId,
+    getOrCreateChatByUserId,
     getAdminUnreadCount
 } from '../controllers/chatController.js';
 
@@ -25,5 +26,6 @@ router.get('/admin/chats', adminOnly, getAllChats);
 router.get('/admin/chats/unread/count', adminOnly, getAdminUnreadCount);
 router.get('/admin/chat/:chatId', adminOnly, getChatById);
 router.get('/admin/chat/user/:userId', adminOnly, getChatByUserId);
+router.post('/admin/chat/user/:userId', adminOnly, getOrCreateChatByUserId);
 
 export default router;

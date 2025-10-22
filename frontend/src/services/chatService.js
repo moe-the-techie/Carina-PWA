@@ -86,6 +86,17 @@ export const getChatByUserId = async (userId) => {
     return apiRequest(`/admin/chat/user/${userId}`);
 };
 
+// Admin: Get or create chat by user ID (for initiating chats with users)
+export const getOrCreateChatByUserId = async (userId) => {
+    if (!userId || userId === 'null' || userId === 'undefined') {
+        throw new Error('Invalid user ID provided');
+    }
+    
+    return apiRequest(`/admin/chat/user/${userId}`, {
+        method: 'POST',
+    });
+};
+
 // Get unread count for current user
 export const getUnreadCount = async () => {
     return apiRequest('/chat/unread/count');

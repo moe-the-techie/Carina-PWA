@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Box, 
     Typography, 
@@ -11,8 +12,11 @@ import {
     TableContainer,
     TableHead,
     TableRow,
-    Chip
+    Chip,
+    IconButton,
+    Tooltip
 } from '@mui/material';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 
@@ -20,6 +24,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminDashboardPage() {
     const theme = useTheme();
+    const navigate = useNavigate();
     const [dashboardData, setDashboardData] = useState({
         stats: {},
         recentUsers: [],
@@ -53,6 +58,15 @@ export default function AdminDashboardPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleMessageUser = (userId) => {
+        if (!userId || userId === 'null' || userId === 'undefined') {
+            console.error('Cannot message user: Invalid user ID');
+            return;
+        }
+        
+        navigate('/admin/chats', { state: { userId } });
     };
 
     if (loading) {
@@ -151,6 +165,7 @@ export default function AdminDashboardPage() {
                                                 <TableCell>Name</TableCell>
                                                 <TableCell>Email</TableCell>
                                                 <TableCell>Joined</TableCell>
+                                                <TableCell align="center">Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -160,6 +175,17 @@ export default function AdminDashboardPage() {
                                                     <TableCell>{user.email}</TableCell>
                                                     <TableCell>
                                                         {new Date(user.createdAt).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        <Tooltip title="Message User">
+                                                            <IconButton 
+                                                                size="small" 
+                                                                color="primary"
+                                                                onClick={() => handleMessageUser(user._id)}
+                                                            >
+                                                                <ChatIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -183,6 +209,7 @@ export default function AdminDashboardPage() {
                                                 <TableCell>User</TableCell>
                                                 <TableCell>Status</TableCell>
                                                 <TableCell>Date</TableCell>
+                                                <TableCell align="center">Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -198,6 +225,19 @@ export default function AdminDashboardPage() {
                                                     </TableCell>
                                                     <TableCell>
                                                         {new Date(form.createdAt).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell align="center">
+                                                        {form.user?._id && (
+                                                            <Tooltip title="Message User">
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    color="primary"
+                                                                    onClick={() => handleMessageUser(form.user._id)}
+                                                                >
+                                                                    <ChatIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}

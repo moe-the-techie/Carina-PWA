@@ -271,6 +271,44 @@ export const getChatByUserId = async (req, res) => {
     }
 };
 
+// Admin: Get or create chat by user ID (for initiating chats from admin side)
+export const getOrCreateChatByUserId = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Guard: Check if userId is null or invalid
+        if (!userId || userId === 'null' || userId === 'undefined') {
+            return res.status(400).json({ error: 'Invalid user ID provided' });
+        }
+
+        const user = await User.findById(userId).select('name email');
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        let chat = await Chat.findOne({ userId });
+
+        if (!chat) {
+            chat = new Chat({ userId });
+            await chat.save();
+        }
+
+        await chat.populate('userId', 'name email');
+
+        res.status(200).json({
+            chatId: chat._id,
+            user: chat.userId,
+            lastMessageAt: chat.lastMessageAt,
+            unreadByAdmins: chat.unreadByAdmins,
+            unreadByUser: chat.unreadByUser,
+            createdAt: chat.createdAt
+        });
+    } catch (error) {
+        console.error('Error in getOrCreateChatByUserId:', error);
+        res.status(500).json({ error: 'Failed to get or create chat' });
+    }
+};
+
 // Get unread count for current user
 export const getUnreadCount = async (req, res) => {
     try {

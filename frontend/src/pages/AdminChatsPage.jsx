@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Box,
     Paper,
@@ -14,7 +15,9 @@ import {
     Badge,
     CircularProgress,
     InputAdornment,
-    Chip
+    Chip,
+    Alert,
+    Button
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
@@ -25,11 +28,13 @@ import {
     getAllChats,
     getMessages,
     sendMessage,
-    markMessagesAsRead
+    markMessagesAsRead,
+    getOrCreateChatByUserId
 } from '../services/chatService';
 
 export default function AdminChatsPage() {
     const theme = useTheme();
+    const location = useLocation();
     const [chats, setChats] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -37,8 +42,12 @@ export default function AdminChatsPage() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [error, setError] = useState('');
+    const [hasMoreChats, setHasMoreChats] = useState(false);
+    const [loadingMoreChats, setLoadingMoreChats] = useState(false);
     const messagesEndRef = useRef(null);
     const pollingIntervalRef = useRef(null);
+    const hasInitializedChat = useRef(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,14 +57,33 @@ export default function AdminChatsPage() {
         scrollToBottom();
     }, [messages]);
 
-    const loadChats = async () => {
+    const loadChats = async (resetPagination = false) => {
         try {
+            if (resetPagination) {
+                setChats([]);
+            }
             const response = await getAllChats(0, 50);
             setChats(response.chats);
+            setHasMoreChats(response.hasMore);
         } catch (error) {
             console.error('Error loading chats:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMoreChats = async () => {
+        if (loadingMoreChats || !hasMoreChats) return;
+        
+        try {
+            setLoadingMoreChats(true);
+            const response = await getAllChats(chats.length, 50);
+            setChats(prev => [...prev, ...response.chats]);
+            setHasMoreChats(response.hasMore);
+        } catch (error) {
+            console.error('Error loading more chats:', error);
+        } finally {
+            setLoadingMoreChats(false);
         }
     };
 
@@ -78,7 +106,58 @@ export default function AdminChatsPage() {
 
     const handleChatSelect = async (chat) => {
         setSelectedChat(chat);
+        setError('');
         await loadMessages(chat.chatId);
+    };
+
+    // Handle opening chat from userId (when navigating from users page)
+    const openChatByUserId = async (userId) => {
+        try {
+            if (!userId || userId === 'null' || userId === 'undefined') {
+                setError('Cannot open chat: Invalid user ID');
+                return;
+            }
+
+            setLoading(true);
+            setError('');
+            
+            const chatData = await getOrCreateChatByUserId(userId);
+            
+            const chatObject = {
+                chatId: chatData.chatId,
+                user: chatData.user,
+                lastMessageAt: chatData.lastMessageAt,
+                unreadByAdmins: chatData.unreadByAdmins,
+                lastMessage: null,
+                createdAt: chatData.createdAt
+            };
+            
+            setChats(prevChats => {
+                const existingChatIndex = prevChats.findIndex(
+                    chat => chat.chatId === chatData.chatId
+                );
+                
+                if (existingChatIndex >= 0) {
+                    const updatedChats = [...prevChats];
+                    updatedChats[existingChatIndex] = {
+                        ...updatedChats[existingChatIndex],
+                        ...chatObject
+                    };
+                    return updatedChats;
+                } else {
+                    return [chatObject, ...prevChats];
+                }
+            });
+            
+            setSelectedChat(chatObject);
+            
+            await loadMessages(chatData.chatId);
+        } catch (error) {
+            console.error('Error opening chat by user ID:', error);
+            setError(error.message || 'Failed to open chat with user');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSendMessage = async (e) => {
@@ -90,8 +169,9 @@ export default function AdminChatsPage() {
             const response = await sendMessage(selectedChat.chatId, newMessage.trim());
             setMessages(prev => [...prev, response]);
             setNewMessage('');
-            setChats(prevChats =>
-                prevChats.map(chat =>
+            
+            setChats(prevChats => {
+                const updatedChats = prevChats.map(chat =>
                     chat.chatId === selectedChat.chatId
                         ? {
                             ...chat,
@@ -104,8 +184,23 @@ export default function AdminChatsPage() {
                             lastMessageAt: response.createdAt
                         }
                         : chat
-                ).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt))
-            );
+                );
+                
+                return updatedChats.sort((a, b) => 
+                    new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+                );
+            });
+            
+            setSelectedChat(prev => ({
+                ...prev,
+                lastMessageAt: response.createdAt,
+                lastMessage: {
+                    content: response.content,
+                    senderId: response.senderId,
+                    senderRole: response.senderRole,
+                    createdAt: response.createdAt
+                }
+            }));
         } catch (error) {
             console.error('Error sending message:', error);
         } finally {
@@ -143,6 +238,14 @@ export default function AdminChatsPage() {
         return () => clearInterval(chatListInterval);
     }, []);
 
+    // Handle userId from navigation state (when coming from users page)
+    useEffect(() => {
+        if (location.state?.userId && !hasInitializedChat.current) {
+            hasInitializedChat.current = true;
+            openChatByUserId(location.state.userId);
+        }
+    }, [location.state?.userId]);
+
     const formatTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -176,6 +279,11 @@ export default function AdminChatsPage() {
     return (
         <PageFade>
             <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', gap: 2, p: 2 }}>
+                {error && (
+                    <Alert severity="error" sx={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
+                        {error}
+                    </Alert>
+                )}
                 <Paper sx={{ width: 350, display: 'flex', flexDirection: 'column', backgroundColor: theme.palette.background.paper }}>
                     <Box sx={{ p: 2 }}>
                         <Typography variant="h6" gutterBottom>User Chats</Typography>
@@ -197,31 +305,45 @@ export default function AdminChatsPage() {
                                 <Typography color="text.secondary">No chats found</Typography>
                             </Box>
                         ) : (
-                            filteredChats.map((chat) => (
-                                <ListItem key={chat.chatId} disablePadding>
-                                    <ListItemButton
-                                        selected={selectedChat?.chatId === chat.chatId}
-                                        onClick={() => handleChatSelect(chat)}
-                                    >
-                                        <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: 2 }}>
-                                            <Avatar><PersonIcon /></Avatar>
-                                        </Badge>
-                                        <ListItemText
-                                            primary={chat.user?.name || 'Unknown User'}
-                                            secondary={
-                                                <React.Fragment>
-                                                    <Typography component="span" variant="body2" color="text.primary" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {chat.lastMessage?.content || 'No messages yet'}
-                                                    </Typography>
-                                                    <Typography component="span" variant="caption" color="text.secondary">
-                                                        {formatTime(chat.lastMessageAt)}
-                                                    </Typography>
-                                                </React.Fragment>
-                                            }
-                                        />
-                                    </ListItemButton>
-                                </ListItem>
-                            ))
+                            <>
+                                {filteredChats.map((chat) => (
+                                    <ListItem key={chat.chatId} disablePadding>
+                                        <ListItemButton
+                                            selected={selectedChat?.chatId === chat.chatId}
+                                            onClick={() => handleChatSelect(chat)}
+                                        >
+                                            <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: 2 }}>
+                                                <Avatar><PersonIcon /></Avatar>
+                                            </Badge>
+                                            <ListItemText
+                                                primary={chat.user?.name || 'Unknown User'}
+                                                secondary={
+                                                    <React.Fragment>
+                                                        <Typography component="span" variant="body2" color="text.primary" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {chat.lastMessage?.content || 'No messages yet'}
+                                                        </Typography>
+                                                        <Typography component="span" variant="caption" color="text.secondary">
+                                                            {formatTime(chat.lastMessageAt)}
+                                                        </Typography>
+                                                    </React.Fragment>
+                                                }
+                                            />
+                                        </ListItemButton>
+                                    </ListItem>
+                                ))}
+                                {!searchQuery && hasMoreChats && (
+                                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                                        <Button 
+                                            variant="outlined" 
+                                            onClick={loadMoreChats}
+                                            disabled={loadingMoreChats}
+                                            fullWidth
+                                        >
+                                            {loadingMoreChats ? <CircularProgress size={24} /> : 'Load More Chats'}
+                                        </Button>
+                                    </Box>
+                                )}
+                            </>
                         )}
                     </List>
                 </Paper>

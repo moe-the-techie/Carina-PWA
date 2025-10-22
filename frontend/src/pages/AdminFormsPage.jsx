@@ -24,8 +24,11 @@ import {
     Grid,
     Card,
     CardContent,
-    Divider
+    Divider,
+    IconButton,
+    Tooltip
 } from '@mui/material';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 
@@ -126,6 +129,15 @@ export default function AdminFormsPage() {
     const openFormDetails = (form) => {
         setSelectedForm(form);
         setFormDetailsOpen(true);
+    };
+
+    const handleMessageUser = (userId) => {
+        if (!userId || userId === 'null' || userId === 'undefined') {
+            setError('Cannot message user: Invalid user ID');
+            return;
+        }
+        
+        navigate('/admin/chats', { state: { userId } });
     };
 
     const viewPlan = async (form) => {
@@ -236,6 +248,18 @@ export default function AdminFormsPage() {
                                         {new Date(form.createdAt).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell>
+                                        {form.user?._id && (
+                                            <Tooltip title="Message User">
+                                                <IconButton 
+                                                    size="small" 
+                                                    color="primary"
+                                                    onClick={() => handleMessageUser(form.user._id)}
+                                                    sx={{ mr: 1 }}
+                                                >
+                                                    <ChatIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                         <Button
                                             size="small"
                                             onClick={() => openFormDetails(form)}
@@ -422,6 +446,17 @@ export default function AdminFormsPage() {
                             </>
                         )}
                         <Button onClick={() => setFormDetailsOpen(false)}>Close</Button>
+                        <Button 
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => {
+                                setFormDetailsOpen(false);
+                                handleMessageUser(selectedForm?.user?._id);
+                            }}
+                            startIcon={<ChatIcon />}
+                        >
+                            Message User
+                        </Button>
                     </DialogActions>
                 </Dialog>
 
