@@ -14,6 +14,7 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminFormsPage from './pages/AdminFormsPage';
 import AdminTemplatesPage from './pages/AdminTemplatesPage';
 import AdminPlanBuilderPage from './pages/AdminPlanBuilderPage';
+import AdminChatsPage from './pages/AdminChatsPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
@@ -93,6 +94,7 @@ function App() {
                 <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminFormsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/templates" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
             </Routes>
         </Router>
     );
