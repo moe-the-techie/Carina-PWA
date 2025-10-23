@@ -17,6 +17,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import DescriptionIcon from '@mui/icons-material/Description';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import TemplateIcon from '@mui/icons-material/FileCopy';
+import ChatIcon from '@mui/icons-material/Chat';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
@@ -29,6 +30,7 @@ export default function AdminSidebar({ onLogout }) {
         { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
         { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
         { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
+        { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats' },
         { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates' },
         { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
     ];

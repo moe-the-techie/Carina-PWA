@@ -20,13 +20,16 @@ import {
     Grid,
     Card,
     CardContent,
-    Divider
+    Divider,
+    Stack
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminUsersPage() {
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -105,6 +108,15 @@ export default function AdminUsersPage() {
 
     const handlePageChange = (event, newPage) => {
         setPage(newPage);
+    };
+
+    const handleMessageUser = (userId) => {
+        if (!userId || userId === 'null' || userId === 'undefined') {
+            setError('Cannot message user: Invalid user ID');
+            return;
+        }
+        
+        navigate('/admin/chats', { state: { userId } });
     };
 
     if (loading && users.length === 0) {
@@ -186,12 +198,22 @@ export default function AdminUsersPage() {
                                         {new Date(user.createdAt).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell>
-                                        <Button
-                                            size="small"
-                                            onClick={() => fetchUserDetails(user._id)}
-                                        >
-                                            View Details
-                                        </Button>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button
+                                                size="small"
+                                                onClick={() => fetchUserDetails(user._id)}
+                                            >
+                                                View Details
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => handleMessageUser(user._id)}
+                                            >
+                                                Message
+                                            </Button>
+                                        </Stack>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -287,6 +309,16 @@ export default function AdminUsersPage() {
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => setUserDetailsOpen(false)}>Close</Button>
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            onClick={() => {
+                                setUserDetailsOpen(false);
+                                handleMessageUser(selectedUser?.user?._id);
+                            }}
+                        >
+                            Message User
+                        </Button>
                     </DialogActions>
                 </Dialog>
             </Box>
