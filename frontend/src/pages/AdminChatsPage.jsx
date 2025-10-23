@@ -17,11 +17,15 @@ import {
     InputAdornment,
     Chip,
     Alert,
-    Button
+    Button,
+    useMediaQuery,
+    AppBar,
+    Toolbar
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import {
@@ -42,6 +46,7 @@ import {
 export default function AdminChatsPage() {
     const theme = useTheme();
     const location = useLocation();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const [chats, setChats] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -52,6 +57,7 @@ export default function AdminChatsPage() {
     const [error, setError] = useState('');
     const [hasMoreChats, setHasMoreChats] = useState(false);
     const [loadingMoreChats, setLoadingMoreChats] = useState(false);
+    const [showChatView, setShowChatView] = useState(false); // New state for mobile view toggle
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
@@ -121,6 +127,16 @@ export default function AdminChatsPage() {
         setSelectedChat(chat);
         setError('');
         await loadMessages(chat.chatId);
+        
+        if (isMobile) {
+            setShowChatView(true);
+        }
+    };
+
+    const handleBackToList = () => {
+        setShowChatView(false);
+        setSelectedChat(null);
+        clearCurrentlyViewingChat();
     };
 
     // Handle opening chat from userId (when navigating from users page)
@@ -165,6 +181,10 @@ export default function AdminChatsPage() {
             setSelectedChat(chatObject);
             
             await loadMessages(chatData.chatId);
+            
+            if (isMobile) {
+                setShowChatView(true);
+            }
         } catch (error) {
             console.error('Error opening chat by user ID:', error);
             setError(error.message || 'Failed to open chat with user');
@@ -295,6 +315,12 @@ export default function AdminChatsPage() {
         loadChats();
     }, []);
 
+    useEffect(() => {
+        if (!isMobile) {
+            setShowChatView(false);
+        }
+    }, [isMobile]);
+
     // Handle userId from navigation state (when coming from users page)
     useEffect(() => {
         if (location.state?.userId && !hasInitializedChat.current) {
@@ -323,6 +349,269 @@ export default function AdminChatsPage() {
         chat.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const renderChatList = () => (
+        <Paper sx={{ 
+            width: { xs: '100%', md: 350 }, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            backgroundColor: theme.palette.background.paper,
+            height: { xs: '100%', md: 'auto' }
+        }}>
+            <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
+                    User Chats
+                </Typography>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    InputProps={{
+                        startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>)
+                    }}
+                />
+            </Box>
+            <Divider />
+            <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+                {filteredChats.length === 0 ? (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography color="text.secondary">No chats found</Typography>
+                    </Box>
+                ) : (
+                    <>
+                        {filteredChats.map((chat) => (
+                            <ListItem key={chat.chatId} disablePadding>
+                                <ListItemButton
+                                    selected={selectedChat?.chatId === chat.chatId}
+                                    onClick={() => handleChatSelect(chat)}
+                                    sx={{ p: { xs: 1, md: 1.5 } }}
+                                >
+                                    <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: 2 }}>
+                                        <Avatar sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
+                                            <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                        </Avatar>
+                                    </Badge>
+                                    <ListItemText
+                                        primary={
+                                            <Typography 
+                                                variant="subtitle1" 
+                                                sx={{ 
+                                                    fontSize: { xs: '0.875rem', md: '1rem' },
+                                                    fontWeight: chat.unreadByAdmins > 0 ? 'bold' : 'normal'
+                                                }}
+                                            >
+                                                {chat.user?.name || 'Unknown User'}
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            <React.Fragment>
+                                                <Typography 
+                                                    component="span" 
+                                                    variant="body2" 
+                                                    color="text.primary" 
+                                                    sx={{ 
+                                                        display: 'block', 
+                                                        overflow: 'hidden', 
+                                                        textOverflow: 'ellipsis', 
+                                                        whiteSpace: 'nowrap',
+                                                        fontSize: { xs: '0.75rem', md: '0.875rem' }
+                                                    }}
+                                                >
+                                                    {chat.lastMessage?.content || 'No messages yet'}
+                                                </Typography>
+                                                <Typography 
+                                                    component="span" 
+                                                    variant="caption" 
+                                                    color="text.secondary"
+                                                    sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}
+                                                >
+                                                    {formatTime(chat.lastMessageAt)}
+                                                </Typography>
+                                            </React.Fragment>
+                                        }
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                        {!searchQuery && hasMoreChats && (
+                            <Box sx={{ p: 2, textAlign: 'center' }}>
+                                <Button 
+                                    variant="outlined" 
+                                    onClick={loadMoreChats}
+                                    disabled={loadingMoreChats}
+                                    fullWidth
+                                    size="small"
+                                >
+                                    {loadingMoreChats ? <CircularProgress size={20} /> : 'Load More Chats'}
+                                </Button>
+                            </Box>
+                        )}
+                    </>
+                )}
+            </List>
+        </Paper>
+    );
+
+    const renderChatView = () => (
+        <Paper sx={{ 
+            flexGrow: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            backgroundColor: theme.palette.background.paper,
+            width: { xs: '100%', md: 'auto' },
+            height: { xs: '100%', md: 'auto' }
+        }}>
+            {selectedChat ? (
+                <>
+                    {/* Chat Header */}
+                    <Box sx={{ 
+                        p: { xs: 1.5, md: 2 }, 
+                        borderBottom: 1, 
+                        borderColor: 'divider', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: { xs: 1, md: 2 } 
+                    }}>
+                        {isMobile && (
+                            <IconButton 
+                                onClick={handleBackToList}
+                                sx={{ mr: 1 }}
+                                aria-label="Back to chat list"
+                            >
+                                <ArrowBackIcon />
+                            </IconButton>
+                        )}
+                        <Avatar sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
+                            <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                        </Avatar>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+                                {selectedChat.user?.name}
+                            </Typography>
+                            <Typography 
+                                variant="caption" 
+                                color="text.secondary"
+                                sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}
+                            >
+                                {selectedChat.user?.email}
+                            </Typography>
+                        </Box>
+                    </Box>
+                    
+                    <Box sx={{ 
+                        flexGrow: 1, 
+                        overflow: 'auto', 
+                        p: { xs: 1, md: 2 }, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 1 
+                    }}>
+                        {messages.map((message, index) => {
+                            const isAdmin = message.senderRole === 'admin';
+                            return (
+                                <Box 
+                                    key={message.messageId || index} 
+                                    sx={{ 
+                                        display: 'flex', 
+                                        justifyContent: isAdmin ? 'flex-end' : 'flex-start' 
+                                    }}
+                                >
+                                    <Box sx={{ 
+                                        maxWidth: { xs: '85%', md: '70%' }, 
+                                        p: { xs: 1, md: 1.5 }, 
+                                        borderRadius: 2, 
+                                        backgroundColor: isAdmin ? theme.palette.primary.main : theme.palette.grey[200], 
+                                        color: isAdmin ? theme.palette.primary.contrastText : theme.palette.text.primary 
+                                    }}>
+                                        {isAdmin && (
+                                            <Chip 
+                                                label="Admin" 
+                                                size="small" 
+                                                sx={{ 
+                                                    mb: 0.5, 
+                                                    height: { xs: 18, md: 20 }, 
+                                                    backgroundColor: 'rgba(255,255,255,0.2)',
+                                                    fontSize: { xs: '0.65rem', md: '0.75rem' }
+                                                }} 
+                                            />
+                                        )}
+                                        <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                                            {message.content}
+                                        </Typography>
+                                        <Typography 
+                                            variant="caption" 
+                                            sx={{ 
+                                                display: 'block', 
+                                                mt: 0.5, 
+                                                opacity: 0.7,
+                                                fontSize: { xs: '0.7rem', md: '0.75rem' }
+                                            }}
+                                        >
+                                            {formatTime(message.createdAt)}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </Box>
+                    
+                    <Box 
+                        component="form" 
+                        onSubmit={handleSendMessage} 
+                        sx={{ 
+                            p: { xs: 1, md: 2 }, 
+                            borderTop: 1, 
+                            borderColor: 'divider', 
+                            display: 'flex', 
+                            gap: 1 
+                        }}
+                    >
+                        <TextField 
+                            fullWidth 
+                            placeholder="Type your message..." 
+                            value={newMessage} 
+                            onChange={(e) => setNewMessage(e.target.value)} 
+                            disabled={sending} 
+                            multiline 
+                            maxRows={4}
+                            size="small"
+                            sx={{ 
+                                '& .MuiInputBase-root': {
+                                    fontSize: { xs: '0.875rem', md: '1rem' }
+                                }
+                            }}
+                        />
+                        <IconButton 
+                            color="primary" 
+                            type="submit" 
+                            disabled={!newMessage.trim() || sending}
+                            sx={{ 
+                                width: { xs: 40, md: 48 },
+                                height: { xs: 40, md: 48 }
+                            }}
+                        >
+                            {sending ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
+                        </IconButton>
+                    </Box>
+                </>
+            ) : (
+                <Box sx={{ 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    p: 4
+                }}>
+                    <Typography color="text.secondary" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                        Select a chat to start messaging
+                    </Typography>
+                </Box>
+            )}
+        </Paper>
+    );
+
     if (loading) {
         return (
             <PageFade>
@@ -335,115 +624,41 @@ export default function AdminChatsPage() {
 
     return (
         <PageFade>
-            <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', gap: 2, p: 2 }}>
+            <Box sx={{ 
+                height: { xs: 'calc(100vh - 140px)', md: 'calc(100vh - 120px)' }, 
+                display: 'flex', 
+                gap: { xs: 0, md: 2 }, 
+                p: { xs: 0, md: 2 },
+                position: 'relative'
+            }}>
                 {error && (
-                    <Alert severity="error" sx={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
+                    <Alert 
+                        severity="error" 
+                        sx={{ 
+                            position: 'absolute', 
+                            top: { xs: 10, md: 80 }, 
+                            left: '50%', 
+                            transform: 'translateX(-50%)', 
+                            zIndex: 1000,
+                            width: { xs: '90%', md: 'auto' }
+                        }}
+                    >
                         {error}
                     </Alert>
                 )}
-                <Paper sx={{ width: 350, display: 'flex', flexDirection: 'column', backgroundColor: theme.palette.background.paper }}>
-                    <Box sx={{ p: 2 }}>
-                        <Typography variant="h6" gutterBottom>User Chats</Typography>
-                        <TextField
-                            fullWidth
-                            size="small"
-                            placeholder="Search users..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            InputProps={{
-                                startAdornment: (<InputAdornment position="start"><SearchIcon /></InputAdornment>)
-                            }}
-                        />
-                    </Box>
-                    <Divider />
-                    <List sx={{ flexGrow: 1, overflow: 'auto' }}>
-                        {filteredChats.length === 0 ? (
-                            <Box sx={{ p: 3, textAlign: 'center' }}>
-                                <Typography color="text.secondary">No chats found</Typography>
-                            </Box>
-                        ) : (
-                            <>
-                                {filteredChats.map((chat) => (
-                                    <ListItem key={chat.chatId} disablePadding>
-                                        <ListItemButton
-                                            selected={selectedChat?.chatId === chat.chatId}
-                                            onClick={() => handleChatSelect(chat)}
-                                        >
-                                            <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: 2 }}>
-                                                <Avatar><PersonIcon /></Avatar>
-                                            </Badge>
-                                            <ListItemText
-                                                primary={chat.user?.name || 'Unknown User'}
-                                                secondary={
-                                                    <React.Fragment>
-                                                        <Typography component="span" variant="body2" color="text.primary" sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {chat.lastMessage?.content || 'No messages yet'}
-                                                        </Typography>
-                                                        <Typography component="span" variant="caption" color="text.secondary">
-                                                            {formatTime(chat.lastMessageAt)}
-                                                        </Typography>
-                                                    </React.Fragment>
-                                                }
-                                            />
-                                        </ListItemButton>
-                                    </ListItem>
-                                ))}
-                                {!searchQuery && hasMoreChats && (
-                                    <Box sx={{ p: 2, textAlign: 'center' }}>
-                                        <Button 
-                                            variant="outlined" 
-                                            onClick={loadMoreChats}
-                                            disabled={loadingMoreChats}
-                                            fullWidth
-                                        >
-                                            {loadingMoreChats ? <CircularProgress size={24} /> : 'Load More Chats'}
-                                        </Button>
-                                    </Box>
-                                )}
-                            </>
-                        )}
-                    </List>
-                </Paper>
-                <Paper sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', backgroundColor: theme.palette.background.paper }}>
-                    {selectedChat ? (
-                        <>
-                            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Avatar><PersonIcon /></Avatar>
-                                <Box>
-                                    <Typography variant="h6">{selectedChat.user?.name}</Typography>
-                                    <Typography variant="caption" color="text.secondary">{selectedChat.user?.email}</Typography>
-                                </Box>
-                            </Box>
-                            <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                {messages.map((message, index) => {
-                                    const isAdmin = message.senderRole === 'admin';
-                                    return (
-                                        <Box key={message.messageId || index} sx={{ display: 'flex', justifyContent: isAdmin ? 'flex-end' : 'flex-start' }}>
-                                            <Box sx={{ maxWidth: '70%', p: 1.5, borderRadius: 2, backgroundColor: isAdmin ? theme.palette.primary.main : theme.palette.grey[200], color: isAdmin ? theme.palette.primary.contrastText : theme.palette.text.primary }}>
-                                                {isAdmin && (<Chip label="Admin" size="small" sx={{ mb: 0.5, height: 20, backgroundColor: 'rgba(255,255,255,0.2)' }} />)}
-                                                <Typography variant="body1">{message.content}</Typography>
-                                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.7 }}>
-                                                    {formatTime(message.createdAt)}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    );
-                                })}
-                                <div ref={messagesEndRef} />
-                            </Box>
-                            <Box component="form" onSubmit={handleSendMessage} sx={{ p: 2, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 1 }}>
-                                <TextField fullWidth placeholder="Type your message..." value={newMessage} onChange={(e) => setNewMessage(e.target.value)} disabled={sending} multiline maxRows={4} />
-                                <IconButton color="primary" type="submit" disabled={!newMessage.trim() || sending}>
-                                    {sending ? <CircularProgress size={24} /> : <SendIcon />}
-                                </IconButton>
-                            </Box>
-                        </>
-                    ) : (
-                        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Typography color="text.secondary">Select a chat to start messaging</Typography>
-                        </Box>
-                    )}
-                </Paper>
+                
+                {!isMobile && (
+                    <>
+                        {renderChatList()}
+                        {renderChatView()}
+                    </>
+                )}
+                
+                {isMobile && (
+                    <>
+                        {!showChatView ? renderChatList() : renderChatView()}
+                    </>
+                )}
             </Box>
         </PageFade>
     );
