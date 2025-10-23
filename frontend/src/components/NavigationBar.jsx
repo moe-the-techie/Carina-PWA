@@ -11,6 +11,7 @@ import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import ThemeToggle from './ThemeToggle';
 
 export default function NavigationBar() {
   const location = useLocation();
@@ -27,12 +28,14 @@ export default function NavigationBar() {
       component="nav"
       className="fixed bottom-0 md:top-0 md:bottom-auto w-full shadow-md z-50"
       sx={{
-        backgroundColor: 'white',
+        backgroundColor: theme.palette.background.paper,
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'center',
         py: { xs: 0.5, md: 1 },
         height: { xs: '60px', md: '10vh' },
-        minHeight: '60px'
+        minHeight: '60px',
+        px: { xs: 1, md: 2 }
       }}
     >
       <Box
@@ -101,6 +104,14 @@ export default function NavigationBar() {
             </li>
           );
         })}
+      </Box>
+      <Box sx={{ 
+        position: 'absolute', 
+        right: { xs: 8, md: 16 },
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <ThemeToggle />
       </Box>
       <Divider sx={{ 
         position: 'absolute', 

@@ -7,8 +7,7 @@ import '@fontsource/roboto/700.css';
 import './index.css'
 import './responsive.css'
 import App from './App.jsx'
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { theme } from './theme.js';
+import { ThemeContextProvider } from './contexts/ThemeContext.jsx';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
@@ -35,9 +34,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ThemeContextProvider>
       <App />
-    </ThemeProvider>
+    </ThemeContextProvider>
   </StrictMode>,
 )

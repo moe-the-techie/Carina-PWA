@@ -228,7 +228,11 @@ export default function ChatPage() {
                                             maxWidth: { xs: '85%', md: '70%' }, 
                                             p: { xs: 1, md: 1.5 }, 
                                             borderRadius: 2, 
-                                            backgroundColor: isUser ? theme.palette.primary.main : theme.palette.grey[200], 
+                                            backgroundColor: isUser 
+                                                ? theme.palette.primary.main 
+                                                : theme.palette.mode === 'dark' 
+                                                    ? theme.palette.grey[800] 
+                                                    : theme.palette.grey[200], 
                                             color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary 
                                         }}>
                                             {!isUser && (

@@ -521,7 +521,11 @@ export default function AdminChatsPage() {
                                         maxWidth: { xs: '85%', md: '70%' }, 
                                         p: { xs: 1, md: 1.5 }, 
                                         borderRadius: 2, 
-                                        backgroundColor: isAdmin ? theme.palette.primary.main : theme.palette.grey[200], 
+                                        backgroundColor: isAdmin 
+                                            ? theme.palette.primary.main 
+                                            : theme.palette.mode === 'dark' 
+                                                ? theme.palette.grey[800] 
+                                                : theme.palette.grey[200], 
                                         color: isAdmin ? theme.palette.primary.contrastText : theme.palette.text.primary 
                                     }}>
                                         {isAdmin && (

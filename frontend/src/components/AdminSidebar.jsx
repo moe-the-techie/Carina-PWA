@@ -24,6 +24,7 @@ import ChatIcon from '@mui/icons-material/Chat';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import ThemeToggle from './ThemeToggle';
 
 const drawerWidth = 240;
 
@@ -129,6 +130,11 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                         <ListItemText primary="Logout" />
                     </ListItemButton>
                 </ListItem>
+                <ListItem disablePadding>
+                    <Box sx={{ width: '100%', px: 2, py: 1 }}>
+                        <ThemeToggle />
+                    </Box>
+                </ListItem>
             </List>
         </Box>
     );
@@ -156,6 +162,8 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                         <Typography variant="h6" noWrap component="div">
                             Carina Admin
                         </Typography>
+                        <Box sx={{ flexGrow: 1 }} />
+                        <ThemeToggle />
                     </Toolbar>
                 </AppBar>
             )}
