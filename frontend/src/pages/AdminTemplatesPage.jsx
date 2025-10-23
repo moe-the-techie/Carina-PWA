@@ -69,7 +69,7 @@ export default function AdminTemplatesPage() {
     const [templateForm, setTemplateForm] = useState({
         name: '',
         description: '',
-        category: 'General',
+        category: '',
         duration: 1,
         tags: ''
     });
@@ -110,6 +110,11 @@ export default function AdminTemplatesPage() {
 
     const createTemplate = async () => {
         try {
+            if (!templateForm.category) {
+                setError('Please select a category');
+                return;
+            }
+
             const templateData = {
                 ...templateForm,
                 tags: templateForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
@@ -132,7 +137,7 @@ export default function AdminTemplatesPage() {
             setTemplateForm({
                 name: '',
                 description: '',
-                category: 'General',
+                category: '',
                 duration: 1,
                 tags: ''
             });
@@ -183,6 +188,18 @@ export default function AdminTemplatesPage() {
             console.error('Error toggling template status:', error);
             setError(error.message);
         }
+    };
+
+    const handleCloseCreateDialog = () => {
+        setCreateDialogOpen(false);
+        setTemplateForm({
+            name: '',
+            description: '',
+            category: '',
+            duration: 1,
+            tags: ''
+        });
+        setError('');
     };
 
     const deleteTemplate = async (templateId) => {
@@ -277,7 +294,7 @@ export default function AdminTemplatesPage() {
                     </Grid>
                     <Grid item xs={12} md={3}>
                         <FormControl fullWidth>
-                            <InputLabel>Category</InputLabel>
+                            <InputLabel shrink>Category</InputLabel>
                             <Select
                                 value={categoryFilter}
                                 onChange={(e) => {
@@ -285,8 +302,12 @@ export default function AdminTemplatesPage() {
                                     setPage(1);
                                 }}
                                 label="Category"
+                                displayEmpty
+                                notched
                             >
-                                <MenuItem value="">All Categories</MenuItem>
+                                <MenuItem value="">
+                                    <em>Select Category</em>
+                                </MenuItem>
                                 {categories.map(category => (
                                     <MenuItem key={category} value={category}>{category}</MenuItem>
                                 ))}
@@ -295,7 +316,7 @@ export default function AdminTemplatesPage() {
                     </Grid>
                     <Grid item xs={12} md={3}>
                         <FormControl fullWidth>
-                            <InputLabel>Status</InputLabel>
+                            <InputLabel shrink>Status</InputLabel>
                             <Select
                                 value={activeFilter}
                                 onChange={(e) => {
@@ -303,8 +324,12 @@ export default function AdminTemplatesPage() {
                                     setPage(1);
                                 }}
                                 label="Status"
+                                displayEmpty
+                                notched
                             >
-                                <MenuItem value="">All Templates</MenuItem>
+                                <MenuItem value="">
+                                    <em>Select Status</em>
+                                </MenuItem>
                                 <MenuItem value="true">Active</MenuItem>
                                 <MenuItem value="false">Inactive</MenuItem>
                             </Select>
@@ -481,7 +506,7 @@ export default function AdminTemplatesPage() {
                 </Menu>
 
                 {/* Create Template Dialog */}
-                <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+                <Dialog open={createDialogOpen} onClose={handleCloseCreateDialog} maxWidth="sm" fullWidth>
                     <DialogTitle>Create New Template</DialogTitle>
                     <DialogContent>
                         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -506,12 +531,17 @@ export default function AdminTemplatesPage() {
                             </Grid>
                             <Grid item xs={6}>
                                 <FormControl fullWidth>
-                                    <InputLabel>Category</InputLabel>
+                                    <InputLabel shrink>Category</InputLabel>
                                     <Select
                                         value={templateForm.category}
                                         onChange={(e) => setTemplateForm(prev => ({ ...prev, category: e.target.value }))}
                                         label="Category"
+                                        displayEmpty
+                                        notched
                                     >
+                                        <MenuItem value="">
+                                            <em>Select Category</em>
+                                        </MenuItem>
                                         {categories.map(category => (
                                             <MenuItem key={category} value={category}>{category}</MenuItem>
                                         ))}
@@ -540,11 +570,11 @@ export default function AdminTemplatesPage() {
                         </Grid>
                     </DialogContent>
                     <DialogActions>
-                        <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCloseCreateDialog}>Cancel</Button>
                         <Button 
                             onClick={createTemplate} 
                             variant="contained"
-                            disabled={!templateForm.name.trim()}
+                            disabled={!templateForm.name.trim() || !templateForm.category}
                         >
                             Create & Edit
                         </Button>
