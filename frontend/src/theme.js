@@ -26,18 +26,122 @@ export const theme = createTheme ({
     typography: {
         fontFamily: 'roboto',
         fontSize: 14,
+        h1: {
+            fontSize: '2.5rem',
+            '@media (max-width:600px)': {
+                fontSize: '2rem',
+            },
+        },
+        h2: {
+            fontSize: '2rem',
+            '@media (max-width:600px)': {
+                fontSize: '1.75rem',
+            },
+        },
+        h3: {
+            fontSize: '1.75rem',
+            '@media (max-width:600px)': {
+                fontSize: '1.5rem',
+            },
+        },
+        h4: {
+            fontSize: '1.5rem',
+            '@media (max-width:600px)': {
+                fontSize: '1.25rem',
+            },
+        },
+        h5: {
+            fontSize: '1.25rem',
+            '@media (max-width:600px)': {
+                fontSize: '1.125rem',
+            },
+        },
+        h6: {
+            fontSize: '1.125rem',
+            '@media (max-width:600px)': {
+                fontSize: '1rem',
+            },
+        },
+        body1: {
+            fontSize: '1rem',
+            '@media (max-width:600px)': {
+                fontSize: '0.875rem',
+            },
+        },
+        body2: {
+            fontSize: '0.875rem',
+            '@media (max-width:600px)': {
+                fontSize: '0.75rem',
+            },
+        },
     },
+    breakpoints: {
+        values: {
+            xs: 0,
+            sm: 600,
+            md: 900,
+            lg: 1200,
+            xl: 1536,
+        },
+    },
+    spacing: (factor) => `${0.25 * factor}rem`,
     components: {
         MuiButton: {
             styleOverrides: {
                 root: {
                     fontWeight: 'bold',
+                    '@media (max-width:600px)': {
+                        fontSize: '0.875rem',
+                        padding: '8px 16px',
+                    },
                 },
             },
             defaultProps: {
                 disableElevation: true,
                 disableRipple: true
             }
+        },
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    borderRadius: '12px',
+                    '@media (max-width:600px)': {
+                        borderRadius: '8px',
+                    },
+                },
+            },
+        },
+        MuiCardContent: {
+            styleOverrides: {
+                root: {
+                    '&:last-child': {
+                        paddingBottom: '16px',
+                        '@media (max-width:600px)': {
+                            paddingBottom: '12px',
+                        },
+                    },
+                },
+            },
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    '@media (max-width:600px)': {
+                        padding: '8px 4px',
+                        fontSize: '0.75rem',
+                    },
+                },
+            },
+        },
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    '@media (max-width:900px)': {
+                        width: '280px',
+                    },
+                },
+            },
         },
         Box: {
             styleOverrides: {

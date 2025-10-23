@@ -91,58 +91,67 @@ export default function AdminDashboardPage() {
 
     return (
         <PageFade>
-            <Box sx={{ p: 3 }}>
-                <Typography variant="h4" gutterBottom>
+            <Box sx={{ 
+                p: { xs: 2, md: 3 },
+                maxWidth: '100%',
+                overflow: 'hidden'
+            }}>
+                <Typography 
+                    variant="h4" 
+                    gutterBottom
+                    sx={{ 
+                        fontSize: { xs: '1.5rem', md: '2rem' },
+                        mb: { xs: 2, md: 3 }
+                    }}
+                >
                     Admin Dashboard
                 </Typography>
 
                 {/* Stats Cards */}
-                <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 3, md: 4 } }}>
                     <Grid item xs={12} sm={6} md={2.4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 2 } }}>
+                                <Typography color="textSecondary" gutterBottom variant="body2">
                                     Total Users
                                 </Typography>
-                                <Typography variant="h4">
+                                <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
                                     {dashboardData.totalUsers || 0}
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                     <Grid item xs={12} sm={6} md={2.4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 2 } }}>
+                                <Typography color="textSecondary" gutterBottom variant="body2">
                                     Total Forms
                                 </Typography>
-                                <Typography variant="h4">
+                                <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
                                     {dashboardData.totalForms || 0}
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                     <Grid item xs={12} sm={6} md={2.4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 2 } }}>
+                                <Typography color="textSecondary" gutterBottom variant="body2">
                                     Pending Forms
                                 </Typography>
-                                <Typography variant="h4" color="warning.main">
+                                <Typography variant="h4" color="warning.main" sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
                                     {dashboardData.pendingForms || 0}
                                 </Typography>
                             </CardContent>
                         </Card>
                     </Grid>
                     <Grid item xs={12} sm={6} md={2.4}>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={2.4}>
-                        <Card>
-                            <CardContent>
-                                <Typography color="textSecondary" gutterBottom>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 2 } }}>
+                                <Typography color="textSecondary" gutterBottom variant="body2">
                                     Active Plans
                                 </Typography>
-                                <Typography variant="h4" color="success.main">
+                                <Typography variant="h4" color="success.main" sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>
                                     {dashboardData.activePlans || 0}
                                 </Typography>
                             </CardContent>
@@ -151,29 +160,29 @@ export default function AdminDashboardPage() {
                 </Grid>
 
                 {/* Recent Activity */}
-                <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
+                <Grid container spacing={{ xs: 2, md: 3 }}>
+                    <Grid item xs={12} lg={6}>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
                                     Recent Users
                                 </Typography>
-                                <TableContainer>
+                                <TableContainer sx={{ overflowX: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>Name</TableCell>
-                                                <TableCell>Email</TableCell>
-                                                <TableCell>Joined</TableCell>
-                                                <TableCell align="center">Actions</TableCell>
+                                                <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Name</TableCell>
+                                                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Email</TableCell>
+                                                <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Joined</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {dashboardData.recentUsers.map((user) => (
                                                 <TableRow key={user._id}>
-                                                    <TableCell>{user.name}</TableCell>
-                                                    <TableCell>{user.email}</TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{user.name}</TableCell>
+                                                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{user.email}</TableCell>
+                                                    <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                                                         {new Date(user.createdAt).toLocaleDateString()}
                                                     </TableCell>
                                                     <TableCell align="center">
@@ -196,34 +205,35 @@ export default function AdminDashboardPage() {
                         </Card>
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
+                    <Grid item xs={12} lg={6}>
+                        <Card sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
                                     Recent Forms
                                 </Typography>
-                                <TableContainer>
+                                <TableContainer sx={{ overflowX: 'auto' }}>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell>User</TableCell>
-                                                <TableCell>Status</TableCell>
-                                                <TableCell>Date</TableCell>
-                                                <TableCell align="center">Actions</TableCell>
+                                                <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>User</TableCell>
+                                                <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Status</TableCell>
+                                                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Date</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>Actions</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                             {dashboardData.recentForms.map((form) => (
                                                 <TableRow key={form._id}>
-                                                    <TableCell>{form.user?.name || 'Unknown'}</TableCell>
+                                                    <TableCell sx={{ fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{form.user?.name || 'Unknown'}</TableCell>
                                                     <TableCell>
                                                         <Chip 
                                                             label={form.reviewed ? 'Reviewed' : 'Pending'} 
                                                             color={form.reviewed ? 'success' : 'warning'}
                                                             size="small"
+                                                            sx={{ fontSize: { xs: '0.65rem', md: '0.75rem' } }}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                                                         {new Date(form.createdAt).toLocaleDateString()}
                                                     </TableCell>
                                                     <TableCell align="center">

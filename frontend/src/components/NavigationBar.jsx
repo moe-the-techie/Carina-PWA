@@ -10,6 +10,7 @@ import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
 
 export default function NavigationBar() {
   const location = useLocation();
@@ -24,57 +25,89 @@ export default function NavigationBar() {
   return (
     <Box
       component="nav"
-      className="fixed bottom-0 md:top-0 md:bottom-auto w-full shadow-md z-50 h-[10vh]"
+      className="fixed bottom-0 md:top-0 md:bottom-auto w-full shadow-md z-50"
       sx={{
-        backgroundColor: 'white', // white background
+        backgroundColor: 'white',
         display: 'flex',
         justifyContent: 'center',
-        py: 1,
+        py: { xs: 0.5, md: 1 },
+        height: { xs: '60px', md: '10vh' },
+        minHeight: '60px'
       }}
     >
       <Box
         component="ul"
         sx={{
           display: 'flex',
-          justifyContent: 'space-around', // evenly spaced
+          justifyContent: 'space-around',
           alignItems: 'center',
           width: '100%',
           height: '100%',
           listStyle: 'none',
           margin: 0,
           padding: 0,
+          maxWidth: { xs: '100%', md: '600px' }
         }}
       >
         {navItems.map(({ to, outlinedIcon, filledIcon, label }) => {
           const isActive = location.pathname === to;
           return (
             <li key={to}>
-              <Link to={to}>
-                <IconButton
-                  color="inherit"
-                  aria-label={label}
+              <Link to={to} style={{ textDecoration: 'none' }}>
+                <Box
                   sx={{
-                    width: '8vh', // match nav bar height
-                    height: '8vh',
-                    padding: 0, // remove default padding
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    
-                    color: isActive ? theme.palette.primary.main : '#000',
+                    minWidth: { xs: '60px', md: '80px' },
+                    py: { xs: 0.5, md: 1 }
                   }}
                 >
-                  {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
-                    fontSize: 'inherit',
-                    sx: { fontSize: '5vh' }, // or larger if you like
-                  })}
-                </IconButton>
+                  <IconButton
+                    color="inherit"
+                    aria-label={label}
+                    sx={{
+                      width: { xs: '40px', md: '48px' },
+                      height: { xs: '40px', md: '48px' },
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isActive ? theme.palette.primary.main : '#666',
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      }
+                    }}
+                  >
+                    {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
+                      fontSize: 'inherit',
+                      sx: { fontSize: { xs: '20px', md: '24px' } }
+                    })}
+                  </IconButton>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontSize: { xs: '10px', md: '12px' },
+                      color: isActive ? theme.palette.primary.main : '#666',
+                      mt: { xs: 0.25, md: 0.5 },
+                      fontWeight: isActive ? 'bold' : 'normal'
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Box>
               </Link>
             </li>
           );
         })}
       </Box>
-      <Divider sx={{ position: 'absolute', top: { xs: 0, md: 'auto' }, bottom: { xs: 'auto', md: 0 }, width: '100%' }} />
+      <Divider sx={{ 
+        position: 'absolute', 
+        top: { xs: 0, md: 'auto' }, 
+        bottom: { xs: 'auto', md: 0 }, 
+        width: '100%' 
+      }} />
     </Box>
   );
 }

@@ -5,6 +5,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import './index.css'
+import './responsive.css'
 import App from './App.jsx'
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { theme } from './theme.js';

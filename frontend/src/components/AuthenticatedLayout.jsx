@@ -10,14 +10,24 @@ export default function AuthenticatedLayout({ children }) {
     <Box
       sx={{
         minHeight: '100vh',
-        pb: isDesktop ? 0 : '10vh', // padding bottom only on mobile
-        pt: isDesktop ? '10vh' : 0, // padding top only on desktop
+        pb: isDesktop ? 0 : '70px', // Bottom padding for mobile nav bar
+        pt: isDesktop ? '10vh' : 0,
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       <NavigationBar />
-      <main>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: { xs: 2, md: 3 },
+          maxWidth: '100vw',
+          overflow: 'hidden'
+        }}
+      >
         {children}
-      </main>
+      </Box>
     </Box>
   );
 }

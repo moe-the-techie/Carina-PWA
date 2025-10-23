@@ -1,7 +1,9 @@
 {
-    "name": "Carina-PWA",
+    "name": "Carina PWA - Health & Nutrition Assistant",
     "short_name": "Carina",
+    "description": "Your personal health and nutrition assistant - accessible anywhere, anytime",
     "start_url": "/?home=true",
+    "scope": "/",
     "icons": [
         {
         "src": "icons/manifest-icon-192.maskable.png",
@@ -28,9 +30,12 @@
         "purpose": "maskable"
         }
     ],
-    "theme_color": "#ffffff",
+    "theme_color": "#91EB4E",
     "background_color": "#ffffff",
-    "display": "fullscreen",
-    "orientation": "portrait",
-    "permissions": ["notifications"]
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "permissions": ["notifications"],
+    "categories": ["health", "medical", "nutrition"],
+    "lang": "en-US",
+    "prefer_related_applications": false
 }
