@@ -11,7 +11,15 @@ import { theme } from './theme.js';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
-    .then(reg => console.log('[PWA] Service worker registered:', reg.scope))
+    .then(reg => {
+      console.log('[PWA] Service worker registered:', reg.scope);
+      
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          console.log('[PWA] Notification permission:', permission);
+        });
+      }
+    })
     .catch(err => console.error('[PWA] SW registration failed:', err));
 
   // Listen for SW messages to write to localStorage

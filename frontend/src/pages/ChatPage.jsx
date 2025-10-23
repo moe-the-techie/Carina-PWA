@@ -19,7 +19,13 @@ import {
     sendMessage,
     markMessagesAsRead
 } from '../services/chatService';
-import { subscribeToChat, unsubscribeFromChannel, disconnectAbly } from '../services/ablyService';
+import { 
+    subscribeToChat, 
+    removeMessageHandler, 
+    requestNotificationPermission,
+    setCurrentlyViewingChat,
+    clearCurrentlyViewingChat
+} from '../services/ablyService';
 
 export default function ChatPage() {
     const theme = useTheme();
@@ -30,6 +36,10 @@ export default function ChatPage() {
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
     const hasSubscribed = useRef(false);
+
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,6 +58,7 @@ export default function ChatPage() {
                 const messagesResponse = await getMessages(chatResponse.chatId);
                 setMessages(messagesResponse.messages);
                 await markMessagesAsRead(chatResponse.chatId);
+                setCurrentlyViewingChat(chatResponse.chatId);
             }
         } catch (error) {
             console.error('Error loading chat:', error);
@@ -100,20 +111,18 @@ export default function ChatPage() {
             });
 
             return () => {
-                unsubscribeFromChannel(`chat:${chat.userId}:messages`);
+                removeMessageHandler(`chat:${chat.userId}:messages`, handleNewMessage);
                 hasSubscribed.current = false;
             };
         }
     }, [chat]);
 
     useEffect(() => {
-        return () => {
-            disconnectAbly();
-        };
-    }, []);
-
-    useEffect(() => {
         loadChat();
+        
+        return () => {
+            clearCurrentlyViewingChat();
+        };
     }, []);
 
     const formatTime = (dateString) => {

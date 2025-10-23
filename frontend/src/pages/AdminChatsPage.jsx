@@ -31,7 +31,13 @@ import {
     markMessagesAsRead,
     getOrCreateChatByUserId
 } from '../services/chatService';
-import { subscribeToAdminChats, unsubscribeFromChannel, disconnectAbly } from '../services/ablyService';
+import { 
+    subscribeToAdminChats, 
+    removeMessageHandler, 
+    requestNotificationPermission,
+    setCurrentlyViewingChat,
+    clearCurrentlyViewingChat
+} from '../services/ablyService';
 
 export default function AdminChatsPage() {
     const theme = useTheme();
@@ -49,6 +55,11 @@ export default function AdminChatsPage() {
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
+
+    // Request notification permission on mount
+    useEffect(() => {
+        requestNotificationPermission();
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -93,6 +104,7 @@ export default function AdminChatsPage() {
             const response = await getMessages(chatId);
             setMessages(response.messages);
             await markMessagesAsRead(chatId);
+            setCurrentlyViewingChat(chatId);
             setChats(prevChats =>
                 prevChats.map(chat =>
                     chat.chatId === chatId
@@ -267,16 +279,15 @@ export default function AdminChatsPage() {
 
             // Cleanup function
             return () => {
-                unsubscribeFromChannel('admin:chats');
+                removeMessageHandler('admin:chats', handleNewMessage);
                 hasSubscribed.current = false;
             };
         }
     }, [selectedChat]);
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
-            disconnectAbly();
+            clearCurrentlyViewingChat();
         };
     }, []);
 

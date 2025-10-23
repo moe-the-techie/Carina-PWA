@@ -1,13 +1,15 @@
-// Service Worker for PWA with Ably support
+// Service Worker for PWA with Ably support and notifications
+
+const CACHE_NAME = 'carina-pwa-v1';
 
 self.addEventListener('install', () => {
   console.log('[SW] Installed');
   self.skipWaiting(); // Activate immediately
 });
 
-self.addEventListener('activate', () => {
+self.addEventListener('activate', (event) => {
   console.log('[SW] Activated');
-  return self.clients.claim();
+  event.waitUntil(self.clients.claim());
 });
 
 // Intercept fetch requests
@@ -65,19 +67,33 @@ self.addEventListener('message', event => {
     console.log('[SW] Ably message received:', event.data);
     
     if (event.data.messageData) {
-      const { content, senderRole } = event.data.messageData;
+      const { content, senderRole, chatId } = event.data.messageData;
       
       if (senderRole === 'admin' || senderRole === 'user') {
-        self.registration.showNotification('New Message', {
-          body: content,
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-96x96.png',
-          tag: 'chat-message',
+        const title = senderRole === 'admin' ? 'Message from Support' : 'New Message';
+        
+        self.registration.showNotification(title, {
+          body: content || 'You have a new message',
+          icon: '/icons/manifest-icon-192.maskable.png',
+          badge: '/icons/manifest-icon-192.maskable.png',
+          tag: `chat-${chatId || 'message'}`,
           renotify: true,
           requireInteraction: false,
+          vibrate: [200, 100, 200],
+          actions: [
+            {
+              action: 'open',
+              title: 'Open Chat'
+            },
+            {
+              action: 'close',
+              title: 'Dismiss'
+            }
+          ],
           data: {
-            url: '/chat',
-            messageData: event.data.messageData
+            url: senderRole === 'user' ? '/admin/chats' : '/chat',
+            messageData: event.data.messageData,
+            chatId: chatId
           }
         });
       }
@@ -87,18 +103,24 @@ self.addEventListener('message', event => {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', event => {
+  console.log('[SW] Notification clicked:', event.action);
   event.notification.close();
+  
+  if (event.action === 'close') {
+    return;
+  }
   
   const urlToOpen = event.notification.data?.url || '/chat';
   
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
       for (const client of clients) {
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
+        if (client.url.includes(urlToOpen.split('?')[0]) && 'focus' in client) {
           return client.focus();
         }
       }
       
+      // Otherwise, open a new window
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }
@@ -111,11 +133,25 @@ self.addEventListener('push', event => {
   const title = data.title || 'New Message';
   const options = {
     body: data.body || 'You have a new message',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-96x96.png',
-    tag: 'chat-message',
+    icon: '/icons/manifest-icon-192.maskable.png',
+    badge: '/icons/manifest-icon-192.maskable.png',
+    tag: `chat-${data.chatId || 'message'}`,
+    renotify: true,
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+    actions: [
+      {
+        action: 'open',
+        title: 'Open Chat'
+      },
+      {
+        action: 'close',
+        title: 'Dismiss'
+      }
+    ],
     data: {
       url: data.url || '/chat',
+      chatId: data.chatId
     }
   };
   
