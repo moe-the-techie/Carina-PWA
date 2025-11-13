@@ -525,6 +525,106 @@ export default function AdminFormsPage() {
                                     </Card>
                                 </Grid>
 
+                                {/* Recommendations */}
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom>
+                                                Dietary Recommendations
+                                            </Typography>
+                                            
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" color="error.main" gutterBottom>
+                                                    Foods to Avoid:
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                                                    {selectedPlan.recommendations?.avoid?.length > 0 ? (
+                                                        selectedPlan.recommendations.avoid.map((item, index) => (
+                                                            <Chip key={index} label={item} color="error" size="small" />
+                                                        ))
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                    )}
+                                                </Box>
+                                            </Box>
+
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" color="warning.main" gutterBottom>
+                                                    Use Carefully:
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                                                    {selectedPlan.recommendations?.useCarefully?.length > 0 ? (
+                                                        selectedPlan.recommendations.useCarefully.map((item, index) => (
+                                                            <Chip key={index} label={item} color="warning" size="small" />
+                                                        ))
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                    )}
+                                                </Box>
+                                            </Box>
+
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="subtitle2" color="success.main" gutterBottom>
+                                                    Recommended Daily:
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                                                    {selectedPlan.recommendations?.eatDaily?.length > 0 ? (
+                                                        selectedPlan.recommendations.eatDaily.map((item, index) => (
+                                                            <Chip key={index} label={item} color="success" size="small" />
+                                                        ))
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                    )}
+                                                </Box>
+                                            </Box>
+
+                                            <Box sx={{ mb: 1 }}>
+                                                <Typography variant="subtitle2" color="info.main" gutterBottom>
+                                                    Exercise Recommendations:
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                    {selectedPlan.recommendations?.exercise?.length > 0 ? (
+                                                        selectedPlan.recommendations.exercise.map((item, index) => (
+                                                            <Chip key={index} label={item} color="info" size="small" />
+                                                        ))
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Warnings */}
+                                {selectedPlan.warnings && selectedPlan.warnings.length > 0 && (
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent>
+                                                <Typography variant="h6" gutterBottom sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    ⚠️ Important Warnings
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                    {selectedPlan.warnings.map((warning, index) => (
+                                                        <Chip 
+                                                            key={index} 
+                                                            label={warning} 
+                                                            color="error" 
+                                                            variant="outlined"
+                                                            sx={{ 
+                                                                fontWeight: 'bold',
+                                                                '& .MuiChip-label': {
+                                                                    fontWeight: 'bold'
+                                                                }
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
+
                                 {/* User Info */}
                                 <Grid item xs={12} md={6}>
                                     <Card>

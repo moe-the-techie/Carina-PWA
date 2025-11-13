@@ -68,6 +68,40 @@ export default function AdminPlanBuilderPage() {
             targetCarbs: '',
             targetFats: ''
         },
+        recommendations: {
+            avoid: [],
+            useCarefully: [],
+            eatDaily: [],
+            breakfast: [
+                { category: 'Proteins', items: [] },
+                { category: 'Carbohydrates', items: [] },
+                { category: 'Fruits', items: [] },
+                { category: 'Vegetables', items: [] },
+                { category: 'Dairy', items: [] },
+                { category: 'Healthy Fats', items: [] },
+                { category: 'Beverages', items: [] }
+            ],
+            lunch: [
+                { category: 'Proteins', items: [] },
+                { category: 'Carbohydrates', items: [] },
+                { category: 'Fruits', items: [] },
+                { category: 'Vegetables', items: [] },
+                { category: 'Dairy', items: [] },
+                { category: 'Healthy Fats', items: [] },
+                { category: 'Beverages', items: [] }
+            ],
+            dinner: [
+                { category: 'Proteins', items: [] },
+                { category: 'Carbohydrates', items: [] },
+                { category: 'Fruits', items: [] },
+                { category: 'Vegetables', items: [] },
+                { category: 'Dairy', items: [] },
+                { category: 'Healthy Fats', items: [] },
+                { category: 'Beverages', items: [] }
+            ],
+            exercise: []
+        },
+        warnings: [],
         weeklyPlans: []
     });
 
@@ -77,6 +111,12 @@ export default function AdminPlanBuilderPage() {
     const [currentMealType, setCurrentMealType] = useState('');
     const [currentSnackIndex, setCurrentSnackIndex] = useState(-1); // For editing snacks
     const [mealDialogMode, setMealDialogMode] = useState('add'); // 'add', 'edit', 'view'
+    
+    // Chip detail dialog state
+    const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
+    const [selectedChipContent, setSelectedChipContent] = useState('');
+    const [selectedChipTitle, setSelectedChipTitle] = useState('');
+    const [selectedChipCategory, setSelectedChipCategory] = useState('');
     const [mealData, setMealData] = useState({
         name: '',
         description: '',
@@ -121,7 +161,41 @@ export default function AdminPlanBuilderPage() {
                             targetProtein: '',
                             targetCarbs: '',
                             targetFats: ''
-                        }
+                        },
+                        recommendations: {
+                            avoid: [],
+                            useCarefully: [],
+                            eatDaily: [],
+                            breakfast: [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            lunch: [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            dinner: [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            exercise: []
+                        },
+                        warnings: []
                     }));
                 }
             }
@@ -140,6 +214,43 @@ export default function AdminPlanBuilderPage() {
                         targetCarbs: '',
                         targetFats: ''
                     },
+                    recommendations: (() => {
+                        const defaultRecommendations = templateData.defaultRecommendations || {};
+                        return {
+                            avoid: defaultRecommendations.avoid || [],
+                            useCarefully: defaultRecommendations.useCarefully || [],
+                            eatDaily: defaultRecommendations.eatDaily || [],
+                            breakfast: defaultRecommendations.breakfast || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            lunch: defaultRecommendations.lunch || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            dinner: defaultRecommendations.dinner || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            exercise: defaultRecommendations.exercise || []
+                        };
+                    })(),
+                    warnings: templateData.defaultWarnings || [],
                     weeklyPlans: templateData.weeklyTemplate || []
                 }));
                 
@@ -170,6 +281,43 @@ export default function AdminPlanBuilderPage() {
                         targetCarbs: '',
                         targetFats: ''
                     },
+                    recommendations: (() => {
+                        const defaultRecommendations = templateData.defaultRecommendations || {};
+                        return {
+                            avoid: defaultRecommendations.avoid || [],
+                            useCarefully: defaultRecommendations.useCarefully || [],
+                            eatDaily: defaultRecommendations.eatDaily || [],
+                            breakfast: defaultRecommendations.breakfast || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            lunch: defaultRecommendations.lunch || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            dinner: defaultRecommendations.dinner || [
+                                { category: 'Proteins', items: [] },
+                                { category: 'Carbohydrates', items: [] },
+                                { category: 'Fruits', items: [] },
+                                { category: 'Vegetables', items: [] },
+                                { category: 'Dairy', items: [] },
+                                { category: 'Healthy Fats', items: [] },
+                                { category: 'Beverages', items: [] }
+                            ],
+                            exercise: defaultRecommendations.exercise || []
+                        };
+                    })(),
+                    warnings: templateData.defaultWarnings || [],
                     weeklyPlans: templateData.weeklyTemplate || []
                 }));
                 
@@ -201,7 +349,7 @@ export default function AdminPlanBuilderPage() {
                 setIsEditingPlan(true);
                 setEditingPlanId(existingPlan._id);
                 
-                // Load existing plan data
+                const recommendations = existingPlan.recommendations || {};
                 setPlanData({
                     title: existingPlan.title,
                     description: existingPlan.description,
@@ -213,6 +361,40 @@ export default function AdminPlanBuilderPage() {
                         targetCarbs: '',
                         targetFats: ''
                     },
+                    recommendations: {
+                        avoid: recommendations.avoid || [],
+                        useCarefully: recommendations.useCarefully || [],
+                        eatDaily: recommendations.eatDaily || [],
+                        breakfast: recommendations.breakfast || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        lunch: recommendations.lunch || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        dinner: recommendations.dinner || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        exercise: recommendations.exercise || []
+                    },
+                    warnings: existingPlan.warnings || [],
                     weeklyPlans: existingPlan.weeklyPlans || []
                 });
                 
@@ -322,6 +504,43 @@ export default function AdminPlanBuilderPage() {
                     targetCarbs: '',
                     targetFats: ''
                 },
+                recommendations: (() => {
+                    const templateRecommendations = template.defaultRecommendations || {};
+                    return {
+                        avoid: templateRecommendations.avoid || [],
+                        useCarefully: templateRecommendations.useCarefully || [],
+                        eatDaily: templateRecommendations.eatDaily || [],
+                        breakfast: templateRecommendations.breakfast || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        lunch: templateRecommendations.lunch || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        dinner: templateRecommendations.dinner || [
+                            { category: 'Proteins', items: [] },
+                            { category: 'Carbohydrates', items: [] },
+                            { category: 'Fruits', items: [] },
+                            { category: 'Vegetables', items: [] },
+                            { category: 'Dairy', items: [] },
+                            { category: 'Healthy Fats', items: [] },
+                            { category: 'Beverages', items: [] }
+                        ],
+                        exercise: templateRecommendations.exercise || []
+                    };
+                })(),
+                warnings: template.defaultWarnings || [],
                 weeklyPlans: template.weeklyTemplate || []
             }));
 
@@ -358,6 +577,119 @@ export default function AdminPlanBuilderPage() {
         setPlanData(prev => ({ ...prev, weeklyPlans }));
     };
 
+    // Helper functions for managing recommendations
+    const addRecommendation = (category, value) => {
+        if (value.trim()) {
+            setPlanData(prev => ({
+                ...prev,
+                recommendations: {
+                    ...prev.recommendations,
+                    [category]: [...prev.recommendations[category], value.trim()]
+                }
+            }));
+        }
+    };
+
+    const removeRecommendation = (category, index) => {
+        setPlanData(prev => ({
+            ...prev,
+            recommendations: {
+                ...prev.recommendations,
+                [category]: prev.recommendations[category].filter((_, i) => i !== index)
+            }
+        }));
+    };
+
+    const [newRecommendationInputs, setNewRecommendationInputs] = useState({
+        avoid: '',
+        useCarefully: '',
+        eatDaily: '',
+        exercise: ''
+    });
+
+    // Meal category food inputs
+    const [newMealFoodInputs, setNewMealFoodInputs] = useState({
+        breakfast: {},
+        lunch: {},
+        dinner: {}
+    });
+
+    // Helper functions for managing warnings
+    const addWarning = (value) => {
+        if (value.trim()) {
+            setPlanData(prev => ({
+                ...prev,
+                warnings: [...prev.warnings, value.trim()]
+            }));
+        }
+    };
+
+    const removeWarning = (index) => {
+        setPlanData(prev => ({
+            ...prev,
+            warnings: prev.warnings.filter((_, i) => i !== index)
+        }));
+    };
+
+    const [newWarningInput, setNewWarningInput] = useState('');
+
+    // Helper functions for managing meal food categories
+    const addMealFood = (mealType, category, value) => {
+        if (value.trim()) {
+            setPlanData(prev => ({
+                ...prev,
+                recommendations: {
+                    ...prev.recommendations,
+                    [mealType]: prev.recommendations[mealType].map(cat => 
+                        cat.category === category
+                            ? { ...cat, items: [...cat.items, value.trim()] }
+                            : cat
+                    )
+                }
+            }));
+        }
+    };
+
+    const removeMealFood = (mealType, category, itemIndex) => {
+        setPlanData(prev => ({
+            ...prev,
+            recommendations: {
+                ...prev.recommendations,
+                [mealType]: prev.recommendations[mealType].map(cat => 
+                    cat.category === category
+                        ? { ...cat, items: cat.items.filter((_, i) => i !== itemIndex) }
+                        : cat
+                )
+            }
+        }));
+    };
+
+    const handleMealFoodInputChange = (mealType, category, value) => {
+        setNewMealFoodInputs(prev => ({
+            ...prev,
+            [mealType]: {
+                ...prev[mealType],
+                [category]: value
+            }
+        }));
+    };
+
+    const handleMealFoodSubmit = (mealType, category) => {
+        const value = newMealFoodInputs[mealType]?.[category] || '';
+        if (value.trim()) {
+            addMealFood(mealType, category, value);
+            setNewMealFoodInputs(prev => ({
+                ...prev,
+                [mealType]: {
+                    ...prev[mealType],
+                    [category]: ''
+                }
+            }));
+        }
+    };
+
+
+
     const handlePlanChange = (field, value) => {
         if (field.includes('.')) {
             const [parent, child] = field.split('.');
@@ -371,6 +703,14 @@ export default function AdminPlanBuilderPage() {
         } else {
             setPlanData(prev => ({ ...prev, [field]: value }));
         }
+    };
+
+    // Function to open chip detail dialog
+    const openChipDetailDialog = (content, title, category) => {
+        setSelectedChipContent(content);
+        setSelectedChipTitle(title);
+        setSelectedChipCategory(category);
+        setChipDetailDialogOpen(true);
     };
 
     const openMealDialog = (dayIndex, mealType, mode = 'add', existingMeal = null, snackIndex = -1) => {
@@ -501,7 +841,9 @@ export default function AdminPlanBuilderPage() {
                     category: templateCategory,
                     duration: planData.duration,
                     weeklyTemplate: planData.weeklyPlans,
-                    defaultGoals: planData.goals
+                    defaultGoals: planData.goals,
+                    defaultRecommendations: planData.recommendations,
+                    defaultWarnings: planData.warnings
                 })
             });
 
@@ -555,6 +897,8 @@ export default function AdminPlanBuilderPage() {
                     duration: planData.duration,
                     weeklyTemplate: planData.weeklyPlans,
                     defaultGoals: planData.goals,
+                    defaultRecommendations: planData.recommendations,
+                    defaultWarnings: planData.warnings,
                     tags: templateMetadata.tags.filter(tag => tag.trim() !== '')
                 })
             });
@@ -588,6 +932,37 @@ export default function AdminPlanBuilderPage() {
                     targetCarbs: '',
                     targetFats: ''
                 },
+                recommendations: {
+                    avoid: [],
+                    useCarefully: [],
+                    eatDaily: [],
+                    breakfast: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Fruits', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    lunch: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Vegetables', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    dinner: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Vegetables', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    exercise: []
+                },
+                warnings: [],
                 weeklyPlans: []
             });
             
@@ -655,6 +1030,37 @@ export default function AdminPlanBuilderPage() {
                     targetCarbs: '',
                     targetFats: ''
                 },
+                recommendations: {
+                    avoid: [],
+                    useCarefully: [],
+                    eatDaily: [],
+                    breakfast: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Fruits', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    lunch: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Vegetables', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    dinner: [
+                        { category: 'Proteins', items: [] },
+                        { category: 'Carbohydrates', items: [] },
+                        { category: 'Vegetables', items: [] },
+                        { category: 'Healthy Fats', items: [] },
+                        { category: 'Dairy', items: [] },
+                        { category: 'Beverages', items: [] }
+                    ],
+                    exercise: []
+                },
+                warnings: [],
                 weeklyPlans: []
             });
             setSelectedUser('');
@@ -709,8 +1115,19 @@ export default function AdminPlanBuilderPage() {
 
     return (
         <PageFade>
-            <Box sx={{ p: 3 }}>
-                <Typography variant="h4" gutterBottom>
+            <Box sx={{ 
+                p: { xs: 1, sm: 2, md: 3 },
+                maxWidth: '100%',
+                overflow: 'hidden'
+            }}>
+                <Typography 
+                    variant={"h4"}
+                    sx={{ 
+                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+                        textAlign: { xs: 'center', sm: 'left' }
+                    }}
+                    gutterBottom
+                >
                     {isEditingTemplate ? `Edit Template: ${templateMetadata.name}` : 'Plan Builder'}
                 </Typography>
 
@@ -915,7 +1332,7 @@ export default function AdminPlanBuilderPage() {
                                     Goals & Targets
                                 </Typography>
                                 
-                                <Grid container spacing={2}>
+                                <Grid container spacing={{ xs: 1, sm: 2 }}>
                                     <Grid item xs={12} sm={6} md={2.4}>
                                         <TextField
                                             fullWidth
@@ -923,6 +1340,7 @@ export default function AdminPlanBuilderPage() {
                                             label="Target Weight (kg)"
                                             value={planData.goals.targetWeight}
                                             onChange={(e) => handlePlanChange('goals.targetWeight', e.target.value)}
+                                            size="small"
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={2.4}>
@@ -932,6 +1350,7 @@ export default function AdminPlanBuilderPage() {
                                             label="Target Calories"
                                             value={planData.goals.targetCalories}
                                             onChange={(e) => handlePlanChange('goals.targetCalories', e.target.value)}
+                                            size="small"
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={2.4}>
@@ -941,6 +1360,7 @@ export default function AdminPlanBuilderPage() {
                                             label="Target Protein (g)"
                                             value={planData.goals.targetProtein}
                                             onChange={(e) => handlePlanChange('goals.targetProtein', e.target.value)}
+                                            size="small"
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={2.4}>
@@ -950,6 +1370,7 @@ export default function AdminPlanBuilderPage() {
                                             label="Target Carbs (g)"
                                             value={planData.goals.targetCarbs}
                                             onChange={(e) => handlePlanChange('goals.targetCarbs', e.target.value)}
+                                            size="small"
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={2.4}>
@@ -959,9 +1380,501 @@ export default function AdminPlanBuilderPage() {
                                             label="Target Fats (g)"
                                             value={planData.goals.targetFats}
                                             onChange={(e) => handlePlanChange('goals.targetFats', e.target.value)}
+                                            size="small"
                                         />
                                     </Grid>
                                 </Grid>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
+                    {/* Recommendations */}
+                    <Grid item xs={12}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom>
+                                    Dietary Recommendations
+                                </Typography>
+                                
+                                <Grid container spacing={{ xs: 2, sm: 3 }}>
+                                    {/* Avoid */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Box>
+                                            <Typography variant="subtitle1" color="error" gutterBottom>
+                                                Avoid
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                                {planData.recommendations.avoid.map((item, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                        onClick={() => openChipDetailDialog(item, 'Avoid Item', 'Avoid')}
+                                                        onDelete={(e) => {
+                                                            e.stopPropagation();
+                                                            removeRecommendation('avoid', index);
+                                                        }}
+                                                        color="error"
+                                                        size="small"
+                                                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'error.dark' } }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Add item to avoid"
+                                                value={newRecommendationInputs.avoid}
+                                                onChange={(e) => setNewRecommendationInputs(prev => ({
+                                                    ...prev,
+                                                    avoid: e.target.value
+                                                }))}
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addRecommendation('avoid', newRecommendationInputs.avoid);
+                                                        setNewRecommendationInputs(prev => ({ ...prev, avoid: '' }));
+                                                    }
+                                                }}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                addRecommendation('avoid', newRecommendationInputs.avoid);
+                                                                setNewRecommendationInputs(prev => ({ ...prev, avoid: '' }));
+                                                            }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    )
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+
+                                    {/* Use Carefully */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Box>
+                                            <Typography variant="subtitle1" color="warning.main" gutterBottom>
+                                                Use Carefully
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                                {planData.recommendations.useCarefully.map((item, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                        onClick={() => openChipDetailDialog(item, 'Use Carefully Item', 'Use Carefully')}
+                                                        onDelete={(e) => {
+                                                            e.stopPropagation();
+                                                            removeRecommendation('useCarefully', index);
+                                                        }}
+                                                        color="warning"
+                                                        size="small"
+                                                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'warning.dark' } }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Add item to use carefully"
+                                                value={newRecommendationInputs.useCarefully}
+                                                onChange={(e) => setNewRecommendationInputs(prev => ({
+                                                    ...prev,
+                                                    useCarefully: e.target.value
+                                                }))}
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addRecommendation('useCarefully', newRecommendationInputs.useCarefully);
+                                                        setNewRecommendationInputs(prev => ({ ...prev, useCarefully: '' }));
+                                                    }
+                                                }}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                addRecommendation('useCarefully', newRecommendationInputs.useCarefully);
+                                                                setNewRecommendationInputs(prev => ({ ...prev, useCarefully: '' }));
+                                                            }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    )
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+
+                                    {/* Eat Daily */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Box>
+                                            <Typography variant="subtitle1" color="success.main" gutterBottom>
+                                                Eat Daily
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                                {planData.recommendations.eatDaily.map((item, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                        onClick={() => openChipDetailDialog(item, 'Eat Daily Item', 'Eat Daily')}
+                                                        onDelete={(e) => {
+                                                            e.stopPropagation();
+                                                            removeRecommendation('eatDaily', index);
+                                                        }}
+                                                        color="success"
+                                                        size="small"
+                                                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'success.dark' } }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Add item to eat daily"
+                                                value={newRecommendationInputs.eatDaily}
+                                                onChange={(e) => setNewRecommendationInputs(prev => ({
+                                                    ...prev,
+                                                    eatDaily: e.target.value
+                                                }))}
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addRecommendation('eatDaily', newRecommendationInputs.eatDaily);
+                                                        setNewRecommendationInputs(prev => ({ ...prev, eatDaily: '' }));
+                                                    }
+                                                }}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                addRecommendation('eatDaily', newRecommendationInputs.eatDaily);
+                                                                setNewRecommendationInputs(prev => ({ ...prev, eatDaily: '' }));
+                                                            }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    )
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+
+                                    {/* Exercise */}
+                                    <Grid item xs={12} sm={6} md={3}>
+                                        <Box>
+                                            <Typography variant="subtitle1" color="info.main" gutterBottom>
+                                                Exercise
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+                                                {planData.recommendations.exercise.map((item, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                        onClick={() => openChipDetailDialog(item, 'Exercise Recommendation', 'Exercise')}
+                                                        onDelete={(e) => {
+                                                            e.stopPropagation();
+                                                            removeRecommendation('exercise', index);
+                                                        }}
+                                                        color="info"
+                                                        size="small"
+                                                        sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'info.dark' } }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                placeholder="Add exercise recommendation"
+                                                value={newRecommendationInputs.exercise}
+                                                onChange={(e) => setNewRecommendationInputs(prev => ({
+                                                    ...prev,
+                                                    exercise: e.target.value
+                                                }))}
+                                                onKeyPress={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        addRecommendation('exercise', newRecommendationInputs.exercise);
+                                                        setNewRecommendationInputs(prev => ({ ...prev, exercise: '' }));
+                                                    }
+                                                }}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                addRecommendation('exercise', newRecommendationInputs.exercise);
+                                                                setNewRecommendationInputs(prev => ({ ...prev, exercise: '' }));
+                                                            }}
+                                                        >
+                                                            <AddIcon />
+                                                        </IconButton>
+                                                    )
+                                                }}
+                                            />
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
+                    {/* Meal-Specific Food Recommendations */}
+                    <Grid item xs={12}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom>
+                                    Meal-Specific Food Recommendations
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                    Add food options organized by categories for each meal type that users can choose from.
+                                </Typography>
+                                
+                                {/* Breakfast Categories */}
+                                <Box sx={{ mb: 4 }}>
+                                    <Typography variant="h6" color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        Breakfast Food Categories
+                                    </Typography>
+                                    <Grid container spacing={{ xs: 1, sm: 2 }}>
+                                        {(planData.recommendations.breakfast || []).filter(categoryData => 
+                                            categoryData && typeof categoryData === 'object' && categoryData.category
+                                        ).map((categoryData, categoryIndex) => (
+                                            <Grid item xs={12} sm={6} md={4} key={categoryIndex}>
+                                                <Box sx={{ p: 2, border: 1, borderColor: 'primary.light', borderRadius: 2 }}>
+                                                    <Typography variant="subtitle2" color="primary" gutterBottom>
+                                                        {categoryData.category}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap', minHeight: 32 }}>
+                                                        {(categoryData.items || []).filter(item => 
+                                                            typeof item === 'string'
+                                                        ).map((item, itemIndex) => (
+                                                            <Chip
+                                                                key={itemIndex}
+                                                                label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                onClick={() => openChipDetailDialog(item, `${categoryData.category} Item`, `Breakfast - ${categoryData.category}`)}
+                                                                onDelete={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeMealFood('breakfast', categoryData.category, itemIndex);
+                                                                }}
+                                                                color="primary"
+                                                                size="small"
+                                                                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'primary.dark' } }}
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        placeholder={categoryData.category === 'Fruits' || categoryData.category === 'Vegetables' ? `Add ${categoryData.category.toLowerCase()} with quantity` : `Add ${categoryData.category.toLowerCase()}`}
+                                                        value={newMealFoodInputs.breakfast?.[categoryData.category] || ''}
+                                                        onChange={(e) => handleMealFoodInputChange('breakfast', categoryData.category, e.target.value)}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleMealFoodSubmit('breakfast', categoryData.category);
+                                                            }
+                                                        }}
+                                                        InputProps={{
+                                                            endAdornment: (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleMealFoodSubmit('breakfast', categoryData.category)}
+                                                                >
+                                                                    <AddIcon />
+                                                                </IconButton>
+                                                            )
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </Box>
+
+                                {/* Lunch Categories */}
+                                <Box sx={{ mb: 4 }}>
+                                    <Typography variant="h6" color="secondary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        Lunch Food Categories
+                                    </Typography>
+                                    <Grid container spacing={{ xs: 1, sm: 2 }}>
+                                        {(planData.recommendations.lunch || []).filter(categoryData => 
+                                            categoryData && typeof categoryData === 'object' && categoryData.category
+                                        ).map((categoryData, categoryIndex) => (
+                                            <Grid item xs={12} sm={6} md={4} key={categoryIndex}>
+                                                <Box sx={{ p: 2, border: 1, borderColor: 'secondary.light', borderRadius: 2 }}>
+                                                    <Typography variant="subtitle2" color="secondary" gutterBottom>
+                                                        {categoryData.category}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap', minHeight: 32 }}>
+                                                        {(categoryData.items || []).filter(item => 
+                                                            typeof item === 'string'
+                                                        ).map((item, itemIndex) => (
+                                                            <Chip
+                                                                key={itemIndex}
+                                                                label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                onClick={() => openChipDetailDialog(item, `${categoryData.category} Item`, `Lunch - ${categoryData.category}`)}
+                                                                onDelete={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeMealFood('lunch', categoryData.category, itemIndex);
+                                                                }}
+                                                                color="secondary"
+                                                                size="small"
+                                                                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'secondary.dark' } }}
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        placeholder={categoryData.category === 'Fruits' || categoryData.category === 'Vegetables' ? `Add ${categoryData.category.toLowerCase()} with quantity` : `Add ${categoryData.category.toLowerCase()}`}
+                                                        value={newMealFoodInputs.lunch?.[categoryData.category] || ''}
+                                                        onChange={(e) => handleMealFoodInputChange('lunch', categoryData.category, e.target.value)}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleMealFoodSubmit('lunch', categoryData.category);
+                                                            }
+                                                        }}
+                                                        InputProps={{
+                                                            endAdornment: (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleMealFoodSubmit('lunch', categoryData.category)}
+                                                                >
+                                                                    <AddIcon />
+                                                                </IconButton>
+                                                            )
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </Box>
+
+                                {/* Dinner Categories */}
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="h6" color="success.main" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        Dinner Food Categories
+                                    </Typography>
+                                    <Grid container spacing={{ xs: 1, sm: 2 }}>
+                                        {(planData.recommendations.dinner || []).filter(categoryData => 
+                                            categoryData && typeof categoryData === 'object' && categoryData.category
+                                        ).map((categoryData, categoryIndex) => (
+                                            <Grid item xs={12} sm={6} md={4} key={categoryIndex}>
+                                                <Box sx={{ p: 2, border: 1, borderColor: 'success.light', borderRadius: 2 }}>
+                                                    <Typography variant="subtitle2" color="success.main" gutterBottom>
+                                                        {categoryData.category}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap', minHeight: 32 }}>
+                                                        {(categoryData.items || []).filter(item => 
+                                                            typeof item === 'string'
+                                                        ).map((item, itemIndex) => (
+                                                            <Chip
+                                                                key={itemIndex}
+                                                                label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                onClick={() => openChipDetailDialog(item, `${categoryData.category} Item`, `Dinner - ${categoryData.category}`)}
+                                                                onDelete={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeMealFood('dinner', categoryData.category, itemIndex);
+                                                                }}
+                                                                color="success"
+                                                                size="small"
+                                                                sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'success.dark' } }}
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        placeholder={categoryData.category === 'Fruits' || categoryData.category === 'Vegetables' ? `Add ${categoryData.category.toLowerCase()} with quantity` : `Add ${categoryData.category.toLowerCase()}`}
+                                                        value={newMealFoodInputs.dinner?.[categoryData.category] || ''}
+                                                        onChange={(e) => handleMealFoodInputChange('dinner', categoryData.category, e.target.value)}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleMealFoodSubmit('dinner', categoryData.category);
+                                                            }
+                                                        }}
+                                                        InputProps={{
+                                                            endAdornment: (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleMealFoodSubmit('dinner', categoryData.category)}
+                                                                >
+                                                                    <AddIcon />
+                                                                </IconButton>
+                                                            )
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
+                    {/* Warnings */}
+                    <Grid item xs={12}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                   ️Important Warnings
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Critical alerts and warnings that users must be aware of regarding their nutrition plan.
+                                </Typography>
+                                
+                                <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                                    {planData.warnings.map((warning, index) => (
+                                        <Chip
+                                            key={index}
+                                            label={warning.length > 40 ? `${warning.substring(0, 40)}...` : warning}
+                                            onClick={() => openChipDetailDialog(warning, 'Important Warning', 'Warnings')}
+                                            onDelete={(e) => {
+                                                e.stopPropagation();
+                                                removeWarning(index);
+                                            }}
+                                            color="error"
+                                            variant="outlined"
+                                            sx={{ 
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer',
+                                                '&:hover': { backgroundColor: 'error.light' },
+                                                '& .MuiChip-label': {
+                                                    fontWeight: 'bold'
+                                                }
+                                            }}
+                                        />
+                                    ))}
+                                </Box>
+                                
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={2}
+                                    placeholder="Add important warning or alert (e.g., 'Consult doctor before following this plan if you have diabetes')"
+                                    value={newWarningInput}
+                                    onChange={(e) => setNewWarningInput(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            addWarning(newWarningInput);
+                                            setNewWarningInput('');
+                                        }
+                                    }}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <IconButton
+                                                onClick={() => {
+                                                    addWarning(newWarningInput);
+                                                    setNewWarningInput('');
+                                                }}
+                                                color="error"
+                                                disabled={!newWarningInput.trim()}
+                                            >
+                                                <AddIcon />
+                                            </IconButton>
+                                        )
+                                    }}
+                                />
                             </CardContent>
                         </Card>
                     </Grid>
@@ -1013,8 +1926,8 @@ export default function AdminPlanBuilderPage() {
                                                     />
                                                 </Box>
                                             </AccordionSummary>
-                                        <AccordionDetails>
-                                            <Grid container spacing={2}>
+                                        <AccordionDetails sx={{ p: { xs: 1, sm: 2 } }}>
+                                            <Grid container spacing={{ xs: 1, sm: 2 }}>
                                                 {/* Breakfast */}
                                                 <Grid item xs={12} sm={6} md={3}>
                                                     <Typography variant="subtitle2" gutterBottom>Breakfast</Typography>
@@ -1140,7 +2053,16 @@ export default function AdminPlanBuilderPage() {
 
                     {/* Actions */}
                     <Grid item xs={12}>
-                        <Box sx={{ textAlign: 'center', display: 'flex', gap: 2, justifyContent: 'center' }}>
+                        <Box sx={{ 
+                            textAlign: 'center', 
+                            display: 'flex', 
+                            gap: { xs: 1, sm: 2 }, 
+                            justifyContent: 'center',
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            '& .MuiButton-root': {
+                                minHeight: { xs: '48px', sm: 'auto' }
+                            }
+                        }}>
                             {isEditingTemplate ? (
                                 <>
                                     <Button
@@ -1213,18 +2135,31 @@ export default function AdminPlanBuilderPage() {
                 </Grid>
 
                 {/* Meal Dialog */}
-                <Dialog open={mealDialogOpen} onClose={() => setMealDialogOpen(false)} maxWidth="md" fullWidth>
+                <Dialog 
+                    open={mealDialogOpen} 
+                    onClose={() => setMealDialogOpen(false)} 
+                    maxWidth="md" 
+                    fullWidth
+                    fullScreen={{ xs: true, sm: false }}
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            margin: { xs: 0, sm: 2 },
+                            maxHeight: { xs: '100vh', sm: 'calc(100% - 64px)' }
+                        }
+                    }}
+                >
                     <DialogTitle>
                         {mealDialogMode === 'edit' ? 'Edit' : 'Add'} {currentMealType}
                     </DialogTitle>
-                    <DialogContent>
-                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
+                        <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mt: { xs: 0, sm: 1 } }}>
                             <Grid item xs={12} sm={6}>
                                 <TextField
                                     fullWidth
                                     label="Meal Name"
                                     value={mealData.name}
                                     onChange={(e) => setMealData(prev => ({ ...prev, name: e.target.value }))}
+                                    size="small"
                                 />
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -1234,6 +2169,7 @@ export default function AdminPlanBuilderPage() {
                                     label="Calories"
                                     value={mealData.calories}
                                     onChange={(e) => setMealData(prev => ({ ...prev, calories: e.target.value }))}
+                                    size="small"
                                 />
                             </Grid>
                             <Grid item xs={12}>
@@ -1244,14 +2180,15 @@ export default function AdminPlanBuilderPage() {
                                     label="Description"
                                     value={mealData.description}
                                     onChange={(e) => setMealData(prev => ({ ...prev, description: e.target.value }))}
+                                    size="small"
                                 />
                             </Grid>
                             
                             {/* Nutrients */}
                             <Grid item xs={12}>
                                 <Typography variant="subtitle2" gutterBottom>Nutrients</Typography>
-                                <Grid container spacing={2}>
-                                    <Grid item xs={3}>
+                                <Grid container spacing={{ xs: 1, sm: 2 }}>
+                                    <Grid item xs={6} sm={3}>
                                         <TextField
                                             fullWidth
                                             type="number"
@@ -1261,9 +2198,10 @@ export default function AdminPlanBuilderPage() {
                                                 ...prev,
                                                 nutrients: { ...prev.nutrients, protein: e.target.value }
                                             }))}
+                                            size="small"
                                         />
                                     </Grid>
-                                    <Grid item xs={3}>
+                                    <Grid item xs={6} sm={3}>
                                         <TextField
                                             fullWidth
                                             type="number"
@@ -1273,9 +2211,10 @@ export default function AdminPlanBuilderPage() {
                                                 ...prev,
                                                 nutrients: { ...prev.nutrients, carbs: e.target.value }
                                             }))}
+                                            size="small"
                                         />
                                     </Grid>
-                                    <Grid item xs={3}>
+                                    <Grid item xs={6} sm={3}>
                                         <TextField
                                             fullWidth
                                             type="number"
@@ -1285,9 +2224,10 @@ export default function AdminPlanBuilderPage() {
                                                 ...prev,
                                                 nutrients: { ...prev.nutrients, fats: e.target.value }
                                             }))}
+                                            size="small"
                                         />
                                     </Grid>
-                                    <Grid item xs={3}>
+                                    <Grid item xs={6} sm={3}>
                                         <TextField
                                             fullWidth
                                             type="number"
@@ -1297,6 +2237,7 @@ export default function AdminPlanBuilderPage() {
                                                 ...prev,
                                                 nutrients: { ...prev.nutrients, fiber: e.target.value }
                                             }))}
+                                            size="small"
                                         />
                                     </Grid>
                                 </Grid>
@@ -1351,10 +2292,74 @@ export default function AdminPlanBuilderPage() {
                             </Grid>
                         </Grid>
                     </DialogContent>
-                    <DialogActions>
+                    <DialogActions sx={{ 
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: { xs: 1, sm: 0 },
+                        p: { xs: 2, sm: 1 },
+                        '& .MuiButton-root': {
+                            minHeight: { xs: '44px', sm: 'auto' },
+                            width: { xs: '100%', sm: 'auto' }
+                        }
+                    }}>
                         <Button onClick={() => setMealDialogOpen(false)}>Cancel</Button>
                         <Button onClick={saveMeal} variant="contained" disabled={!mealData.name}>
                             {mealDialogMode === 'edit' ? 'Update Meal' : 'Add Meal'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Chip Detail Dialog */}
+                <Dialog 
+                    open={chipDetailDialogOpen} 
+                    onClose={() => setChipDetailDialogOpen(false)} 
+                    maxWidth="sm" 
+                    fullWidth
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            borderRadius: 2,
+                            maxHeight: '80vh'
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+                        borderBottom: 1,
+                        borderColor: 'divider'
+                    }}>
+                        <Typography variant="h6" component="span">
+                            {selectedChipTitle}
+                        </Typography>
+                        {selectedChipCategory && (
+                            <Chip 
+                                label={selectedChipCategory} 
+                                size="small" 
+                                color="primary" 
+                                variant="outlined"
+                            />
+                        )}
+                    </DialogTitle>
+                    <DialogContent sx={{ p: 3, mt: 1 }}>
+                        <Typography 
+                            variant="body1" 
+                            sx={{ 
+                                lineHeight: 1.6,
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word'
+                            }}
+                        >
+                            {selectedChipContent}
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
+                        <Button 
+                            onClick={() => setChipDetailDialogOpen(false)}
+                            variant="contained"
+                            color="primary"
+                        >
+                            Close
                         </Button>
                     </DialogActions>
                 </Dialog>

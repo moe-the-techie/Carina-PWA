@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
 
                 {/* Stats Cards */}
                 <Grid container spacing={{ xs: 2, md: 3 }} sx={{ mb: { xs: 3, md: 4 } }}>
-                    <Grid item xs={12} sm={6} md={2.4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 2 } }}>
                                 <Typography color="textSecondary" gutterBottom variant="body2">
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 2 } }}>
                                 <Typography color="textSecondary" gutterBottom variant="body2">
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 2 } }}>
                                 <Typography color="textSecondary" gutterBottom variant="body2">
@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4}>
+                    <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 2 } }}>
                                 <Typography color="textSecondary" gutterBottom variant="body2">
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
 
                 {/* Recent Activity */}
                 <Grid container spacing={{ xs: 2, md: 3 }}>
-                    <Grid item xs={12} lg={6}>
+                    <Grid size={{ xs: 12, lg: 6 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                                 <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>
@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
                         </Card>
                     </Grid>
 
-                    <Grid item xs={12} lg={6}>
+                    <Grid size={{ xs: 12, lg: 6 }}>
                         <Card sx={{ height: '100%' }}>
                             <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                                 <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', md: '1.25rem' } }}>

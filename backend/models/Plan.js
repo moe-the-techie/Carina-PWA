@@ -85,6 +85,61 @@ const planSchema = new Schema({
         targetCarbs: Number,
         targetFats: Number
     },
+    recommendations: {
+        avoid: [{
+            type: String,
+            trim: true
+        }],
+        useCarefully: [{
+            type: String,
+            trim: true
+        }],
+        eatDaily: [{
+            type: String,
+            trim: true
+        }],
+        breakfast: [{
+            category: {
+                type: String,
+                enum: ['Proteins', 'Carbohydrates', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
+                required: true
+            },
+            items: [{
+                type: String,
+                trim: true
+            }]
+        }],
+        lunch: [{
+            category: {
+                type: String,
+                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
+                required: true
+            },
+            items: [{
+                type: String,
+                trim: true
+            }]
+        }],
+        dinner: [{
+            category: {
+                type: String,
+                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
+                required: true
+            },
+            items: [{
+                type: String,
+                trim: true
+            }]
+        }],
+        exercise: [{
+            type: String,
+            trim: true
+        }]
+    },
+    warnings: [{
+        type: String,
+        trim: true
+    }],
     status: {
         type: String,
         enum: ['draft', 'active', 'completed', 'paused'],

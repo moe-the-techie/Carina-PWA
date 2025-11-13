@@ -32,6 +32,57 @@ html, body {
   .MuiDrawer-paper {
     border-radius: 0 !important;
   }
+
+  /* Plan Builder and View Plan specific styles */
+  .MuiAccordion-root {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .MuiAccordionSummary-content {
+    margin: 0.75rem 0 !important;
+  }
+
+  .MuiChip-root {
+    margin: 0.125rem !important;
+    font-size: 0.7rem !important;
+    height: auto !important;
+    min-height: 24px !important;
+  }
+
+  .MuiDialog-paper {
+    margin: 0 !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  /* Better touch targets for mobile */
+  .MuiIconButton-root {
+    padding: 8px !important;
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+
+  /* Typography scaling for mobile */
+  .MuiTypography-h4 {
+    font-size: 1.5rem !important;
+  }
+
+  .MuiTypography-h5 {
+    font-size: 1.25rem !important;
+  }
+
+  .MuiTypography-h6 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Card content padding optimization */
+  .MuiCardContent-root {
+    padding: 12px !important;
+  }
+
+  .MuiCardContent-root:last-child {
+    padding-bottom: 12px !important;
+  }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
@@ -76,5 +127,61 @@ html, body {
   
   .MuiGrid-item {
     padding: 0.5rem !important;
+  }
+
+  /* Improved text selection on mobile */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+  }
+
+  /* Improved scrolling on mobile */
+  .MuiAccordionDetails-root {
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better spacing for plan builder elements */
+  .MuiBox-root {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Improve chip wrapping */
+  .MuiChip-root {
+    max-width: calc(50% - 4px) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Better form layout */
+  .MuiFormControl-root {
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Improved dialog layout */
+  .MuiDialogTitle-root {
+    padding: 1rem !important;
+    font-size: 1.1rem !important;
+  }
+
+  .MuiDialogContent-root {
+    padding: 0.5rem 1rem !important;
+  }
+
+  .MuiDialogActions-root {
+    padding: 1rem !important;
   }
 }

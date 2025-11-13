@@ -72,6 +72,8 @@ export async function createTemplate(req, res) {
             duration,
             weeklyTemplate,
             defaultGoals,
+            defaultRecommendations,
+            defaultWarnings,
             tags
         } = req.body;
 
@@ -82,6 +84,8 @@ export async function createTemplate(req, res) {
             duration,
             weeklyTemplate: weeklyTemplate || [],
             defaultGoals: defaultGoals || {},
+            defaultRecommendations: defaultRecommendations || {},
+            defaultWarnings: defaultWarnings || [],
             tags: tags || [],
             createdBy: req.user._id
         });
