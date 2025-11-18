@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import { 
@@ -10,17 +10,66 @@ import {
   ListItemText, 
   ListItemSecondaryAction,
   Switch,
-  Divider
+  Divider,
+  IconButton,
+  Alert
 } from '@mui/material';
+import { Edit as EditIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
+import EditAccountDialog from '../components/EditAccountDialog.jsx';
 import { useThemeMode } from '../contexts/ThemeContext';
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function SettingsPage({ onLogout }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const { mode, toggleTheme } = useThemeMode();
+  const [user, setUser] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${apiBaseUrl}/api/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        setUser(data.user);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setError('Failed to load profile information');
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  const handleUserUpdate = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
+  const formatUserInfo = () => {
+    if (!user) return 'Loading...';
+    
+    const parts = [user.name];
+    if (user.email) parts.push(user.email);
+    
+    return parts.join(' • ');
+  };
 
   return (
     <PageFade>
@@ -42,6 +91,12 @@ export default function SettingsPage({ onLogout }) {
               Settings
             </Typography>
             
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            
             <List>
               <ListItem>
                 <ListItemText 
@@ -62,9 +117,19 @@ export default function SettingsPage({ onLogout }) {
               
               <ListItem>
                 <ListItemText 
-                  primary="Account" 
-                  secondary="You are currently logged in"
+                  primary="Account Information" 
+                  secondary={formatUserInfo()}
                 />
+                <ListItemSecondaryAction>
+                  <IconButton 
+                    edge="end" 
+                    onClick={() => setEditDialogOpen(true)}
+                    disabled={!user}
+                    color="primary"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
               </ListItem>
             </List>
             
@@ -80,6 +145,13 @@ export default function SettingsPage({ onLogout }) {
             </Box>
           </CardContent>
         </Card>
+
+        <EditAccountDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          user={user}
+          onUserUpdate={handleUserUpdate}
+        />
       </Box>
     </PageFade>
   );
