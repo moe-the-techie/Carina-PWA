@@ -27,7 +27,8 @@ import {
     CardActions,
     Divider,
     IconButton,
-    Tooltip
+    Tooltip,
+    Avatar
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
@@ -355,6 +356,21 @@ export default function AdminFormsPage() {
                                             <Typography variant="h6" gutterBottom>
                                                 User Information
                                             </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+                                                <Avatar
+                                                    src={selectedForm.user?.profileImageUrl}
+                                                    alt={selectedForm.user?.name}
+                                                    sx={{ width: 48, height: 48 }}
+                                                >
+                                                    {!selectedForm.user?.profileImageUrl && selectedForm.user?.name?.charAt(0)?.toUpperCase()}
+                                                </Avatar>
+                                                <Box>
+                                                    <Typography variant="subtitle1">{selectedForm.user?.name}</Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {selectedForm.user?.email}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
                                             <Typography><strong>Name:</strong> {selectedForm.user?.name}</Typography>
                                             <Typography><strong>Email:</strong> {selectedForm.user?.email}</Typography>
                                             <Typography><strong>Gender:</strong> {selectedForm.user?.gender}</Typography>

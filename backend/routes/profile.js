@@ -3,9 +3,23 @@ const router = express.Router();
 import { protect } from '../middleware/auth.js';
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
+import { upload, uploadToCloudinary, deleteImage } from '../config/cloudinary.js';
 
 router.get('/profile', protect, async (req, res) => {
-    return res.status(200).json({user: req.user});
+    return res.status(200).json({
+        user: {
+            _id: req.user._id,
+            firebaseUid: req.user.firebaseUid,
+            name: req.user.name,
+            email: req.user.email,
+            dateOfBirth: req.user.dateOfBirth,
+            isMother: req.user.isMother,
+            gender: req.user.gender,
+            role: req.user.role,
+            profileImageUrl: req.user.profileImageUrl,
+            createdAt: req.user.createdAt
+        }
+    });
 });
 
 router.put('/profile', protect, async (req, res) => {
@@ -55,7 +69,8 @@ router.put('/profile', protect, async (req, res) => {
             dateOfBirth: updatedUser.dateOfBirth,
             isMother: updatedUser.isMother,
             gender: updatedUser.gender,
-            role: updatedUser.role
+            role: updatedUser.role,
+            profileImageUrl: updatedUser.profileImageUrl
         };
 
         res.status(200).json({
@@ -65,6 +80,115 @@ router.put('/profile', protect, async (req, res) => {
     } catch (error) {
         console.error('Error updating profile:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Upload profile photo
+router.post('/profile/upload-photo', protect, upload.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Delete existing profile image if it exists
+        if (user.profileImagePublicId) {
+            try {
+                await deleteImage(user.profileImagePublicId);
+            } catch (deleteError) {
+                console.error('Error deleting old profile image:', deleteError);
+            }
+        }
+
+        const filename = `user-${userId}-${Date.now()}`;
+        
+        const result = await uploadToCloudinary(req.file.buffer, filename);
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                profileImageUrl: result.secure_url,
+                profileImagePublicId: result.public_id
+            },
+            { new: true }
+        );
+
+        const userResponse = {
+            _id: updatedUser._id,
+            firebaseUid: updatedUser.firebaseUid,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            dateOfBirth: updatedUser.dateOfBirth,
+            isMother: updatedUser.isMother,
+            gender: updatedUser.gender,
+            role: updatedUser.role,
+            profileImageUrl: updatedUser.profileImageUrl
+        };
+
+        res.status(200).json({
+            message: 'Profile photo uploaded successfully',
+            user: userResponse
+        });
+    } catch (error) {
+        console.error('Error uploading profile photo:', error);
+        res.status(500).json({ error: 'Failed to upload profile photo' });
+    }
+});
+
+// Delete profile photo
+router.delete('/profile/photo', protect, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!user.profileImagePublicId) {
+            return res.status(400).json({ error: 'No profile photo to delete' });
+        }
+
+        try {
+            await deleteImage(user.profileImagePublicId);
+        } catch (deleteError) {
+            console.error('Error deleting image from Cloudinary:', deleteError);
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                profileImageUrl: null,
+                profileImagePublicId: null
+            },
+            { new: true }
+        );
+
+        const userResponse = {
+            _id: updatedUser._id,
+            firebaseUid: updatedUser.firebaseUid,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            dateOfBirth: updatedUser.dateOfBirth,
+            isMother: updatedUser.isMother,
+            gender: updatedUser.gender,
+            role: updatedUser.role,
+            profileImageUrl: updatedUser.profileImageUrl
+        };
+
+        res.status(200).json({
+            message: 'Profile photo deleted successfully',
+            user: userResponse
+        });
+    } catch (error) {
+        console.error('Error deleting profile photo:', error);
+        res.status(500).json({ error: 'Failed to delete profile photo' });
     }
 });
 

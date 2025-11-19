@@ -12,7 +12,8 @@ import {
   Switch,
   Divider,
   IconButton,
-  Alert
+  Alert,
+  Avatar
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
@@ -95,6 +96,25 @@ export default function SettingsPage({ onLogout }) {
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
+            )}
+            
+            {/* Profile Photo Section */}
+            {user && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+                <Avatar
+                  src={user.profileImageUrl}
+                  alt={user.name}
+                  sx={{ width: 64, height: 64 }}
+                >
+                  {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
+                </Avatar>
+                <Box>
+                  <Typography variant="h6">{user.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {user.email}
+                  </Typography>
+                </Box>
+              </Box>
             )}
             
             <List>

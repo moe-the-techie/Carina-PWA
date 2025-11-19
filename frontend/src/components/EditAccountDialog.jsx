@@ -15,11 +15,15 @@ import {
   Box,
   Alert,
   Typography,
-  Divider
+  Divider,
+  Avatar,
+  IconButton,
+  Badge
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { PhotoCamera, Delete } from '@mui/icons-material';
 import dayjs from 'dayjs';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -37,6 +41,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
   const [passwordResetSuccess, setPasswordResetSuccess] = useState('');
   const [passwordResetError, setPasswordResetError] = useState('');
@@ -169,6 +175,92 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
     }));
   };
 
+  const handlePhotoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image file size must be less than 5MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      setPhotoFile(file);
+      setError('');
+    }
+  };
+
+  const uploadPhoto = async () => {
+    if (!photoFile) return;
+    
+    setPhotoLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('photo', photoFile);
+
+      const response = await fetch(`${apiBaseUrl}/api/profile/upload-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload photo');
+      }
+
+      setSuccess('Profile photo updated successfully!');
+      onUserUpdate(data.user);
+      setPhotoFile(null);
+      
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      setError(error.message);
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  const deletePhoto = async () => {
+    setPhotoLoading(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${apiBaseUrl}/api/profile/photo`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete photo');
+      }
+
+      setSuccess('Profile photo deleted successfully!');
+      onUserUpdate(data.user);
+      
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      setError(error.message);
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
   const validateForm = () => {
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
       setError('New password and confirmation do not match');
@@ -275,6 +367,75 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
           )}
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Profile Photo Section */}
+            <Box>
+              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Profile Photo</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Badge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  badgeContent={
+                    <IconButton
+                      color="primary"
+                      component="label"
+                      size="small"
+                      sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.100' } }}
+                    >
+                      <PhotoCamera fontSize="small" />
+                      <input
+                        hidden
+                        accept="image/*"
+                        type="file"
+                        onChange={handlePhotoChange}
+                      />
+                    </IconButton>
+                  }
+                >
+                  <Avatar
+                    src={user?.profileImageUrl}
+                    alt={user?.name}
+                    sx={{ width: 80, height: 80 }}
+                  >
+                    {!user?.profileImageUrl && user?.name?.charAt(0)?.toUpperCase()}
+                  </Avatar>
+                </Badge>
+                <Box>
+                  {photoFile && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Selected: {photoFile.name}
+                    </Typography>
+                  )}
+                  {photoFile && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={uploadPhoto}
+                      disabled={photoLoading}
+                      sx={{ mr: 1 }}
+                    >
+                      {photoLoading ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  )}
+                  {user?.profileImageUrl && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      color="error"
+                      onClick={deletePhoto}
+                      disabled={photoLoading}
+                      startIcon={<Delete />}
+                    >
+                      {photoLoading ? 'Deleting...' : 'Remove'}
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Supported formats: JPG, PNG, JPEG. Maximum size: 5MB
+              </Typography>
+              <Divider sx={{ mt: 2 }} />
+            </Box>
+
             <Typography variant="h6" color="primary">Basic Information</Typography>
             
             <TextField

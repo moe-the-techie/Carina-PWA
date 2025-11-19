@@ -114,7 +114,8 @@ export async function login(req, res) {
                     dateOfBirth: adminUser.dateOfBirth,
                     isMother: adminUser.isMother,
                     gender: adminUser.gender,
-                    role: adminUser.role
+                    role: adminUser.role,
+                    profileImageUrl: adminUser.profileImageUrl
                 },
                 token: token,
                 firebase_uid: null,
@@ -156,7 +157,8 @@ export async function login(req, res) {
                 dateOfBirth: user.dateOfBirth,
                 isMother: user.isMother,
                 gender: user.gender,
-                role: user.role
+                role: user.role,
+                profileImageUrl: user.profileImageUrl
             },
             token: token,
             firebase_uid: userCredential.user.uid,

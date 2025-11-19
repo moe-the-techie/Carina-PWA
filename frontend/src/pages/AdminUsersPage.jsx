@@ -21,7 +21,8 @@ import {
     Card,
     CardContent,
     Divider,
-    Stack
+    Stack,
+    Avatar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
@@ -158,6 +159,7 @@ export default function AdminUsersPage() {
                     <Table>
                         <TableHead>
                             <TableRow>
+                                <TableCell>Photo</TableCell>
                                 <TableCell>Name</TableCell>
                                 <TableCell>Email</TableCell>
                                 <TableCell>Gender</TableCell>
@@ -170,6 +172,15 @@ export default function AdminUsersPage() {
                         <TableBody>
                             {users.map((user) => (
                                 <TableRow key={user._id}>
+                                    <TableCell>
+                                        <Avatar
+                                            src={user.profileImageUrl}
+                                            alt={user.name}
+                                            sx={{ width: 40, height: 40 }}
+                                        >
+                                            {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
+                                        </Avatar>
+                                    </TableCell>
                                     <TableCell>{user.name}</TableCell>
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>
@@ -248,6 +259,21 @@ export default function AdminUsersPage() {
                                             <Typography variant="h6" gutterBottom>
                                                 Personal Information
                                             </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+                                                <Avatar
+                                                    src={selectedUser.user.profileImageUrl}
+                                                    alt={selectedUser.user.name}
+                                                    sx={{ width: 64, height: 64 }}
+                                                >
+                                                    {!selectedUser.user.profileImageUrl && selectedUser.user.name?.charAt(0)?.toUpperCase()}
+                                                </Avatar>
+                                                <Box>
+                                                    <Typography variant="h6">{selectedUser.user.name}</Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {selectedUser.user.email}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
                                             <Typography><strong>Name:</strong> {selectedUser.user.name}</Typography>
                                             <Typography><strong>Email:</strong> {selectedUser.user.email}</Typography>
                                             <Typography><strong>Gender:</strong> {selectedUser.user.gender || 'Not specified'}</Typography>
