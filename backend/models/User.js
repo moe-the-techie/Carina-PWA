@@ -71,6 +71,14 @@ const userSchema = new Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    isBanned: {
+        type: Boolean,
+        default: false
+    },
+    bannedAt: {
+        type: Date,
+        default: null
+    },
     lastVerificationEmailSentAt: {
         type: Date,
         default: null

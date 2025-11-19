@@ -1,6 +1,10 @@
 import User from '../models/User.js';
 import Form from '../models/Form.js';
 import Plan from '../models/Plan.js';
+import Chat from '../models/Chat.js';
+import Message from '../models/Message.js';
+import { deleteImage } from '../config/cloudinary.js';
+import { adminAuth } from '../config/firebase.js';
 export async function getDashboardStats(req, res) {
     try {
         const totalUsers = await User.countDocuments({ role: 'user' });
@@ -135,5 +139,129 @@ export async function markFormReviewed(req, res) {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
+    }
+}
+
+export async function deleteUserByAdmin(req, res) {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ error: 'Cannot delete admin users' });
+        }
+
+        if (user.profileImagePublicId) {
+            try {
+                await deleteImage(user.profileImagePublicId);
+            } catch (deleteError) {
+                console.error('Error deleting profile image:', deleteError);
+            }
+        }
+
+        // Delete all related data
+        try {
+            await Form.deleteMany({ user: userId });
+            await Plan.deleteMany({ userId: userId });
+            
+            const userChat = await Chat.findOne({ userId: userId });
+            if (userChat) {
+                await Message.deleteMany({ chatId: userChat._id });
+                await Chat.findByIdAndDelete(userChat._id);
+            }
+        } catch (cleanupError) {
+            console.error('Error cleaning up related data:', cleanupError);
+        }
+
+        if (user.firebaseUid) {
+            try {
+                await adminAuth.deleteUser(user.firebaseUid);
+                console.log('Successfully deleted Firebase user:', user.firebaseUid);
+            } catch (firebaseError) {
+                console.error('Error deleting Firebase user:', firebaseError);
+            }
+        }
+
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({
+            message: 'User deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+}
+
+export async function banUserByAdmin(req, res) {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ error: 'Cannot ban admin users' });
+        }
+
+        if (user.isBanned) {
+            return res.status(400).json({ error: 'User is already banned' });
+        }
+
+        if (user.profileImagePublicId) {
+            try {
+                await deleteImage(user.profileImagePublicId);
+            } catch (deleteError) {
+                console.error('Error deleting profile image:', deleteError);
+            }
+        }
+
+        // Delete all related data
+        try {
+            await Form.deleteMany({ user: userId });
+            await Plan.deleteMany({ userId: userId });
+            
+            const userChat = await Chat.findOne({ userId: userId });
+            if (userChat) {
+                await Message.deleteMany({ chatId: userChat._id });
+                await Chat.findByIdAndDelete(userChat._id);
+            }
+        } catch (cleanupError) {
+            console.error('Error cleaning up related data:', cleanupError);
+        }
+
+        if (user.firebaseUid) {
+            try {
+                await adminAuth.deleteUser(user.firebaseUid);
+                console.log('Successfully deleted Firebase user:', user.firebaseUid);
+            } catch (firebaseError) {
+                console.error('Error deleting Firebase user:', firebaseError);
+            }
+        }
+
+        user.isBanned = true;
+        user.bannedAt = new Date();
+        await user.save();
+
+        res.status(200).json({
+            message: 'User banned successfully',
+            user: {
+                _id: user._id,
+                email: user.email,
+                isBanned: user.isBanned,
+                bannedAt: user.bannedAt
+            }
+        });
+    } catch (error) {
+        console.error('Error banning user:', error);
+        res.status(500).json({ error: 'Failed to ban user' });
     }
 }

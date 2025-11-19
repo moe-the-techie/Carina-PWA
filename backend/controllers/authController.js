@@ -24,7 +24,15 @@ export async function register(req, res) {
         const existingUser = await User.findOne({ email: email });
 
         if (existingUser) {
+            if (existingUser.isBanned) {
+                return res.status(403).json({ error: 'This email has been banned and cannot be used to register.' });
+            }
             return res.status(400).json({ error: `The email ${email} is already registered. Try logging in!` });
+        }
+
+        const bannedUser = await User.findOne({ email: email, isBanned: true });
+        if (bannedUser) {
+            return res.status(403).json({ error: 'This email has been banned and cannot be used to register.' });
         }
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -94,6 +102,10 @@ export async function login(req, res) {
         if (adminUser) {
             console.log('Admin login attempt for:', email);
             
+            if (adminUser.isBanned) {
+                return res.status(403).json({ error: 'Your account has been banned. Please contact support.' });
+            }
+            
             const isPasswordValid = await bcrypt.compare(password, adminUser.password);
             
             if (!isPasswordValid) {
@@ -143,6 +155,10 @@ export async function login(req, res) {
             return res.status(404).json({
                 error: 'User not found in our database. Please contact support.'
             });
+        }
+
+        if (user.isBanned) {
+            return res.status(403).json({ error: 'Your account has been banned. Please contact support.' });
         }
 
         const token = generateToken(user._id);

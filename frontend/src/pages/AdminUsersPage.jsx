@@ -22,7 +22,9 @@ import {
     CardContent,
     Divider,
     Stack,
-    Avatar
+    Avatar,
+    Alert,
+    Snackbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
@@ -43,6 +45,11 @@ export default function AdminUsersPage() {
     const [userDetailsOpen, setUserDetailsOpen] = useState(false);
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [banDialogOpen, setBanDialogOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
+    const [userToBan, setUserToBan] = useState(null);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     // Debounce search input
     useEffect(() => {
@@ -121,6 +128,86 @@ export default function AdminUsersPage() {
         }
         
         navigate('/admin/chats', { state: { userId } });
+    };
+
+    const handleDeleteClick = (user) => {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleBanClick = (user) => {
+        setUserToBan(user);
+        setBanDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/users/${userToDelete._id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete user');
+            }
+
+            setSnackbar({
+                open: true,
+                message: 'User deleted successfully',
+                severity: 'success'
+            });
+            
+            setDeleteDialogOpen(false);
+            setUserToDelete(null);
+            fetchUsers(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to delete user',
+                severity: 'error'
+            });
+        }
+    };
+
+    const handleBanConfirm = async () => {
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/users/${userToBan._id}/ban`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to ban user');
+            }
+
+            setSnackbar({
+                open: true,
+                message: 'User banned successfully',
+                severity: 'success'
+            });
+            
+            setBanDialogOpen(false);
+            setUserToBan(null);
+            fetchUsers(); // Refresh the list
+        } catch (error) {
+            console.error('Error banning user:', error);
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to ban user',
+                severity: 'error'
+            });
+        }
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
     };
 
     if (loading && users.length === 0) {
@@ -231,7 +318,7 @@ export default function AdminUsersPage() {
                                                 size="small"
                                                 onClick={() => fetchUserDetails(user._id)}
                                             >
-                                                View Details
+                                                View
                                             </Button>
                                             <Button
                                                 size="small"
@@ -240,6 +327,22 @@ export default function AdminUsersPage() {
                                                 onClick={() => handleMessageUser(user._id)}
                                             >
                                                 Message
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="warning"
+                                                onClick={() => handleBanClick(user)}
+                                            >
+                                                Ban
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => handleDeleteClick(user)}
+                                            >
+                                                Delete
                                             </Button>
                                         </Stack>
                                     </TableCell>
@@ -376,6 +479,26 @@ export default function AdminUsersPage() {
                         >
                             Message User
                         </Button>
+                        <Button 
+                            variant="outlined"
+                            color="warning"
+                            onClick={() => {
+                                setUserDetailsOpen(false);
+                                handleBanClick(selectedUser?.user);
+                            }}
+                        >
+                            Ban User
+                        </Button>
+                        <Button 
+                            variant="outlined"
+                            color="error"
+                            onClick={() => {
+                                setUserDetailsOpen(false);
+                                handleDeleteClick(selectedUser?.user);
+                            }}
+                        >
+                            Delete User
+                        </Button>
                     </DialogActions>
                 </Dialog>
 
@@ -384,6 +507,90 @@ export default function AdminUsersPage() {
                     imageUrl={selectedImage}
                     onClose={() => setImageDialogOpen(false)}
                 />
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog
+                    open={deleteDialogOpen}
+                    onClose={() => setDeleteDialogOpen(false)}
+                >
+                    <DialogTitle>Confirm Delete User</DialogTitle>
+                    <DialogContent>
+                        <Typography>
+                            Are you sure you want to delete user <strong>{userToDelete?.name}</strong> ({userToDelete?.email})?
+                        </Typography>
+                        <Typography color="error" sx={{ mt: 2 }}>
+                            This action will:
+                        </Typography>
+                        <ul>
+                            <li>Permanently delete the user account</li>
+                            <li>Delete all their forms and plans</li>
+                            <li>Delete all their chat messages</li>
+                            <li>Delete their profile image</li>
+                            <li>Delete their Firebase authentication</li>
+                            <li><strong>User can recreate an account with the same email</strong></li>
+                        </ul>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={handleDeleteConfirm} 
+                            color="error" 
+                            variant="contained"
+                        >
+                            Delete User
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Ban Confirmation Dialog */}
+                <Dialog
+                    open={banDialogOpen}
+                    onClose={() => setBanDialogOpen(false)}
+                >
+                    <DialogTitle>Confirm Ban User</DialogTitle>
+                    <DialogContent>
+                        <Typography>
+                            Are you sure you want to ban user <strong>{userToBan?.name}</strong> ({userToBan?.email})?
+                        </Typography>
+                        <Typography color="warning.main" sx={{ mt: 2 }}>
+                            This action will:
+                        </Typography>
+                        <ul>
+                            <li>Mark the user account as banned</li>
+                            <li>Delete all their forms and plans</li>
+                            <li>Delete all their chat messages</li>
+                            <li>Delete their profile image</li>
+                            <li>Delete their Firebase authentication</li>
+                            <li><strong>User CANNOT recreate an account with the same email</strong></li>
+                        </ul>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setBanDialogOpen(false)}>Cancel</Button>
+                        <Button 
+                            onClick={handleBanConfirm} 
+                            color="warning" 
+                            variant="contained"
+                        >
+                            Ban User
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Snackbar for notifications */}
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={6000}
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                >
+                    <Alert 
+                        onClose={handleCloseSnackbar} 
+                        severity={snackbar.severity}
+                        sx={{ width: '100%' }}
+                    >
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </Box>
         </PageFade>
     );
