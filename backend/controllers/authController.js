@@ -62,7 +62,7 @@ export async function register(req, res) {
         console.error('Registration error:', error);
         
         switch (error.code) {
-            case 'auth/email-already-in-use':
+            case 'auth/email-already-exists':
                 return res.status(409).json({ error: 'username or email already exists' });
             case 'auth/invalid-email':
                 return res.status(400).json({ error: 'Invalid email address.' });
@@ -169,18 +169,16 @@ export async function login(req, res) {
     } catch (error) {
         console.error('Error during login:', error);
 
-        switch (error.code) {
-            case 'auth/user-not-found':
-                return res.status(404).json({ error: 'User with this email does not exist.' });
-            case 'auth/wrong-password':
-                return res.status(401).json({ error: 'Incorrect password.' });
-            case 'auth/invalid-email':
-                return res.status(400).json({ error: 'Invalid email address.' });
-            case 'auth/invalid-credential':
-                return res.status(400).json({ error: 'Wrong password' });
-            default:
-                return res.status(500).json({ error: 'Internal Server Error.' });
-        }
+    switch (error.code) {
+        case 'auth/user-not-found':
+            return res.status(404).json({ error: 'User with this email does not exist.' });
+        case 'auth/invalid-credential':
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        default:
+            console.error('Unexpected login error:', error);
+            return res.status(500).json({ error: 'Internal Server Error.' });
+    }
+
     }
 };
 
@@ -260,8 +258,6 @@ export async function resendVerificationWithAuth(req, res) {
             switch (authError.code) {
                 case 'auth/user-not-found':
                     return res.status(404).json({ error: 'User with this email does not exist.' });
-                case 'auth/wrong-password':
-                    return res.status(401).json({ error: 'Incorrect password. Please check your credentials.' });
                 case 'auth/invalid-email':
                     return res.status(400).json({ error: 'Invalid email address.' });
                 case 'auth/invalid-credential':
