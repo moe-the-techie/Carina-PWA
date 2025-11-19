@@ -196,7 +196,7 @@ export const getAllChats = async (req, res) => {
             .sort({ lastMessageAt: -1 })
             .skip(parseInt(skip))
             .limit(parseInt(limit))
-            .populate('userId', 'name email');
+            .populate('userId', 'name email profileImageUrl');
 
         const chatsWithLastMessage = await Promise.all(
             chats.map(async (chat) => {
@@ -293,7 +293,7 @@ export const getOrCreateChatByUserId = async (req, res) => {
             return res.status(400).json({ error: 'Invalid user ID provided' });
         }
 
-        const user = await User.findById(userId).select('name email');
+        const user = await User.findById(userId).select('name email profileImageUrl');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -305,7 +305,7 @@ export const getOrCreateChatByUserId = async (req, res) => {
             await chat.save();
         }
 
-        await chat.populate('userId', 'name email');
+        await chat.populate('userId', 'name email profileImageUrl');
 
         res.status(200).json({
             chatId: chat._id,

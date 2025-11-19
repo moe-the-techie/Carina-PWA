@@ -388,8 +388,14 @@ export default function AdminChatsPage() {
                                     sx={{ p: { xs: 1, md: 1.5 } }}
                                 >
                                     <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: 2 }}>
-                                        <Avatar sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
-                                            <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                        <Avatar 
+                                            src={chat.user?.profileImageUrl}
+                                            alt={chat.user?.name}
+                                            sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}
+                                        >
+                                            {!chat.user?.profileImageUrl && (
+                                                chat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                            )}
                                         </Avatar>
                                     </Badge>
                                     <ListItemText
@@ -482,8 +488,14 @@ export default function AdminChatsPage() {
                                 <ArrowBackIcon />
                             </IconButton>
                         )}
-                        <Avatar sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}>
-                            <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                        <Avatar 
+                            src={selectedChat.user?.profileImageUrl}
+                            alt={selectedChat.user?.name}
+                            sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}
+                        >
+                            {!selectedChat.user?.profileImageUrl && (
+                                selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                            )}
                         </Avatar>
                         <Box>
                             <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
