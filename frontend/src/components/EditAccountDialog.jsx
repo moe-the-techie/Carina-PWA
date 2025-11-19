@@ -18,7 +18,9 @@ import {
   Divider,
   Avatar,
   IconButton,
-  Badge
+  Badge,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -44,6 +46,9 @@ const startCountdown = (initialSeconds, setTimeoutState, setCanChangeState) => {
 };
 
 export default function EditAccountDialog({ open, onClose, user, onUserUpdate }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [formData, setFormData] = useState({
     name: '',
     dateOfBirth: null,
@@ -93,6 +98,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       setPasswordResetRemainingSeconds(0);
       setPhotoChangeTimeout(null);
       setCanChangePhoto(true);
+      setPhotoFile(null); // Clear photo file when dialog closes
       setFormData(prev => ({
         ...prev,
         currentPassword: '',
@@ -199,7 +205,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
 
   const handlePhotoChange = (event) => {
     const file = event.target.files[0];
-    if (file) {
+    if (file && canChangePhoto) {
       if (file.size > 5 * 1024 * 1024) {
         setError('Image file size must be less than 5MB');
         return;
@@ -213,6 +219,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       setPhotoFile(file);
       setError('');
     }
+    // Reset the input value to allow selecting the same file again
+    event.target.value = '';
   };
 
   const checkPhotoTimeout = async () => {
@@ -227,8 +235,11 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       if (response.ok) {
         const data = await response.json();
         setCanChangePhoto(data.canChange);
-        if (!data.canChange && data.remainingSeconds > 0) {
-          startCountdown(data.remainingSeconds, setPhotoChangeTimeout, setCanChangePhoto);
+        if (!data.canChange) {
+          setPhotoFile(null); // Clear any selected photo file if user can't change photo
+          if (data.remainingSeconds > 0) {
+            startCountdown(data.remainingSeconds, setPhotoChangeTimeout, setCanChangePhoto);
+          }
         }
       }
     } catch (error) {
@@ -396,17 +407,38 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       <Dialog 
         open={open} 
         onClose={onClose} 
-        maxWidth="sm" 
+        maxWidth="md" 
         fullWidth
+        fullScreen={false}
         PaperProps={{
-          sx: { minHeight: '600px' }
+          sx: { 
+            minHeight: { xs: '90vh', sm: '70vh', md: '600px' },
+            maxHeight: { xs: '95vh', sm: '90vh', md: '85vh' },
+            m: { xs: 1, sm: 2 },
+            width: { xs: '95vw', sm: '90vw', md: 'auto' }
+          }
         }}
       >
-        <DialogTitle>
-          <Typography variant="h5">Edit Account Information</Typography>
+        <DialogTitle sx={{ pb: { xs: 1, sm: 2 } }}>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              textAlign: { xs: 'center', sm: 'left' }
+            }}
+          >
+            Edit Account Information
+          </Typography>
         </DialogTitle>
         
-        <DialogContent dividers>
+        <DialogContent 
+          dividers 
+          sx={{ 
+            px: { xs: 2, sm: 3 },
+            py: { xs: 2, sm: 3 },
+            overflow: 'auto'
+          }}
+        >
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -419,11 +451,31 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
             </Alert>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: { xs: 2, sm: 3 },
+            width: '100%'
+          }}>
             {/* Profile Photo Section */}
             <Box>
-              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Profile Photo</Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Typography 
+                variant="h6" 
+                color="primary" 
+                sx={{ 
+                  mb: { xs: 1.5, sm: 2 },
+                  fontSize: { xs: '1.1rem', sm: '1.25rem' }
+                }}
+              >
+                Profile Photo
+              </Typography>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'center', sm: 'flex-start' }, 
+                gap: { xs: 2, sm: 3 }, 
+                mb: { xs: 1.5, sm: 2 }
+              }}>
                 <Badge
                   overlap="circular"
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -433,7 +485,12 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                       component="label"
                       size="small"
                       disabled={!canChangePhoto || photoLoading}
-                      sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.100' } }}
+                      sx={{ 
+                        bgcolor: 'background.paper', 
+                        '&:hover': { bgcolor: !canChangePhoto || photoLoading ? 'background.paper' : 'grey.100' },
+                        opacity: !canChangePhoto || photoLoading ? 0.6 : 1,
+                        cursor: !canChangePhoto || photoLoading ? 'not-allowed' : 'pointer'
+                      }}
                     >
                       <PhotoCamera fontSize="small" />
                       <input
@@ -441,7 +498,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                         accept="image/*"
                         type="file"
                         onChange={handlePhotoChange}
-                        disabled={!canChangePhoto}
+                        disabled={!canChangePhoto || photoLoading}
+                        key={canChangePhoto ? 'enabled' : 'disabled'}
                       />
                     </IconButton>
                   }
@@ -449,41 +507,72 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                   <Avatar
                     src={user?.profileImageUrl}
                     alt={user?.name}
-                    sx={{ width: 80, height: 80 }}
+                    sx={{ 
+                      width: { xs: 64, sm: 80, md: 96 }, 
+                      height: { xs: 64, sm: 80, md: 96 }
+                    }}
                   >
                     {!user?.profileImageUrl && user?.name?.charAt(0)?.toUpperCase()}
                   </Avatar>
                 </Badge>
-                <Box>
+                <br></br>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: { xs: 'center', sm: 'flex-start' },
+                  gap: 1,
+                  width: { xs: '100%', sm: 'auto' }
+                }}>
                   {!canChangePhoto && photoChangeTimeout && (
-                    <Alert severity="info" sx={{ mb: 1 }}>
+                    <Alert 
+                      severity="info" 
+                      sx={{ 
+                        mb: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        width: { xs: '100%', sm: 'auto' },
+                        textAlign: { xs: 'center', sm: 'left' }
+                      }}
+                    >
                       Please wait {Math.floor(photoChangeTimeout / 60)}m {photoChangeTimeout % 60}s before changing your photo again
                     </Alert>
                   )}
                   {photoFile && canChangePhoto && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mb: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: { xs: '250px', sm: '300px', md: '350px' }
+                      }}
+                    >
                       Selected: {photoFile.name}
                     </Typography>
                   )}
                   {photoFile && (
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={uploadPhoto}
-                      disabled={photoLoading || !canChangePhoto}
-                      sx={{ mr: 1 }}
-                    >
-                      {photoLoading ? 'Uploading...' : 'Upload'}
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
+                      <Button
+                        variant="contained"
+                        size={isMobile ? "small" : "medium"}
+                        onClick={uploadPhoto}
+                        disabled={photoLoading || !canChangePhoto}
+                        sx={{ minWidth: { xs: '80px', sm: 'auto' } }}
+                      >
+                        {photoLoading ? 'Uploading...' : 'Upload'}
+                      </Button>
+                    </Box>
                   )}
                   {user?.profileImageUrl && (
                     <Button
                       variant="outlined"
-                      size="small"
+                      size={isMobile ? "small" : "medium"}
                       color="error"
                       onClick={deletePhoto}
                       disabled={photoLoading || !canChangePhoto}
                       startIcon={<Delete />}
+                      sx={{ minWidth: { xs: '80px', sm: 'auto' } }}
                     >
                       {photoLoading ? 'Deleting...' : 'Remove'}
                     </Button>
@@ -499,7 +588,16 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
               <Divider sx={{ mt: 2 }} />
             </Box>
 
-            <Typography variant="h6" color="primary">Basic Information</Typography>
+            <Typography 
+              variant="h6" 
+              color="primary"
+              sx={{
+                fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                mt: { xs: 1, sm: 0 }
+              }}
+            >
+              Basic Information
+            </Typography>
             
             <TextField
               label="Full Name"
@@ -507,6 +605,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
               onChange={handleInputChange('name')}
               fullWidth
               required
+              size={isMobile ? "small" : "medium"}
+              sx={{ mb: { xs: 1, sm: 0 } }}
             />
 
             <TextField
@@ -514,26 +614,44 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
               value={user?.email || ''}
               fullWidth
               disabled
+              size={isMobile ? "small" : "medium"}
               helperText="Email cannot be changed"
+              sx={{ mb: { xs: 1, sm: 0 } }}
             />
 
             <DatePicker
               label="Date of Birth"
               value={formData.dateOfBirth}
               onChange={handleDateChange}
-              renderInput={(params) => <TextField {...params} fullWidth />}
+              renderInput={(params) => <TextField {...params} fullWidth size={isMobile ? "small" : "medium"} />}
               maxDate={dayjs()}
+              sx={{ mb: { xs: 1, sm: 0 } }}
             />
 
-            <FormControl component="fieldset">
-              <FormLabel component="legend">Gender</FormLabel>
+            <FormControl component="fieldset" sx={{ mb: { xs: 1, sm: 0 } }}>
+              <FormLabel 
+                component="legend"
+                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+              >
+                Gender
+              </FormLabel>
               <RadioGroup
-                row
+                row={!isMobile}
                 value={formData.gender}
                 onChange={handleInputChange('gender')}
+                sx={{ mt: { xs: 0.5, sm: 1 } }}
               >
-                <FormControlLabel value="male" control={<Radio />} label="Male" />
-                <FormControlLabel value="female" control={<Radio />} label="Female" />
+                <FormControlLabel 
+                  value="male" 
+                  control={<Radio size={isMobile ? "small" : "medium"} />} 
+                  label="Male"
+                  sx={{ mr: { xs: 0, sm: 2 } }}
+                />
+                <FormControlLabel 
+                  value="female" 
+                  control={<Radio size={isMobile ? "small" : "medium"} />} 
+                  label="Female" 
+                />
               </RadioGroup>
             </FormControl>
 
@@ -543,9 +661,16 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                   <Switch
                     checked={formData.isMother}
                     onChange={handleSwitchChange('isMother')}
+                    size={isMobile ? "small" : "medium"}
                   />
                 }
                 label="I am a mother"
+                sx={{ 
+                  mb: { xs: 1, sm: 0 },
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                  }
+                }}
               />
             )}
 
@@ -625,14 +750,32 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={onClose} disabled={loading}>
+        <DialogActions sx={{ 
+          p: { xs: 2, sm: 3 },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 2 },
+          justifyContent: { xs: 'stretch', sm: 'flex-end' }
+        }}>
+          <Button 
+            onClick={onClose} 
+            disabled={loading}
+            size={isMobile ? "medium" : "large"}
+            sx={{ 
+              order: { xs: 2, sm: 1 },
+              width: { xs: '100%', sm: 'auto' }
+            }}
+          >
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit} 
             variant="contained" 
             disabled={loading}
+            size={isMobile ? "medium" : "large"}
+            sx={{ 
+              order: { xs: 1, sm: 2 },
+              width: { xs: '100%', sm: 'auto' }
+            }}
           >
             {loading ? 'Saving...' : 'Save Changes'}
           </Button>
