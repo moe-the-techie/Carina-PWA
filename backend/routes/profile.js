@@ -5,6 +5,28 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import { upload, uploadToCloudinary, deleteImage } from '../config/cloudinary.js';
 
+const PHOTO_CHANGE_COOLDOWN = 5 * 60 * 1000;
+
+const checkPhotoChangeTimeout = (lastChangeAt) => {
+    if (!lastChangeAt) {
+        return { canChange: true, remainingSeconds: 0 };
+    }
+    
+    const timeSinceLastChange = Date.now() - lastChangeAt.getTime();
+    if (timeSinceLastChange < PHOTO_CHANGE_COOLDOWN) {
+        const remainingTime = Math.ceil((PHOTO_CHANGE_COOLDOWN - timeSinceLastChange) / 1000);
+        const minutes = Math.floor(remainingTime / 60);
+        const seconds = remainingTime % 60;
+        return {
+            canChange: false,
+            remainingSeconds: remainingTime,
+            errorMessage: `Please wait ${minutes}m ${seconds}s before changing your profile photo again`
+        };
+    }
+    
+    return { canChange: true, remainingSeconds: 0 };
+};
+
 router.get('/profile', protect, async (req, res) => {
     return res.status(200).json({
         user: {
@@ -97,6 +119,14 @@ router.post('/profile/upload-photo', protect, upload.single('photo'), async (req
             return res.status(404).json({ error: 'User not found' });
         }
 
+        const timeoutCheck = checkPhotoChangeTimeout(user.lastProfileImageChangeAt);
+        if (!timeoutCheck.canChange) {
+            return res.status(429).json({ 
+                error: timeoutCheck.errorMessage,
+                remainingSeconds: timeoutCheck.remainingSeconds
+            });
+        }
+
         // Delete existing profile image if it exists
         if (user.profileImagePublicId) {
             try {
@@ -114,7 +144,8 @@ router.post('/profile/upload-photo', protect, upload.single('photo'), async (req
             userId,
             {
                 profileImageUrl: result.secure_url,
-                profileImagePublicId: result.public_id
+                profileImagePublicId: result.public_id,
+                lastProfileImageChangeAt: new Date()
             },
             { new: true }
         );
@@ -155,6 +186,14 @@ router.delete('/profile/photo', protect, async (req, res) => {
             return res.status(400).json({ error: 'No profile photo to delete' });
         }
 
+        const timeoutCheck = checkPhotoChangeTimeout(user.lastProfileImageChangeAt);
+        if (!timeoutCheck.canChange) {
+            return res.status(429).json({ 
+                error: timeoutCheck.errorMessage,
+                remainingSeconds: timeoutCheck.remainingSeconds
+            });
+        }
+
         try {
             await deleteImage(user.profileImagePublicId);
         } catch (deleteError) {
@@ -165,7 +204,8 @@ router.delete('/profile/photo', protect, async (req, res) => {
             userId,
             {
                 profileImageUrl: null,
-                profileImagePublicId: null
+                profileImagePublicId: null,
+                lastProfileImageChangeAt: new Date()
             },
             { new: true }
         );
@@ -189,6 +229,28 @@ router.delete('/profile/photo', protect, async (req, res) => {
     } catch (error) {
         console.error('Error deleting profile photo:', error);
         res.status(500).json({ error: 'Failed to delete profile photo' });
+    }
+});
+
+router.get('/profile/photo-timeout', protect, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const timeoutCheck = checkPhotoChangeTimeout(user.lastProfileImageChangeAt);
+
+        res.status(200).json({
+            canChange: timeoutCheck.canChange,
+            remainingSeconds: timeoutCheck.remainingSeconds,
+            lastChangeAt: user.lastProfileImageChangeAt
+        });
+    } catch (error) {
+        console.error('Error checking photo timeout:', error);
+        res.status(500).json({ error: 'Failed to check photo timeout status' });
     }
 });
 

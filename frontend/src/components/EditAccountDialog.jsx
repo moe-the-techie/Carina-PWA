@@ -28,6 +28,21 @@ import dayjs from 'dayjs';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+const startCountdown = (initialSeconds, setTimeoutState, setCanChangeState) => {
+  setTimeoutState(initialSeconds);
+  const interval = setInterval(() => {
+    setTimeoutState(prev => {
+      if (prev <= 1) {
+        clearInterval(interval);
+        setCanChangeState(true);
+        return null;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+  return interval;
+};
+
 export default function EditAccountDialog({ open, onClose, user, onUserUpdate }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -43,6 +58,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
   const [success, setSuccess] = useState('');
   const [photoFile, setPhotoFile] = useState(null);
   const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoChangeTimeout, setPhotoChangeTimeout] = useState(null);
+  const [canChangePhoto, setCanChangePhoto] = useState(true);
   const [passwordResetLoading, setPasswordResetLoading] = useState(false);
   const [passwordResetSuccess, setPasswordResetSuccess] = useState('');
   const [passwordResetError, setPasswordResetError] = useState('');
@@ -74,12 +91,17 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       setPasswordResetEmailSent(false);
       setCanResendPasswordReset(true);
       setPasswordResetRemainingSeconds(0);
+      setPhotoChangeTimeout(null);
+      setCanChangePhoto(true);
       setFormData(prev => ({
         ...prev,
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       }));
+    } else if (open) {
+      // Check photo timeout when dialog opens
+      checkPhotoTimeout();
     }
   }, [open]);
 
@@ -193,6 +215,27 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
     }
   };
 
+  const checkPhotoTimeout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${apiBaseUrl}/api/profile/photo-timeout`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCanChangePhoto(data.canChange);
+        if (!data.canChange && data.remainingSeconds > 0) {
+          startCountdown(data.remainingSeconds, setPhotoChangeTimeout, setCanChangePhoto);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking photo timeout:', error);
+    }
+  };
+
   const uploadPhoto = async () => {
     if (!photoFile) return;
     
@@ -215,12 +258,17 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429 && data.remainingSeconds) {
+          setCanChangePhoto(false);
+          startCountdown(data.remainingSeconds, setPhotoChangeTimeout, setCanChangePhoto);
+        }
         throw new Error(data.error || 'Failed to upload photo');
       }
 
       setSuccess('Profile photo updated successfully!');
       onUserUpdate(data.user);
       setPhotoFile(null);
+      await checkPhotoTimeout();
       
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -247,11 +295,16 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429 && data.remainingSeconds) {
+          setCanChangePhoto(false);
+          startCountdown(data.remainingSeconds, setPhotoChangeTimeout, setCanChangePhoto);
+        }
         throw new Error(data.error || 'Failed to delete photo');
       }
 
       setSuccess('Profile photo deleted successfully!');
       onUserUpdate(data.user);
+      await checkPhotoTimeout();
       
     } catch (error) {
       console.error('Error deleting photo:', error);
@@ -379,6 +432,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                       color="primary"
                       component="label"
                       size="small"
+                      disabled={!canChangePhoto || photoLoading}
                       sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.100' } }}
                     >
                       <PhotoCamera fontSize="small" />
@@ -387,6 +441,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                         accept="image/*"
                         type="file"
                         onChange={handlePhotoChange}
+                        disabled={!canChangePhoto}
                       />
                     </IconButton>
                   }
@@ -400,7 +455,12 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                   </Avatar>
                 </Badge>
                 <Box>
-                  {photoFile && (
+                  {!canChangePhoto && photoChangeTimeout && (
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                      Please wait {Math.floor(photoChangeTimeout / 60)}m {photoChangeTimeout % 60}s before changing your photo again
+                    </Alert>
+                  )}
+                  {photoFile && canChangePhoto && (
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       Selected: {photoFile.name}
                     </Typography>
@@ -410,7 +470,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                       variant="contained"
                       size="small"
                       onClick={uploadPhoto}
-                      disabled={photoLoading}
+                      disabled={photoLoading || !canChangePhoto}
                       sx={{ mr: 1 }}
                     >
                       {photoLoading ? 'Uploading...' : 'Upload'}
@@ -422,7 +482,7 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                       size="small"
                       color="error"
                       onClick={deletePhoto}
-                      disabled={photoLoading}
+                      disabled={photoLoading || !canChangePhoto}
                       startIcon={<Delete />}
                     >
                       {photoLoading ? 'Deleting...' : 'Remove'}
@@ -432,6 +492,9 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
               </Box>
               <Typography variant="body2" color="text.secondary">
                 Supported formats: JPG, PNG, JPEG. Maximum size: 5MB
+                {!canChangePhoto && (
+                  <><br />Photo changes are limited to once every 5 minutes to prevent abuse</>
+                )}
               </Typography>
               <Divider sx={{ mt: 2 }} />
             </Box>

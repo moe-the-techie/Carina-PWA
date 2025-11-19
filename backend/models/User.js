@@ -62,6 +62,10 @@ const userSchema = new Schema({
         type: String,
         default: null
     },
+    lastProfileImageChangeAt: {
+        type: Date,
+        default: null
+    },
     role: {
         type: String,
         enum: ['user', 'admin'],
