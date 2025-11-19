@@ -2,8 +2,13 @@ import express from 'express';;
 const router = express.Router();
 import { protect } from '../middleware/auth.js';
 import User from '../models/User.js';
+import Form from '../models/Form.js';
+import Plan from '../models/Plan.js';
+import Chat from '../models/Chat.js';
+import Message from '../models/Message.js';
 import bcrypt from 'bcryptjs';
 import { upload, uploadToCloudinary, deleteImage } from '../config/cloudinary.js';
+import { adminAuth } from '../config/firebase.js';
 
 const PHOTO_CHANGE_COOLDOWN = 5 * 60 * 1000;
 
@@ -251,6 +256,71 @@ router.get('/profile/photo-timeout', protect, async (req, res) => {
     } catch (error) {
         console.error('Error checking photo timeout:', error);
         res.status(500).json({ error: 'Failed to check photo timeout status' });
+    }
+});
+
+// Delete user account
+router.delete('/profile', protect, async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { password } = req.body;
+        
+        const user = await User.findById(userId).select('+password');
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (!user.firebaseUid && !password) {
+            return res.status(400).json({ error: 'Password is required to delete your account' });
+        }
+
+        if (!user.firebaseUid && password) {
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(400).json({ error: 'Incorrect password' });
+            }
+        }
+
+        if (user.profileImagePublicId) {
+            try {
+                await deleteImage(user.profileImagePublicId);
+            } catch (deleteError) {
+                console.error('Error deleting profile image:', deleteError);
+            }
+        }
+
+        // Delete all related data
+        try {
+            await Form.deleteMany({ user: userId });
+            await Plan.deleteMany({ userId: userId });
+            
+            const userChat = await Chat.findOne({ userId: userId });
+            if (userChat) {
+                await Message.deleteMany({ chatId: userChat._id });
+                await Chat.findByIdAndDelete(userChat._id);
+            }
+        } catch (cleanupError) {
+            console.error('Error cleaning up related data:', cleanupError);
+        }
+
+        if (user.firebaseUid) {
+            try {
+                await adminAuth.deleteUser(user.firebaseUid);
+                console.log('Successfully deleted Firebase user:', user.firebaseUid);
+            } catch (firebaseError) {
+                console.error('Error deleting Firebase user:', firebaseError);
+            }
+        }
+
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({
+            message: 'Account deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        res.status(500).json({ error: 'Failed to delete account' });
     }
 });
 

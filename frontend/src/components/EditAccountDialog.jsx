@@ -74,6 +74,10 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
   const [passwordResetEmailSent, setPasswordResetEmailSent] = useState(false);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -102,6 +106,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       setPhotoChangeTimeout(null);
       setCanChangePhoto(true);
       setPhotoFile(null); // Clear photo file when dialog closes
+      setDeletePassword('');
+      setDeleteError('');
       setFormData(prev => ({
         ...prev,
         currentPassword: '',
@@ -400,6 +406,47 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    setDeleteLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const requestBody = {};
+
+      const response = await fetch(`${apiBaseUrl}/api/profile`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete account');
+      }
+
+      // Clear local storage and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Close all dialogs
+      setDeleteDialogOpen(false);
+      onClose();
+      
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setDeleteError(error.message);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -761,6 +808,40 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                 </Button>
               </>
             )}
+
+            {/* Delete Account Section */}
+            <Divider sx={{ my: { xs: 2, sm: 3 } }} />
+            <Box>
+              <Typography 
+                variant="h6" 
+                color="error"
+                sx={{
+                  fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                  mb: { xs: 1, sm: 2 }
+                }}
+              >
+                Danger Zone
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Once you delete your account, there is no going back. Please be certain.
+              </Typography>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth={isMobile}
+                onClick={() => setDeleteDialogOpen(true)}
+                sx={{ 
+                  borderWidth: 2,
+                  '&:hover': {
+                    borderWidth: 2,
+                    backgroundColor: 'error.light',
+                    color: 'white'
+                  }
+                }}
+              >
+                Delete Account
+              </Button>
+            </Box>
           </Box>
         </DialogContent>
 
@@ -801,6 +882,96 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
         imageUrl={selectedImage}
         onClose={() => setImageDialogOpen(false)}
       />
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !deleteLoading && setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { 
+            m: { xs: 1, sm: 2 }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'error.main' }}>
+          <Typography 
+            variant="h5" 
+            component="span"
+            sx={{ 
+              fontSize: { xs: '1.25rem', sm: '1.5rem' }
+            }}
+          >
+            Delete Account
+          </Typography>
+        </DialogTitle>
+        
+        <DialogContent dividers>
+          {deleteError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
+          
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to delete your account? This action cannot be undone.
+          </Typography>
+          
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            All your data, including your profile, plans, forms, and chat history will be permanently deleted.
+          </Alert>
+
+          {!isFirebaseUser && (
+            <TextField
+              label="Enter your password to confirm"
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              fullWidth
+              required
+              size={isMobile ? "small" : "medium"}
+              disabled={deleteLoading}
+              sx={{ mt: 2 }}
+            />
+          )}
+
+          {isFirebaseUser && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Click "Delete My Account" below to permanently delete your account.
+            </Typography>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          p: { xs: 2, sm: 3 },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 2 }
+        }}>
+          <Button 
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setDeletePassword('');
+              setDeleteError('');
+            }}
+            disabled={deleteLoading}
+            fullWidth={isMobile}
+            size={isMobile ? "medium" : "large"}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount}
+            variant="contained"
+            color="error"
+            disabled={deleteLoading || (!isFirebaseUser && !deletePassword)}
+            fullWidth={isMobile}
+            size={isMobile ? "medium" : "large"}
+          >
+            {deleteLoading ? 'Deleting...' : 'Delete My Account'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </LocalizationProvider>
   );
 }
