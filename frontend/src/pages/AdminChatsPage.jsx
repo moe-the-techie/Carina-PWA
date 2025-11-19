@@ -28,6 +28,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 import {
     getAllChats,
     getMessages,
@@ -58,6 +59,8 @@ export default function AdminChatsPage() {
     const [hasMoreChats, setHasMoreChats] = useState(false);
     const [loadingMoreChats, setLoadingMoreChats] = useState(false);
     const [showChatView, setShowChatView] = useState(false); // New state for mobile view toggle
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
@@ -349,6 +352,16 @@ export default function AdminChatsPage() {
         chat.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleImageClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+        setImageDialogOpen(true);
+    };
+
+    const handleCloseImageDialog = () => {
+        setImageDialogOpen(false);
+        setSelectedImage(null);
+    };
+
     const renderChatList = () => (
         <Paper sx={{ 
             width: { xs: '100%', md: 350 }, 
@@ -391,7 +404,21 @@ export default function AdminChatsPage() {
                                         <Avatar 
                                             src={chat.user?.profileImageUrl}
                                             alt={chat.user?.name}
-                                            sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}
+                                            sx={{ 
+                                                width: { xs: 32, md: 40 }, 
+                                                height: { xs: 32, md: 40 },
+                                                cursor: chat.user?.profileImageUrl ? 'pointer' : 'default',
+                                                '&:hover': chat.user?.profileImageUrl ? {
+                                                    opacity: 0.8,
+                                                    transition: 'opacity 0.2s'
+                                                } : {}
+                                            }}
+                                            onClick={(e) => {
+                                                if (chat.user?.profileImageUrl) {
+                                                    e.stopPropagation();
+                                                    handleImageClick(chat.user.profileImageUrl);
+                                                }
+                                            }}
                                         >
                                             {!chat.user?.profileImageUrl && (
                                                 chat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
@@ -491,7 +518,20 @@ export default function AdminChatsPage() {
                         <Avatar 
                             src={selectedChat.user?.profileImageUrl}
                             alt={selectedChat.user?.name}
-                            sx={{ width: { xs: 32, md: 40 }, height: { xs: 32, md: 40 } }}
+                            sx={{ 
+                                width: { xs: 32, md: 40 }, 
+                                height: { xs: 32, md: 40 },
+                                cursor: selectedChat.user?.profileImageUrl ? 'pointer' : 'default',
+                                '&:hover': selectedChat.user?.profileImageUrl ? {
+                                    opacity: 0.8,
+                                    transition: 'opacity 0.2s'
+                                } : {}
+                            }}
+                            onClick={() => {
+                                if (selectedChat.user?.profileImageUrl) {
+                                    handleImageClick(selectedChat.user.profileImageUrl);
+                                }
+                            }}
                         >
                             {!selectedChat.user?.profileImageUrl && (
                                 selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
@@ -676,6 +716,12 @@ export default function AdminChatsPage() {
                     </>
                 )}
             </Box>
+
+            <ImageViewerDialog
+                open={imageDialogOpen}
+                imageUrl={selectedImage}
+                onClose={handleCloseImageDialog}
+            />
         </PageFade>
     );
 }

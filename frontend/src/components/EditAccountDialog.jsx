@@ -27,6 +27,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PhotoCamera, Delete } from '@mui/icons-material';
 import dayjs from 'dayjs';
+import ImageViewerDialog from './ImageViewerDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -71,6 +72,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
   const [canResendPasswordReset, setCanResendPasswordReset] = useState(true);
   const [passwordResetRemainingSeconds, setPasswordResetRemainingSeconds] = useState(0);
   const [passwordResetEmailSent, setPasswordResetEmailSent] = useState(false);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -509,7 +512,18 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
                     alt={user?.name}
                     sx={{ 
                       width: { xs: 64, sm: 80, md: 96 }, 
-                      height: { xs: 64, sm: 80, md: 96 }
+                      height: { xs: 64, sm: 80, md: 96 },
+                      cursor: user?.profileImageUrl ? 'pointer' : 'default',
+                      '&:hover': user?.profileImageUrl ? {
+                        opacity: 0.8,
+                        transition: 'opacity 0.2s'
+                      } : {}
+                    }}
+                    onClick={() => {
+                      if (user?.profileImageUrl) {
+                        setSelectedImage(user.profileImageUrl);
+                        setImageDialogOpen(true);
+                      }
                     }}
                   >
                     {!user?.profileImageUrl && user?.name?.charAt(0)?.toUpperCase()}
@@ -781,6 +795,12 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ImageViewerDialog
+        open={imageDialogOpen}
+        imageUrl={selectedImage}
+        onClose={() => setImageDialogOpen(false)}
+      />
     </LocalizationProvider>
   );
 }

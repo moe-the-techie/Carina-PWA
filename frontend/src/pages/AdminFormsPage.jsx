@@ -33,6 +33,7 @@ import {
 import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -50,6 +51,8 @@ export default function AdminFormsPage() {
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [planDetailsOpen, setPlanDetailsOpen] = useState(false);
     const [planLoading, setPlanLoading] = useState(false);
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
         fetchForms();
@@ -360,7 +363,21 @@ export default function AdminFormsPage() {
                                                 <Avatar
                                                     src={selectedForm.user?.profileImageUrl}
                                                     alt={selectedForm.user?.name}
-                                                    sx={{ width: 48, height: 48 }}
+                                                    sx={{ 
+                                                        width: 48, 
+                                                        height: 48,
+                                                        cursor: selectedForm.user?.profileImageUrl ? 'pointer' : 'default',
+                                                        '&:hover': selectedForm.user?.profileImageUrl ? {
+                                                            opacity: 0.8,
+                                                            transition: 'opacity 0.2s'
+                                                        } : {}
+                                                    }}
+                                                    onClick={() => {
+                                                        if (selectedForm.user?.profileImageUrl) {
+                                                            setSelectedImage(selectedForm.user.profileImageUrl);
+                                                            setImageDialogOpen(true);
+                                                        }
+                                                    }}
                                                 >
                                                     {!selectedForm.user?.profileImageUrl && selectedForm.user?.name?.charAt(0)?.toUpperCase()}
                                                 </Avatar>
@@ -752,6 +769,12 @@ export default function AdminFormsPage() {
                         <Button onClick={() => setPlanDetailsOpen(false)}>Close</Button>
                     </DialogActions>
                 </Dialog>
+
+                <ImageViewerDialog
+                    open={imageDialogOpen}
+                    imageUrl={selectedImage}
+                    onClose={() => setImageDialogOpen(false)}
+                />
             </Box>
         </PageFade>
     );

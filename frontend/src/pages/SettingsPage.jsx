@@ -20,6 +20,7 @@ import { useTheme } from '@mui/material/styles';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
 import EditAccountDialog from '../components/EditAccountDialog.jsx';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 import { useThemeMode } from '../contexts/ThemeContext';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -31,6 +32,8 @@ export default function SettingsPage({ onLogout }) {
   const [user, setUser] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [error, setError] = useState('');
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -104,7 +107,21 @@ export default function SettingsPage({ onLogout }) {
                 <Avatar
                   src={user.profileImageUrl}
                   alt={user.name}
-                  sx={{ width: 64, height: 64 }}
+                  sx={{ 
+                    width: 64, 
+                    height: 64,
+                    cursor: user.profileImageUrl ? 'pointer' : 'default',
+                    '&:hover': user.profileImageUrl ? {
+                      opacity: 0.8,
+                      transition: 'opacity 0.2s'
+                    } : {}
+                  }}
+                  onClick={() => {
+                    if (user.profileImageUrl) {
+                      setSelectedImage(user.profileImageUrl);
+                      setImageDialogOpen(true);
+                    }
+                  }}
                 >
                   {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
                 </Avatar>
@@ -171,6 +188,12 @@ export default function SettingsPage({ onLogout }) {
           onClose={() => setEditDialogOpen(false)}
           user={user}
           onUserUpdate={handleUserUpdate}
+        />
+
+        <ImageViewerDialog
+          open={imageDialogOpen}
+          imageUrl={selectedImage}
+          onClose={() => setImageDialogOpen(false)}
         />
       </Box>
     </PageFade>

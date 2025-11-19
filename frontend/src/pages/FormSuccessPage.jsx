@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { Box, Typography, Button } from '@mui/material';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 
 export default function FormSuccessPage() {
     const navigate = useNavigate();
     const theme = useTheme();
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
 
     return (
         <Box
@@ -28,7 +30,13 @@ export default function FormSuccessPage() {
                     width: '200px',
                     height: 'auto',
                     mb: 4,
+                    cursor: 'pointer',
+                    '&:hover': {
+                        opacity: 0.8,
+                        transition: 'opacity 0.2s'
+                    }
                 }}
+                onClick={() => setImageDialogOpen(true)}
             />
 
             <Typography variant="h5" gutterBottom>
@@ -40,6 +48,12 @@ export default function FormSuccessPage() {
             <Button variant="contained" onClick={() => navigate('/home')} sx={{ width: { xs: '100%', sm: '30%' }, height: '45px' }}>
                 Go to Home
             </Button>
+
+            <ImageViewerDialog
+                open={imageDialogOpen}
+                imageUrl="/form_success_graphic.png"
+                onClose={() => setImageDialogOpen(false)}
+            />
         </Box>
     );
 }

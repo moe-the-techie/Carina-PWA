@@ -26,6 +26,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -40,6 +41,8 @@ export default function AdminUsersPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [selectedUser, setSelectedUser] = useState(null);
     const [userDetailsOpen, setUserDetailsOpen] = useState(false);
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     // Debounce search input
     useEffect(() => {
@@ -176,7 +179,21 @@ export default function AdminUsersPage() {
                                         <Avatar
                                             src={user.profileImageUrl}
                                             alt={user.name}
-                                            sx={{ width: 40, height: 40 }}
+                                            sx={{ 
+                                                width: 40, 
+                                                height: 40,
+                                                cursor: user.profileImageUrl ? 'pointer' : 'default',
+                                                '&:hover': user.profileImageUrl ? {
+                                                    opacity: 0.8,
+                                                    transition: 'opacity 0.2s'
+                                                } : {}
+                                            }}
+                                            onClick={() => {
+                                                if (user.profileImageUrl) {
+                                                    setSelectedImage(user.profileImageUrl);
+                                                    setImageDialogOpen(true);
+                                                }
+                                            }}
                                         >
                                             {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
                                         </Avatar>
@@ -263,7 +280,21 @@ export default function AdminUsersPage() {
                                                 <Avatar
                                                     src={selectedUser.user.profileImageUrl}
                                                     alt={selectedUser.user.name}
-                                                    sx={{ width: 64, height: 64 }}
+                                                    sx={{ 
+                                                        width: 64, 
+                                                        height: 64,
+                                                        cursor: selectedUser.user.profileImageUrl ? 'pointer' : 'default',
+                                                        '&:hover': selectedUser.user.profileImageUrl ? {
+                                                            opacity: 0.8,
+                                                            transition: 'opacity 0.2s'
+                                                        } : {}
+                                                    }}
+                                                    onClick={() => {
+                                                        if (selectedUser.user.profileImageUrl) {
+                                                            setSelectedImage(selectedUser.user.profileImageUrl);
+                                                            setImageDialogOpen(true);
+                                                        }
+                                                    }}
                                                 >
                                                     {!selectedUser.user.profileImageUrl && selectedUser.user.name?.charAt(0)?.toUpperCase()}
                                                 </Avatar>
@@ -347,6 +378,12 @@ export default function AdminUsersPage() {
                         </Button>
                     </DialogActions>
                 </Dialog>
+
+                <ImageViewerDialog
+                    open={imageDialogOpen}
+                    imageUrl={selectedImage}
+                    onClose={() => setImageDialogOpen(false)}
+                />
             </Box>
         </PageFade>
     );
