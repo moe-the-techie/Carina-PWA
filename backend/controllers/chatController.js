@@ -86,7 +86,9 @@ export const sendMessage = async (req, res) => {
         await publishMessage('admin:chats', 'new-message', {
             ...messageData,
             chatId: chat._id,
-            userId: chat.userId
+            userId: chat.userId,
+            unreadByAdmins: chat.unreadByAdmins,
+            unreadByUser: chat.unreadByUser
         });
 
         res.status(201).json(messageData);

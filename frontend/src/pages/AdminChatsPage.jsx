@@ -293,8 +293,8 @@ export default function AdminChatsPage() {
                                     createdAt: messageData.createdAt
                                 },
                                 lastMessageAt: messageData.createdAt,
-                                unreadByAdmins: messageData.senderRole === 'user' 
-                                    ? (chat.unreadByAdmins || 0) + 1 
+                                unreadByAdmins: messageData.senderRole === 'user' && selectedChat?.chatId !== messageData.chatId
+                                    ? messageData.unreadByAdmins
                                     : chat.unreadByAdmins
                             }
                             : chat
