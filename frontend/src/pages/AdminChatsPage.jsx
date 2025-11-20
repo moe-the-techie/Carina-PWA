@@ -50,11 +50,13 @@ import {
     setCurrentlyViewingChat,
     clearCurrentlyViewingChat
 } from '../services/ablyService';
+import { useUnreadCount } from '../contexts/UnreadCountContext';
 
 export default function AdminChatsPage() {
     const theme = useTheme();
     const location = useLocation();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { fetchUnreadCount } = useUnreadCount();
     const [chats, setChats] = useState([]);
     const [selectedChat, setSelectedChat] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -131,6 +133,8 @@ export default function AdminChatsPage() {
                         : chat
                 )
             );
+            // Refresh the global unread count
+            fetchUnreadCount();
         } catch (error) {
             console.error('Error loading messages:', error);
         }
@@ -275,9 +279,14 @@ export default function AdminChatsPage() {
                     });
 
                     // Mark as read if viewing this chat
-                    markMessagesAsRead(selectedChat.chatId).catch(err => 
-                        console.error('Error marking messages as read:', err)
-                    );
+                    markMessagesAsRead(selectedChat.chatId)
+                        .then(() => {
+                            // Refresh the global unread count after marking as read
+                            fetchUnreadCount();
+                        })
+                        .catch(err => 
+                            console.error('Error marking messages as read:', err)
+                        );
                 }
 
                 // Update chat list

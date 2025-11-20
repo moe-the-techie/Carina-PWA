@@ -13,7 +13,8 @@ import {
     useMediaQuery,
     IconButton,
     AppBar,
-    Toolbar
+    Toolbar,
+    Badge
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -25,6 +26,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import ThemeToggle from './ThemeToggle';
+import { useUnreadCount } from '../contexts/UnreadCountContext';
 
 const drawerWidth = 240;
 
@@ -32,12 +34,13 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
     const location = useLocation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { unreadCount } = useUnreadCount();
     
     const menuItems = [
         { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
         { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
         { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
-        { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats' },
+        { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
         { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates' },
         { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
     ];
@@ -105,7 +108,13 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                                 }}
                             >
                                 <ListItemIcon sx={{ color: isActive ? theme.palette.primary.contrastText : 'inherit' }}>
-                                    {item.icon}
+                                    {item.badge !== undefined && item.badge > 0 ? (
+                                        <Badge badgeContent={item.badge} color="error" max={99}>
+                                            {item.icon}
+                                        </Badge>
+                                    ) : (
+                                        item.icon
+                                    )}
                                 </ListItemIcon>
                                 <ListItemText primary={item.label} />
                             </ListItemButton>

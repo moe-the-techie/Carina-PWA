@@ -26,9 +26,11 @@ import {
     setCurrentlyViewingChat,
     clearCurrentlyViewingChat
 } from '../services/ablyService';
+import { useUnreadCount } from '../contexts/UnreadCountContext';
 
 export default function ChatPage() {
     const theme = useTheme();
+    const { resetUnreadCount } = useUnreadCount();
     const [chat, setChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -59,6 +61,7 @@ export default function ChatPage() {
                 setMessages(messagesResponse.messages);
                 await markMessagesAsRead(chatResponse.chatId);
                 setCurrentlyViewingChat(chatResponse.chatId);
+                resetUnreadCount();
             }
         } catch (error) {
             console.error('Error loading chat:', error);

@@ -7,15 +7,18 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import Badge from '@mui/material/Badge';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import ThemeToggle from './ThemeToggle';
+import { useUnreadCount } from '../contexts/UnreadCountContext';
 
 export default function NavigationBar() {
   const location = useLocation();
   const theme = useTheme();
+  const { unreadCount } = useUnreadCount();
 
   const navItems = [
     { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Home' },
@@ -83,10 +86,19 @@ export default function NavigationBar() {
                       }
                     }}
                   >
-                    {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
-                      fontSize: 'inherit',
-                      sx: { fontSize: { xs: '20px', md: '24px' } }
-                    })}
+                    {to === '/chat' ? (
+                      <Badge badgeContent={unreadCount} color="error" max={99}>
+                        {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
+                          fontSize: 'inherit',
+                          sx: { fontSize: { xs: '20px', md: '24px' } }
+                        })}
+                      </Badge>
+                    ) : (
+                      React.cloneElement(isActive ? filledIcon : outlinedIcon, {
+                        fontSize: 'inherit',
+                        sx: { fontSize: { xs: '20px', md: '24px' } }
+                      })
+                    )}
                   </IconButton>
                   <Typography 
                     variant="caption" 

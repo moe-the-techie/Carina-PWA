@@ -21,6 +21,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import { subscribeToChat, subscribeToAdminChats, disconnectAbly, requestNotificationPermission } from './services/ablyService';
 import { getOrCreateChat } from './services/chatService';
+import { UnreadCountProvider } from './contexts/UnreadCountContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
     const [userId, setUserId] = useState(null);
+    const [user, setUser] = useState(null);
     const ablyInitialized = useRef(false);
 
     // Initialize Ably connection when user is logged in
@@ -104,16 +106,19 @@ function App() {
                     setIsLoggedIn(true);
                     setIsAdmin(data.isAdmin || false);
                     setUserId(data.userId || null);
+                    setUser({ _id: data.userId, role: data.isAdmin ? 'admin' : 'user' });
                 })
                 .catch(error => {
                     console.error('Token validation failed:', error);
                     localStorage.removeItem('token');
                     setIsLoggedIn(false);
                     setIsAdmin(false);
+                    setUser(null);
                 })
         } else {
             setIsLoggedIn(false);
             setIsAdmin(false);
+            setUser(null);
         }
     }, [update]);
 
@@ -126,6 +131,7 @@ function App() {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setUserId(null);
+    setUser(null);
     disconnectAbly();
     ablyInitialized.current = false;
    }
@@ -134,8 +140,9 @@ function App() {
 
     return (
         <Router>
-            <ScrollToTop />
-            <Routes>
+            <UnreadCountProvider user={user}>
+                <ScrollToTop />
+                <Routes>
                 <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
                 <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <SignUpPage onLogin={handleLogin} />} />
@@ -154,7 +161,8 @@ function App() {
                 <Route path="/admin/templates" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-            </Routes>
+                </Routes>
+            </UnreadCountProvider>
         </Router>
     );
 }

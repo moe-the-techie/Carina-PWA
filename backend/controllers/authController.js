@@ -70,7 +70,7 @@ export async function register(req, res) {
         console.error('Registration error:', error);
         
         switch (error.code) {
-            case 'auth/email-already-exists':
+            case 'auth/email-already-in-use':
                 return res.status(409).json({ error: 'username or email already exists' });
             case 'auth/invalid-email':
                 return res.status(400).json({ error: 'Invalid email address.' });
