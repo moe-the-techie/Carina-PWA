@@ -22,6 +22,10 @@ export const clearCurrentlyViewingChat = () => {
     console.log('Cleared currently viewing chat');
 };
 
+export const getCurrentlyViewingChat = () => {
+    return currentlyViewingChat;
+};
+
 // Request notification permission
 export const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {

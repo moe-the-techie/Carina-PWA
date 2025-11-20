@@ -4,7 +4,8 @@ import {
     subscribeToChat, 
     subscribeToAdminChats, 
     removeMessageHandler,
-    requestNotificationPermission 
+    requestNotificationPermission,
+    getCurrentlyViewingChat
 } from '../services/ablyService';
 
 const UnreadCountContext = createContext();
@@ -58,9 +59,12 @@ export const UnreadCountProvider = ({ children, user }) => {
 
         if (user.role === 'admin') {
             messageHandler = (messageData) => {
-                // Only increment unread count if message is from a user
+                // Only increment unread count if message is from a user AND not viewing that chat
                 if (messageData.senderRole === 'user') {
-                    setUnreadCount(prev => prev + 1);
+                    const viewingChatId = getCurrentlyViewingChat();
+                    if (viewingChatId !== messageData.chatId) {
+                        setUnreadCount(prev => prev + 1);
+                    }
                 }
             };
 
@@ -74,9 +78,12 @@ export const UnreadCountProvider = ({ children, user }) => {
         } else {
             // Regular user: Subscribe to their own chat
             messageHandler = (messageData) => {
-                // Only increment unread count if message is from admin
+                // Only increment unread count if message is from admin AND not viewing the chat
                 if (messageData.senderRole === 'admin') {
-                    setUnreadCount(prev => prev + 1);
+                    const viewingChatId = getCurrentlyViewingChat();
+                    if (viewingChatId !== messageData.chatId) {
+                        setUnreadCount(prev => prev + 1);
+                    }
                 }
             };
 
