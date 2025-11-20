@@ -26,19 +26,21 @@ import {
     CardContent,
     CardActions,
     Divider,
-    IconButton,
-    Tooltip,
-    Avatar
+    Avatar,
+    useMediaQuery
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import FormActionsDialog from '../components/FormActionsDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminFormsPage() {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const [forms, setForms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,6 +55,8 @@ export default function AdminFormsPage() {
     const [planLoading, setPlanLoading] = useState(false);
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
+    const [selectedFormForActions, setSelectedFormForActions] = useState(null);
 
     useEffect(() => {
         fetchForms();
@@ -175,6 +179,11 @@ export default function AdminFormsPage() {
         }
     };
 
+    const handleOpenActionsDialog = (form) => {
+        setSelectedFormForActions(form);
+        setActionsDialogOpen(true);
+    };
+
     if (loading && forms.length === 0) {
         return (
             <PageFade>
@@ -214,123 +223,133 @@ export default function AdminFormsPage() {
                     </Typography>
                 )}
 
-                {/* Forms Table */}
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>User</TableCell>
-                                <TableCell>Current Weight</TableCell>
-                                <TableCell>Desired Weight</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Date Submitted</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {forms.map((form) => (
-                                <React.Fragment key={form._id}>
-                                    <TableRow>
-                                        <TableCell>
-                                            <Box>
-                                                <Typography variant="body2" fontWeight="bold">
-                                                    {form.user?.name || 'Unknown User'}
-                                                </Typography>
-                                                <Typography variant="caption" color="textSecondary">
-                                                    {form.user?.email}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>{form.currentWeight}kg</TableCell>
-                                        <TableCell>{form.desiredWeight}kg</TableCell>
-                                        <TableCell>
-                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                {/* Forms Table/Cards */}
+                {isMobile ? (
+                    // Mobile Card View
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {forms.map((form) => (
+                            <Card key={form._id}>
+                                <CardContent>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="h6" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {form.user?.name || 'Unknown User'}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {form.user?.email}
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+                                            <Chip 
+                                                label={form.reviewed ? 'Reviewed' : 'Pending'} 
+                                                color={form.reviewed ? 'success' : 'warning'}
+                                                size="small"
+                                            />
+                                            {form.reviewed && form.planSent && (
                                                 <Chip 
-                                                    label={form.reviewed ? 'Reviewed' : 'Pending'} 
-                                                    color={form.reviewed ? 'success' : 'warning'}
-                                                    size="small"
+                                                    label="Plan Sent" 
+                                                    color="success" 
+                                                    size="small" 
                                                 />
-                                                {form.reviewed && form.planSent && (
+                                            )}
+                                        </Box>
+                                    </Box>
+                                    <Divider sx={{ my: 1.5 }} />
+                                    <Grid container spacing={1}>
+                                        <Grid item xs={6}>
+                                            <Typography variant="caption" color="text.secondary">Current Weight</Typography>
+                                            <Typography variant="body1" fontWeight="medium">{form.currentWeight}kg</Typography>
+                                        </Grid>
+                                        <Grid item xs={6}>
+                                            <Typography variant="caption" color="text.secondary">Desired Weight</Typography>
+                                            <Typography variant="body1" fontWeight="medium">{form.desiredWeight}kg</Typography>
+                                        </Grid>
+                                        {!isSmallMobile && (
+                                            <Grid item xs={12}>
+                                                <Typography variant="caption" color="text.secondary">Date Submitted</Typography>
+                                                <Typography variant="body2">{new Date(form.createdAt).toLocaleDateString()}</Typography>
+                                            </Grid>
+                                        )}
+                                    </Grid>
+                                    <Box sx={{ mt: 2 }}>
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={() => handleOpenActionsDialog(form)}
+                                        >
+                                            Actions
+                                        </Button>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                ) : (
+                    // Desktop Table View
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>User</TableCell>
+                                    <TableCell>Current Weight</TableCell>
+                                    <TableCell>Desired Weight</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Date Submitted</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {forms.map((form) => (
+                                    <React.Fragment key={form._id}>
+                                        <TableRow>
+                                            <TableCell>
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight="bold">
+                                                        {form.user?.name || 'Unknown User'}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="textSecondary">
+                                                        {form.user?.email}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>{form.currentWeight}kg</TableCell>
+                                            <TableCell>{form.desiredWeight}kg</TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                                     <Chip 
-                                                        label="Plan Sent" 
-                                                        color="success" 
-                                                        size="small" 
+                                                        label={form.reviewed ? 'Reviewed' : 'Pending'} 
+                                                        color={form.reviewed ? 'success' : 'warning'}
+                                                        size="small"
                                                     />
-                                                )}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(form.createdAt).toLocaleDateString()}
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow>
-                                        <TableCell colSpan={5} sx={{ py: 1, borderBottom: '2px solid', borderBottomColor: 'divider' }}>
-                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                                                {form.user?._id && (
-                                                    <Tooltip title="Message User">
-                                                        <IconButton 
+                                                    {form.reviewed && form.planSent && (
+                                                        <Chip 
+                                                            label="Plan Sent" 
+                                                            color="success" 
                                                             size="small" 
-                                                            color="primary"
-                                                            onClick={() => handleMessageUser(form.user._id)}
-                                                        >
-                                                            <ChatIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
+                                                        />
+                                                    )}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                {new Date(form.createdAt).toLocaleDateString()}
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell colSpan={5} sx={{ py: 1, borderBottom: '2px solid', borderBottomColor: 'divider' }}>
                                                 <Button
                                                     size="small"
-                                                    onClick={() => openFormDetails(form)}
+                                                    variant="contained"
+                                                    color="primary"
+                                                    onClick={() => handleOpenActionsDialog(form)}
                                                 >
-                                                    View Details
+                                                    Actions
                                                 </Button>
-                                                {!form.reviewed && (
-                                                    <>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="primary"
-                                                            onClick={() => sendPlan(form)}
-                                                        >
-                                                            Send Plan
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="success"
-                                                            onClick={() => markFormAsReviewed(form._id)}
-                                                        >
-                                                            Mark Reviewed
-                                                        </Button>
-                                                    </>
-                                                )}
-                                                {form.reviewed && form.planSent && (
-                                                    <>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            color="primary"
-                                                            onClick={() => viewPlan(form)}
-                                                            disabled={planLoading}
-                                                        >
-                                                            {planLoading ? 'Loading...' : 'View Plan'}
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            color="secondary"
-                                                            onClick={() => sendPlan(form)}
-                                                        >
-                                                            Edit Plan
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                </React.Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                            </TableCell>
+                                        </TableRow>
+                                    </React.Fragment>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
 
                 {/* Pagination */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -341,6 +360,20 @@ export default function AdminFormsPage() {
                         color="primary"
                     />
                 </Box>
+
+                {/* Form Actions Dialog */}
+                <FormActionsDialog
+                    open={actionsDialogOpen}
+                    onClose={() => setActionsDialogOpen(false)}
+                    form={selectedFormForActions}
+                    onViewDetails={openFormDetails}
+                    onSendPlan={sendPlan}
+                    onMarkReviewed={markFormAsReviewed}
+                    onViewPlan={viewPlan}
+                    onEditPlan={sendPlan}
+                    onMessageUser={handleMessageUser}
+                    planLoading={planLoading}
+                />
 
                 {/* Form Details Dialog */}
                 <Dialog 

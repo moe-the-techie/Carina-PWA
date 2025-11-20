@@ -24,16 +24,22 @@ import {
     Stack,
     Avatar,
     Alert,
-    Snackbar
+    Snackbar,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import UserActionsDialog from '../components/UserActionsDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminUsersPage() {
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -50,6 +56,8 @@ export default function AdminUsersPage() {
     const [userToDelete, setUserToDelete] = useState(null);
     const [userToBan, setUserToBan] = useState(null);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
+    const [selectedUserForActions, setSelectedUserForActions] = useState(null);
 
     // Debounce search input
     useEffect(() => {
@@ -210,6 +218,11 @@ export default function AdminUsersPage() {
         setSnackbar({ ...snackbar, open: false });
     };
 
+    const handleOpenActionsDialog = (user) => {
+        setSelectedUserForActions(user);
+        setActionsDialogOpen(true);
+    };
+
     if (loading && users.length === 0) {
         return (
             <PageFade>
@@ -244,31 +257,20 @@ export default function AdminUsersPage() {
                     </Typography>
                 )}
 
-                {/* Users Table */}
-                <TableContainer component={Paper}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Photo</TableCell>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Email</TableCell>
-                                <TableCell>Gender</TableCell>
-                                <TableCell>Date of Birth</TableCell>
-                                <TableCell>Is Mother</TableCell>
-                                <TableCell>Joined</TableCell>
-                                <TableCell>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {users.map((user) => (
-                                <TableRow key={user._id}>
-                                    <TableCell>
+                {/* Users Table/Cards */}
+                {isMobile ? (
+                    // Mobile Card View
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {users.map((user) => (
+                            <Card key={user._id}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                                         <Avatar
                                             src={user.profileImageUrl}
                                             alt={user.name}
                                             sx={{ 
-                                                width: 40, 
-                                                height: 40,
+                                                width: 56, 
+                                                height: 56,
                                                 cursor: user.profileImageUrl ? 'pointer' : 'default',
                                                 '&:hover': user.profileImageUrl ? {
                                                     opacity: 0.8,
@@ -284,73 +286,150 @@ export default function AdminUsersPage() {
                                         >
                                             {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
                                         </Avatar>
-                                    </TableCell>
-                                    <TableCell>{user.name}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>
-                                        <Chip 
-                                            label={user.gender || 'Not specified'} 
-                                            size="small"
-                                            color={user.gender === 'female' ? 'secondary' : 'primary'}
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.dateOfBirth 
-                                            ? new Date(user.dateOfBirth).toLocaleDateString()
-                                            : 'Not provided'
-                                        }
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.gender === 'female' ? (
-                                            <Chip 
-                                                label={user.isMother ? 'Yes' : 'No'} 
-                                                size="small"
-                                                color={user.isMother ? 'success' : 'default'}
-                                            />
-                                        ) : 'N/A'}
-                                    </TableCell>
-                                    <TableCell>
-                                        {new Date(user.createdAt).toLocaleDateString()}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Stack direction="row" spacing={1}>
-                                            <Button
-                                                size="small"
-                                                onClick={() => fetchUserDetails(user._id)}
+                                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                                            <Typography variant="h6" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {user.name}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {user.email}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+                                                <Chip 
+                                                    label={user.gender || 'Not specified'} 
+                                                    size="small"
+                                                    color={user.gender === 'female' ? 'secondary' : 'primary'}
+                                                />
+                                                {user.gender === 'female' && (
+                                                    <Chip 
+                                                        label={user.isMother ? 'Mother' : 'Not Mother'} 
+                                                        size="small"
+                                                        color={user.isMother ? 'success' : 'default'}
+                                                    />
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    {!isSmallMobile && (
+                                        <>
+                                            <Divider sx={{ my: 1.5 }} />
+                                            <Grid container spacing={1}>
+                                                <Grid item xs={6}>
+                                                    <Typography variant="caption" color="text.secondary">Date of Birth</Typography>
+                                                    <Typography variant="body2">
+                                                        {user.dateOfBirth 
+                                                            ? new Date(user.dateOfBirth).toLocaleDateString()
+                                                            : 'Not provided'
+                                                        }
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={6}>
+                                                    <Typography variant="caption" color="text.secondary">Joined</Typography>
+                                                    <Typography variant="body2">
+                                                        {new Date(user.createdAt).toLocaleDateString()}
+                                                    </Typography>
+                                                </Grid>
+                                            </Grid>
+                                        </>
+                                    )}
+                                    <Box sx={{ mt: 2 }}>
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={() => handleOpenActionsDialog(user)}
+                                        >
+                                            Actions
+                                        </Button>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                ) : (
+                    // Desktop Table View
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Photo</TableCell>
+                                    <TableCell>Name</TableCell>
+                                    <TableCell>Email</TableCell>
+                                    <TableCell>Gender</TableCell>
+                                    <TableCell>Date of Birth</TableCell>
+                                    <TableCell>Is Mother</TableCell>
+                                    <TableCell>Joined</TableCell>
+                                    <TableCell>Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {users.map((user) => (
+                                    <TableRow key={user._id}>
+                                        <TableCell>
+                                            <Avatar
+                                                src={user.profileImageUrl}
+                                                alt={user.name}
+                                                sx={{ 
+                                                    width: 40, 
+                                                    height: 40,
+                                                    cursor: user.profileImageUrl ? 'pointer' : 'default',
+                                                    '&:hover': user.profileImageUrl ? {
+                                                        opacity: 0.8,
+                                                        transition: 'opacity 0.2s'
+                                                    } : {}
+                                                }}
+                                                onClick={() => {
+                                                    if (user.profileImageUrl) {
+                                                        setSelectedImage(user.profileImageUrl);
+                                                        setImageDialogOpen(true);
+                                                    }
+                                                }}
                                             >
-                                                View
-                                            </Button>
+                                                {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
+                                            </Avatar>
+                                        </TableCell>
+                                        <TableCell>{user.name}</TableCell>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            <Chip 
+                                                label={user.gender || 'Not specified'} 
+                                                size="small"
+                                                color={user.gender === 'female' ? 'secondary' : 'primary'}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.dateOfBirth 
+                                                ? new Date(user.dateOfBirth).toLocaleDateString()
+                                                : 'Not provided'
+                                            }
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.gender === 'female' ? (
+                                                <Chip 
+                                                    label={user.isMother ? 'Yes' : 'No'} 
+                                                    size="small"
+                                                    color={user.isMother ? 'success' : 'default'}
+                                                />
+                                            ) : 'N/A'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell>
                                             <Button
                                                 size="small"
                                                 variant="contained"
                                                 color="primary"
-                                                onClick={() => handleMessageUser(user._id)}
+                                                onClick={() => handleOpenActionsDialog(user)}
                                             >
-                                                Message
+                                                Actions
                                             </Button>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                color="warning"
-                                                onClick={() => handleBanClick(user)}
-                                            >
-                                                Ban
-                                            </Button>
-                                            <Button
-                                                size="small"
-                                                variant="outlined"
-                                                color="error"
-                                                onClick={() => handleDeleteClick(user)}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </Stack>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
 
                 {/* Pagination */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
@@ -506,6 +585,17 @@ export default function AdminUsersPage() {
                     open={imageDialogOpen}
                     imageUrl={selectedImage}
                     onClose={() => setImageDialogOpen(false)}
+                />
+
+                {/* User Actions Dialog */}
+                <UserActionsDialog
+                    open={actionsDialogOpen}
+                    onClose={() => setActionsDialogOpen(false)}
+                    user={selectedUserForActions}
+                    onViewDetails={fetchUserDetails}
+                    onMessage={handleMessageUser}
+                    onBan={handleBanClick}
+                    onDelete={handleDeleteClick}
                 />
 
                 {/* Delete Confirmation Dialog */}
