@@ -106,3 +106,10 @@ export const getUnreadCount = async () => {
 export const getAdminUnreadCount = async () => {
     return apiRequest('/admin/chats/unread/count');
 };
+
+// Admin: Delete a chat
+export const deleteChat = async (chatId) => {
+    return apiRequest(`/admin/chat/${chatId}`, {
+        method: 'DELETE',
+    });
+};

@@ -20,12 +20,18 @@ import {
     Button,
     useMediaQuery,
     AppBar,
-    Toolbar
+    Toolbar,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -34,7 +40,8 @@ import {
     getMessages,
     sendMessage,
     markMessagesAsRead,
-    getOrCreateChatByUserId
+    getOrCreateChatByUserId,
+    deleteChat
 } from '../services/chatService';
 import { 
     subscribeToAdminChats, 
@@ -61,6 +68,9 @@ export default function AdminChatsPage() {
     const [showChatView, setShowChatView] = useState(false); // New state for mobile view toggle
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [chatToDelete, setChatToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
@@ -362,6 +372,45 @@ export default function AdminChatsPage() {
         setSelectedImage(null);
     };
 
+    const handleDeleteClick = (e, chat) => {
+        e.stopPropagation();
+        setChatToDelete(chat);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!chatToDelete) return;
+
+        setDeleting(true);
+        try {
+            await deleteChat(chatToDelete.chatId);
+            
+            // Remove from chats list
+            setChats(prevChats => prevChats.filter(c => c.chatId !== chatToDelete.chatId));
+            
+            // Clear selected chat if it was deleted
+            if (selectedChat?.chatId === chatToDelete.chatId) {
+                setSelectedChat(null);
+                setMessages([]);
+                setShowChatView(false);
+                clearCurrentlyViewingChat();
+            }
+            
+            setDeleteDialogOpen(false);
+            setChatToDelete(null);
+        } catch (error) {
+            console.error('Error deleting chat:', error);
+            setError('Failed to delete chat');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteDialogOpen(false);
+        setChatToDelete(null);
+    };
+
     const renderChatList = () => (
         <Paper sx={{ 
             width: { xs: '100%', md: 350 }, 
@@ -537,7 +586,7 @@ export default function AdminChatsPage() {
                                 selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
                             )}
                         </Avatar>
-                        <Box>
+                        <Box sx={{ flexGrow: 1 }}>
                             <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
                                 {selectedChat.user?.name}
                             </Typography>
@@ -549,6 +598,19 @@ export default function AdminChatsPage() {
                                 {selectedChat.user?.email}
                             </Typography>
                         </Box>
+                        <IconButton
+                            color="error"
+                            onClick={(e) => handleDeleteClick(e, selectedChat)}
+                            size="small"
+                            sx={{ 
+                                ml: 1,
+                                width: { xs: 36, md: 40 },
+                                height: { xs: 36, md: 40 }
+                            }}
+                            aria-label="Delete chat"
+                        >
+                            <DeleteIcon sx={{ fontSize: { xs: 18, md: 22 } }} />
+                        </IconButton>
                     </Box>
                     
                     <Box sx={{ 
@@ -716,6 +778,44 @@ export default function AdminChatsPage() {
                     </>
                 )}
             </Box>
+
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={handleDeleteCancel}
+                aria-labelledby="delete-dialog-title"
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle id="delete-dialog-title">
+                    Delete Chat?
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this chat with <strong>{chatToDelete?.user?.name}</strong>? 
+                        This will permanently delete all messages and cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <Button 
+                        onClick={handleDeleteCancel} 
+                        variant="outlined"
+                        disabled={deleting}
+                        fullWidth={isMobile}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleDeleteConfirm} 
+                        color="error" 
+                        variant="contained"
+                        disabled={deleting}
+                        fullWidth={isMobile}
+                        startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <ImageViewerDialog
                 open={imageDialogOpen}
