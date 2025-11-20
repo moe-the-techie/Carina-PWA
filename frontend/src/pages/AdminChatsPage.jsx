@@ -32,6 +32,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DoneIcon from '@mui/icons-material/Done';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -660,17 +662,33 @@ export default function AdminChatsPage() {
                                         <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
                                             {message.content}
                                         </Typography>
-                                        <Typography 
-                                            variant="caption" 
-                                            sx={{ 
-                                                display: 'block', 
-                                                mt: 0.5, 
-                                                opacity: 0.7,
-                                                fontSize: { xs: '0.7rem', md: '0.75rem' }
-                                            }}
-                                        >
-                                            {formatTime(message.createdAt)}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    opacity: 0.7,
+                                                    fontSize: { xs: '0.7rem', md: '0.75rem' }
+                                                }}
+                                            >
+                                                {formatTime(message.createdAt)}
+                                            </Typography>
+                                            {isAdmin && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
+                                                    {message.readByUser ? (
+                                                        <DoneAllIcon sx={{ 
+                                                            fontSize: { xs: 14, md: 16 },
+                                                            color: '#4fc3f7',
+                                                            opacity: 0.9
+                                                        }} />
+                                                    ) : (
+                                                        <DoneAllIcon sx={{ 
+                                                            fontSize: { xs: 14, md: 16 },
+                                                            opacity: 0.5
+                                                        }} />
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </Box>
                                     </Box>
                                 </Box>
                             );
