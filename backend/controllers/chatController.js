@@ -379,3 +379,28 @@ export const getAblyAuthToken = async (req, res) => {
         res.status(500).json({ error: 'Failed to generate Ably token' });
     }
 };
+
+// Admin: Delete a chat and all its messages
+export const deleteChat = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+
+        const chat = await Chat.findById(chatId);
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat not found' });
+        }
+
+        await Message.deleteMany({ chatId });
+        await Chat.findByIdAndDelete(chatId);
+
+        await publishMessage(`chat:${chat.userId}:messages`, 'chat-deleted', {
+            chatId: chat._id,
+            deletedAt: new Date()
+        });
+
+        res.status(200).json({ message: 'Chat and all messages deleted successfully' });
+    } catch (error) {
+        console.error('Error in deleteChat:', error);
+        res.status(500).json({ error: 'Failed to delete chat' });
+    }
+};

@@ -29,6 +29,8 @@ const chatSchema = new Schema({
 
 chatSchema.index({ lastMessageAt: -1 });
 
+chatSchema.index({ lastMessageAt: 1 }, { expireAfterSeconds: 2592000 }); // 30 days
+
 const Chat = mongoose.model('Chat', chatSchema);
 
 export default Chat;

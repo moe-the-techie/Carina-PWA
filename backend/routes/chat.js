@@ -12,7 +12,8 @@ import {
     getChatByUserId,
     getOrCreateChatByUserId,
     getAdminUnreadCount,
-    getAblyAuthToken
+    getAblyAuthToken,
+    deleteChat
 } from '../controllers/chatController.js';
 
 // User routes (protected)
@@ -29,6 +30,7 @@ router.get('/admin/chats/unread/count', adminOnly, getAdminUnreadCount);
 router.get('/admin/chat/:chatId', adminOnly, getChatById);
 router.get('/admin/chat/user/:userId', adminOnly, getChatByUserId);
 router.post('/admin/chat/user/:userId', adminOnly, getOrCreateChatByUserId);
+router.delete('/admin/chat/:chatId', adminOnly, deleteChat);
 
 export default router;
 
