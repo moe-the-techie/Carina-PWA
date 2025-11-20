@@ -37,6 +37,7 @@ export default function ChatPage() {
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [expandedMessages, setExpandedMessages] = useState({});
     const messagesEndRef = useRef(null);
     const hasSubscribed = useRef(false);
 
@@ -247,9 +248,40 @@ export default function ChatPage() {
                                                     }} 
                                                 />
                                             )}
-                                            <Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
-                                                {message.content}
+                                            <Typography 
+                                                variant="body1" 
+                                                sx={{ 
+                                                    fontSize: { xs: '0.875rem', md: '1rem' },
+                                                    whiteSpace: 'pre-wrap',
+                                                    wordBreak: 'break-word'
+                                                }}
+                                            >
+                                                {message.content.length > 300 && !expandedMessages[message.messageId] 
+                                                    ? `${message.content.substring(0, 300)}...` 
+                                                    : message.content}
                                             </Typography>
+                                            {message.content.length > 300 && (
+                                                <Typography
+                                                    variant="caption"
+                                                    onClick={() => setExpandedMessages(prev => ({
+                                                        ...prev,
+                                                        [message.messageId]: !prev[message.messageId]
+                                                    }))}
+                                                    sx={{
+                                                        display: 'inline-block',
+                                                        mt: 0.5,
+                                                        cursor: 'pointer',
+                                                        color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
+                                                        fontWeight: 'bold',
+                                                        fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                        '&:hover': {
+                                                            textDecoration: 'underline'
+                                                        }
+                                                    }}
+                                                >
+                                                    {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
+                                                </Typography>
+                                            )}
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                                                 <Typography variant="caption" sx={{ 
                                                     opacity: 0.7,
