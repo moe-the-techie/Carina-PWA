@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUnreadCount, getAdminUnreadCount } from '../services/chatService';
-import { subscribeToChat, subscribeToAdminChats, removeMessageHandler } from '../services/ablyService';
+import { 
+    subscribeToChat, 
+    subscribeToAdminChats, 
+    removeMessageHandler,
+    requestNotificationPermission 
+} from '../services/ablyService';
 
 const UnreadCountContext = createContext();
 
@@ -36,12 +41,16 @@ export const UnreadCountProvider = ({ children, user }) => {
         }
     }, [user]);
 
-    // Fetch initial unread count
+    // Fetch initial unread count and request notification permission
     useEffect(() => {
+        if (user) {
+            requestNotificationPermission();
+        }
         fetchUnreadCount();
-    }, [fetchUnreadCount]);
+    }, [fetchUnreadCount, user]);
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates for unread count
+    // Notifications are handled by ablyService based on currentlyViewingChat
     useEffect(() => {
         if (!user) return;
 
@@ -49,6 +58,7 @@ export const UnreadCountProvider = ({ children, user }) => {
 
         if (user.role === 'admin') {
             messageHandler = (messageData) => {
+                // Only increment unread count if message is from a user
                 if (messageData.senderRole === 'user') {
                     setUnreadCount(prev => prev + 1);
                 }
@@ -64,7 +74,7 @@ export const UnreadCountProvider = ({ children, user }) => {
         } else {
             // Regular user: Subscribe to their own chat
             messageHandler = (messageData) => {
-                // Only increment if message is from admin
+                // Only increment unread count if message is from admin
                 if (messageData.senderRole === 'admin') {
                     setUnreadCount(prev => prev + 1);
                 }

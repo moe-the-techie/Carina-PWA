@@ -45,8 +45,7 @@ import {
 } from '../services/chatService';
 import { 
     subscribeToAdminChats, 
-    removeMessageHandler, 
-    requestNotificationPermission,
+    removeMessageHandler,
     setCurrentlyViewingChat,
     clearCurrentlyViewingChat
 } from '../services/ablyService';
@@ -76,11 +75,6 @@ export default function AdminChatsPage() {
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
-
-    // Request notification permission on mount
-    useEffect(() => {
-        requestNotificationPermission();
-    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

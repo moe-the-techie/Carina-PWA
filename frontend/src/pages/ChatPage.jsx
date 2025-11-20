@@ -21,8 +21,7 @@ import {
 } from '../services/chatService';
 import { 
     subscribeToChat, 
-    removeMessageHandler, 
-    requestNotificationPermission,
+    removeMessageHandler,
     setCurrentlyViewingChat,
     clearCurrentlyViewingChat
 } from '../services/ablyService';
@@ -38,10 +37,6 @@ export default function ChatPage() {
     const [sending, setSending] = useState(false);
     const messagesEndRef = useRef(null);
     const hasSubscribed = useRef(false);
-
-    useEffect(() => {
-        requestNotificationPermission();
-    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

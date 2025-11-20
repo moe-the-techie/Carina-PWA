@@ -19,8 +19,7 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
-import { subscribeToChat, subscribeToAdminChats, disconnectAbly, requestNotificationPermission } from './services/ablyService';
-import { getOrCreateChat } from './services/chatService';
+import { disconnectAbly } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -32,57 +31,6 @@ function App() {
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
     const [userId, setUserId] = useState(null);
     const [user, setUser] = useState(null);
-    const ablyInitialized = useRef(false);
-
-    // Initialize Ably connection when user is logged in
-    useEffect(() => {
-        if (!isLoggedIn || ablyInitialized.current) return;
-
-        const initializeAblyConnection = async () => {
-            try {
-                await requestNotificationPermission();
-
-                if (isAdmin) {
-                    console.log('[App] Initializing admin Ably subscription');
-                    await subscribeToAdminChats((messageData) => {
-                        console.log('[App] Admin received message:', messageData);
-                    });
-                } else if (userId) {
-                    console.log('[App] Initializing user Ably subscription for userId:', userId);
-                    await subscribeToChat(userId, (messageData) => {
-                        console.log('[App] User received message:', messageData);
-                    });
-                } else {
-                    // User but we don't have userId yet, fetch it
-                    try {
-                        const chatData = await getOrCreateChat();
-                        if (chatData.userId) {
-                            setUserId(chatData.userId);
-                            console.log('[App] Initializing user Ably subscription for userId:', chatData.userId);
-                            await subscribeToChat(chatData.userId, (messageData) => {
-                                console.log('[App] User received message:', messageData);
-                            });
-                        }
-                    } catch (error) {
-                        console.error('[App] Error getting user chat:', error);
-                    }
-                }
-
-                ablyInitialized.current = true;
-            } catch (error) {
-                console.error('[App] Error initializing Ably:', error);
-            }
-        };
-
-        initializeAblyConnection();
-
-        return () => {
-            if (!isLoggedIn) {
-                disconnectAbly();
-                ablyInitialized.current = false;
-            }
-        };
-    }, [isLoggedIn, isAdmin, userId]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -133,7 +81,6 @@ function App() {
     setUserId(null);
     setUser(null);
     disconnectAbly();
-    ablyInitialized.current = false;
    }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
