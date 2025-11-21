@@ -91,6 +91,8 @@ export default function AdminChatsPage() {
     const [recordingTime, setRecordingTime] = useState(0);
     const [voiceBlob, setVoiceBlob] = useState(null);
     const [playingVoice, setPlayingVoice] = useState({});
+    const [audioProgress, setAudioProgress] = useState({});
+    const [isDragging, setIsDragging] = useState(null);
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
@@ -338,12 +340,20 @@ export default function AdminChatsPage() {
                 
                 newAudio.onended = () => {
                     setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
+                    setAudioProgress(prev => ({ ...prev, [messageId]: 0 }));
                 };
                 
                 newAudio.onerror = (e) => {
                     console.error('Error playing audio:', e);
                     setError('Failed to play voice message');
                     setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
+                };
+                
+                newAudio.ontimeupdate = () => {
+                    if (newAudio.duration) {
+                        const progress = (newAudio.currentTime / newAudio.duration) * 100;
+                        setAudioProgress(prev => ({ ...prev, [messageId]: progress }));
+                    }
                 };
                 
                 await newAudio.play();
@@ -362,6 +372,50 @@ export default function AdminChatsPage() {
             }
         }
     };
+
+    const handleProgressBarClick = (messageId, event) => {
+        const audio = audioRefs.current[messageId];
+        if (!audio) return;
+        
+        const progressBar = event.currentTarget;
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+        
+        audio.currentTime = percentage * audio.duration;
+        setAudioProgress(prev => ({ ...prev, [messageId]: percentage * 100 }));
+    };
+
+    const handleMouseDown = (messageId, event) => {
+        event.preventDefault();
+        setIsDragging(messageId);
+    };
+
+    const handleMouseMove = (messageId, event) => {
+        if (isDragging !== messageId) return;
+        
+        const audio = audioRefs.current[messageId];
+        if (!audio) return;
+        
+        const progressBar = event.currentTarget;
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+        
+        audio.currentTime = percentage * audio.duration;
+        setAudioProgress(prev => ({ ...prev, [messageId]: percentage * 100 }));
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(null);
+    };
+
+    useEffect(() => {
+        if (isDragging !== null) {
+            window.addEventListener('mouseup', handleMouseUp);
+            return () => window.removeEventListener('mouseup', handleMouseUp);
+        }
+    }, [isDragging]);
 
     const formatRecordingTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
@@ -959,13 +1013,61 @@ export default function AdminChatsPage() {
                                                 >
                                                     {playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />}
                                                 </IconButton>
-                                                <Box sx={{ 
-                                                    flex: 1, 
-                                                    height: 4, 
-                                                    backgroundColor: isAdmin ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
-                                                    borderRadius: 2,
-                                                    minWidth: 100
-                                                }} />
+                                                <Box 
+                                                    onClick={(e) => handleProgressBarClick(message._id, e)}
+                                                    onMouseMove={(e) => handleMouseMove(message._id, e)}
+                                                    sx={{ 
+                                                        flex: 1, 
+                                                        height: 24,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer',
+                                                        minWidth: 100,
+                                                        position: 'relative',
+                                                        userSelect: 'none'
+                                                    }}
+                                                >
+                                                    <Box sx={{
+                                                        width: '100%',
+                                                        height: 4,
+                                                        backgroundColor: isAdmin ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
+                                                        borderRadius: 2,
+                                                        position: 'relative',
+                                                        overflow: 'visible'
+                                                    }}>
+                                                        <Box sx={{
+                                                            width: `${audioProgress[message._id] || 0}%`,
+                                                            height: '100%',
+                                                            backgroundColor: isAdmin ? 'white' : theme.palette.primary.main,
+                                                            borderRadius: 2,
+                                                            transition: isDragging === message._id ? 'none' : 'width 0.1s linear',
+                                                            position: 'relative'
+                                                        }}>
+                                                            <Box
+                                                                onMouseDown={(e) => handleMouseDown(message._id, e)}
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    right: -6,
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    width: 12,
+                                                                    height: 12,
+                                                                    borderRadius: '50%',
+                                                                    backgroundColor: isAdmin ? 'white' : theme.palette.primary.main,
+                                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                                    cursor: 'grab',
+                                                                    '&:active': {
+                                                                        cursor: 'grabbing'
+                                                                    },
+                                                                    '&:hover': {
+                                                                        transform: 'translateY(-50%) scale(1.2)'
+                                                                    },
+                                                                    transition: 'transform 0.1s ease'
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
                                                 <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
                                                     {message.voiceDuration ? formatRecordingTime(message.voiceDuration) : '0:00'}
                                                 </Typography>
