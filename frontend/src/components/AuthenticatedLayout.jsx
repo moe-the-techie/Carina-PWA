@@ -10,7 +10,7 @@ export default function AuthenticatedLayout({ children }) {
     <Box
       sx={{
         minHeight: '100vh',
-        pb: isDesktop ? 0 : '70px', // Bottom padding for mobile nav bar
+        pb: isDesktop ? 0 : '60px', // Bottom padding for mobile nav bar
         pt: isDesktop ? '10vh' : 0,
         display: 'flex',
         flexDirection: 'column'
@@ -21,7 +21,7 @@ export default function AuthenticatedLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, md: 3 },
+          p: { xs: 0, md: 3 },
           maxWidth: '100vw',
           overflow: 'hidden'
         }}

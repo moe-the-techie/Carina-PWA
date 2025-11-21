@@ -245,39 +245,53 @@ export default function ChatPage() {
     return (
         <PageFade>
             <Box sx={{ 
-                height: { xs: 'calc(100vh - 140px)', md: 'calc(100vh - 120px)' }, 
+                height: { xs: 'calc(100vh - 60px)', sm: 'calc(100vh - 60px)', md: 'calc(100vh - 10vh - 48px)' }, 
                 display: 'flex', 
                 justifyContent: 'center', 
-                p: { xs: 1, md: 2 } 
+                p: { xs: 0, sm: 1, md: 2 },
+                overflow: 'hidden'
             }}>
                 <Paper sx={{ 
                     width: '100%', 
-                    maxWidth: 800, 
+                    maxWidth: { xs: '100%', md: 800 },
                     display: 'flex', 
                     flexDirection: 'column', 
                     backgroundColor: theme.palette.background.paper,
-                    borderRadius: { xs: 2, md: 1 }
+                    borderRadius: { xs: 0, sm: 2, md: 1 },
+                    overflow: 'hidden'
                 }}>
                     <Box sx={{ 
-                        p: { xs: 1.5, md: 2 }, 
+                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
                         borderBottom: 1, 
                         borderColor: 'divider', 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: { xs: 1, md: 2 } 
+                        gap: { xs: 1, md: 2 },
+                        minHeight: { xs: 56, md: 64 },
+                        flexShrink: 0
                     }}>
                         <Avatar sx={{ 
                             bgcolor: theme.palette.primary.main,
-                            width: { xs: 32, md: 40 },
-                            height: { xs: 32, md: 40 }
+                            width: { xs: 36, sm: 38, md: 40 },
+                            height: { xs: 36, sm: 38, md: 40 }
                         }}>
-                            <SupportAgentIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                            <SupportAgentIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
                         </Avatar>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography variant="h6" sx={{ 
+                                fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.25rem' },
+                                fontWeight: 600
+                            }}>
                                 Chat with Carina
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
+                            <Typography 
+                                variant="caption" 
+                                color="text.secondary" 
+                                sx={{ 
+                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
+                                    display: { xs: 'none', sm: 'block' }
+                                }}
+                            >
                                 Send us a message and we'll get back to you soon
                             </Typography>
                         </Box>
@@ -285,10 +299,13 @@ export default function ChatPage() {
                     <Box sx={{ 
                         flexGrow: 1, 
                         overflow: 'auto', 
-                        p: { xs: 1, md: 2 }, 
+                        overflowX: 'hidden',
+                        p: { xs: 1, sm: 1.5, md: 2 }, 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        gap: 1 
+                        gap: { xs: 0.75, md: 1 },
+                        WebkitOverflowScrolling: 'touch',
+                        scrollBehavior: 'smooth'
                     }}>
                         {messages.length === 0 ? (
                             <Box sx={{ 
@@ -297,14 +314,21 @@ export default function ChatPage() {
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
                                 flexDirection: 'column', 
-                                gap: 2,
-                                p: { xs: 2, md: 4 }
+                                gap: { xs: 1.5, md: 2 },
+                                p: { xs: 2, sm: 3, md: 4 }
                             }}>
                                 <SupportAgentIcon sx={{ 
-                                    fontSize: { xs: 40, md: 60 }, 
+                                    fontSize: { xs: 48, sm: 54, md: 60 }, 
                                     color: theme.palette.grey[400] 
                                 }} />
-                                <Typography color="text.secondary" align="center" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
+                                <Typography 
+                                    color="text.secondary" 
+                                    align="center" 
+                                    sx={{ 
+                                        fontSize: { xs: '0.875rem', sm: '0.9375rem', md: '1rem' },
+                                        px: 2
+                                    }}
+                                >
                                     No messages yet. Start a conversation with Carina!
                                 </Typography>
                             </Box>
@@ -315,18 +339,21 @@ export default function ChatPage() {
                                 return (
                                     <Box key={message.messageId || index} sx={{ 
                                         display: 'flex', 
-                                        justifyContent: isUser ? 'flex-end' : 'flex-start' 
+                                        justifyContent: isUser ? 'flex-end' : 'flex-start',
+                                        mb: 0.5
                                     }}>
                                         <Box sx={{ 
-                                            maxWidth: { xs: '85%', md: '70%' }, 
-                                            p: { xs: 1, md: 1.5 }, 
-                                            borderRadius: 2, 
+                                            maxWidth: { xs: '85%', sm: '80%', md: '70%' }, 
+                                            p: { xs: 1.25, sm: 1.375, md: 1.5 }, 
+                                            borderRadius: { xs: 2.5, md: 2 },
                                             backgroundColor: isUser 
                                                 ? theme.palette.primary.main 
                                                 : theme.palette.mode === 'dark' 
                                                     ? theme.palette.grey[800] 
                                                     : theme.palette.grey[200], 
-                                            color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary 
+                                            color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
+                                            wordWrap: 'break-word',
+                                            overflowWrap: 'break-word'
                                         }}>
                                             {!isUser && (
                                                 <Chip 
@@ -334,9 +361,10 @@ export default function ChatPage() {
                                                     size="small" 
                                                     sx={{ 
                                                         mb: 0.5, 
-                                                        height: { xs: 18, md: 20 }, 
+                                                        height: { xs: 20, sm: 22, md: 24 }, 
                                                         backgroundColor: 'rgba(0,0,0,0.1)',
-                                                        fontSize: { xs: '0.65rem', md: '0.75rem' }
+                                                        fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
+                                                        fontWeight: 500
                                                     }} 
                                                 />
                                             )}
@@ -346,14 +374,20 @@ export default function ChatPage() {
                                                     src={message.imageUrl} 
                                                     alt="Shared image" 
                                                     onClick={() => handleImageClick(message.imageUrl)}
+                                                    loading="lazy"
                                                     sx={{ 
                                                         width: '100%', 
-                                                        maxWidth: 300,
-                                                        borderRadius: 1, 
+                                                        maxWidth: { xs: 280, sm: 300 },
+                                                        borderRadius: { xs: 1.5, md: 1 },
                                                         cursor: 'pointer',
                                                         mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
+                                                        display: 'block',
+                                                        touchAction: 'manipulation',
                                                         '&:hover': {
                                                             opacity: 0.9
+                                                        },
+                                                        '&:active': {
+                                                            opacity: 0.85
                                                         }
                                                     }} 
                                                 />
@@ -363,9 +397,10 @@ export default function ChatPage() {
                                                     <Typography 
                                                         variant="body1" 
                                                         sx={{ 
-                                                            fontSize: { xs: '0.875rem', md: '1rem' },
+                                                            fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
                                                             whiteSpace: 'pre-wrap',
-                                                            wordBreak: 'break-word'
+                                                            wordBreak: 'break-word',
+                                                            lineHeight: { xs: 1.5, md: 1.6 }
                                                         }}
                                                     >
                                                         {message.content.length > 300 && !expandedMessages[message.messageId] 
@@ -380,14 +415,20 @@ export default function ChatPage() {
                                                                 [message.messageId]: !prev[message.messageId]
                                                             }))}
                                                             sx={{
-                                                                display: 'inline-block',
+                                                                display: 'inline-flex',
                                                                 mt: 0.5,
                                                                 cursor: 'pointer',
                                                                 color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
                                                                 fontWeight: 'bold',
-                                                                fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                                fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
+                                                                minHeight: { xs: 32, md: 24 },
+                                                                alignItems: 'center',
+                                                                touchAction: 'manipulation',
                                                                 '&:hover': {
                                                                     textDecoration: 'underline'
+                                                                },
+                                                                '&:active': {
+                                                                    opacity: 0.7
                                                                 }
                                                             }}
                                                         >
@@ -396,10 +437,11 @@ export default function ChatPage() {
                                                     )}
                                                 </>
                                             )}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75 }}>
                                                 <Typography variant="caption" sx={{ 
                                                     opacity: 0.7,
-                                                    fontSize: { xs: '0.7rem', md: '0.75rem' }
+                                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
+                                                    lineHeight: 1
                                                 }}>
                                                     {formatTime(message.createdAt)}
                                                 </Typography>
@@ -407,13 +449,13 @@ export default function ChatPage() {
                                                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
                                                         {message.readByAdmins ? (
                                                             <DoneAllIcon sx={{ 
-                                                                fontSize: { xs: 14, md: 16 },
+                                                                fontSize: { xs: 13, sm: 14, md: 16 },
                                                                 color: '#4fc3f7',
                                                                 opacity: 0.9
                                                             }} />
                                                         ) : (
                                                             <DoneAllIcon sx={{ 
-                                                                fontSize: { xs: 14, md: 16 },
+                                                                fontSize: { xs: 13, sm: 14, md: 16 },
                                                                 opacity: 0.5
                                                             }} />
                                                         )}
@@ -428,9 +470,11 @@ export default function ChatPage() {
                         <div ref={messagesEndRef} />
                     </Box>
                     <Box sx={{ 
-                        p: { xs: 1, md: 2 }, 
+                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
                         borderTop: 1, 
-                        borderColor: 'divider'
+                        borderColor: 'divider',
+                        backgroundColor: theme.palette.background.paper,
+                        flexShrink: 0
                     }}>
                         {imagePreview && (
                             <Box sx={{ 
@@ -443,9 +487,9 @@ export default function ChatPage() {
                                     src={imagePreview} 
                                     alt="Preview" 
                                     sx={{ 
-                                        maxWidth: 200, 
-                                        maxHeight: 150, 
-                                        borderRadius: 1,
+                                        maxWidth: { xs: 150, sm: 180, md: 200 },
+                                        maxHeight: { xs: 120, sm: 140, md: 150 },
+                                        borderRadius: { xs: 1.5, md: 1 },
                                         display: 'block'
                                     }} 
                                 />
@@ -458,18 +502,23 @@ export default function ChatPage() {
                                         right: 4, 
                                         backgroundColor: 'rgba(0,0,0,0.6)',
                                         color: 'white',
+                                        width: { xs: 32, md: 28 },
+                                        height: { xs: 32, md: 28 },
                                         '&:hover': {
                                             backgroundColor: 'rgba(0,0,0,0.8)'
+                                        },
+                                        '&:active': {
+                                            backgroundColor: 'rgba(0,0,0,0.9)'
                                         }
                                     }}
                                 >
-                                    <CloseIcon sx={{ fontSize: 16 }} />
+                                    <CloseIcon sx={{ fontSize: { xs: 18, md: 16 } }} />
                                 </IconButton>
                             </Box>
                         )}
                         <Box component="form" onSubmit={handleSendMessage} sx={{ 
                             display: 'flex', 
-                            gap: 1,
+                            gap: { xs: 0.75, md: 1 },
                             alignItems: 'flex-end'
                         }}>
                             <input
@@ -483,12 +532,14 @@ export default function ChatPage() {
                                 color="primary" 
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={sending || uploading}
+                                aria-label="Attach image"
                                 sx={{ 
-                                    width: { xs: 40, md: 48 },
-                                    height: { xs: 40, md: 48 }
+                                    width: { xs: 44, sm: 46, md: 48 },
+                                    height: { xs: 44, sm: 46, md: 48 },
+                                    flexShrink: 0
                                 }}
                             >
-                                <ImageIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                <ImageIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
                             </IconButton>
                             <TextField 
                                 fullWidth 
@@ -501,7 +552,11 @@ export default function ChatPage() {
                                 size="small"
                                 sx={{ 
                                     '& .MuiInputBase-root': {
-                                        fontSize: { xs: '0.875rem', md: '1rem' }
+                                        fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
+                                        padding: { xs: '10px 12px', md: '8px 14px' }
+                                    },
+                                    '& .MuiInputBase-input': {
+                                        lineHeight: 1.5
                                     }
                                 }}
                             />
@@ -509,12 +564,14 @@ export default function ChatPage() {
                                 color="primary" 
                                 type="submit" 
                                 disabled={(!newMessage.trim() && !selectedFile) || sending || uploading}
+                                aria-label="Send message"
                                 sx={{ 
-                                    width: { xs: 40, md: 48 },
-                                    height: { xs: 40, md: 48 }
+                                    width: { xs: 44, sm: 46, md: 48 },
+                                    height: { xs: 44, sm: 46, md: 48 },
+                                    flexShrink: 0
                                 }}
                             >
-                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
+                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />}
                             </IconButton>
                         </Box>
                     </Box>
