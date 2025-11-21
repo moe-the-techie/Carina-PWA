@@ -275,7 +275,7 @@ export default function FormActionsDialog({
                                     </ListItemIcon>
                                     <ListItemText 
                                         primary="View Plan Feedback" 
-                                        secondary={!isMobile ? "See user's feedback on the plan" : null}
+                                        secondary={!isMobile ? "See user's feedback and complete plan details" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
                                         }}

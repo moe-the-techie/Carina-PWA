@@ -56,6 +56,7 @@ export default function AdminFormsPage() {
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [planDetailsOpen, setPlanDetailsOpen] = useState(false);
     const [planLoading, setPlanLoading] = useState(false);
+    const [openedFromFeedback, setOpenedFromFeedback] = useState(false);
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
@@ -183,7 +184,18 @@ export default function AdminFormsPage() {
     };
 
     const viewFeedback = async (form) => {
+        setOpenedFromFeedback(true);
         await viewPlan(form);
+        // Scroll to feedback section after a brief delay to allow dialog to render
+        setTimeout(() => {
+            const feedbackElement = document.querySelector('[data-testid="user-feedback"]');
+            if (feedbackElement) {
+                feedbackElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }
+        }, 500);
     };
 
     const handleOpenActionsDialog = (form) => {
@@ -561,11 +573,29 @@ export default function AdminFormsPage() {
                 {/* Plan Details Dialog */}
                 <Dialog 
                     open={planDetailsOpen} 
-                    onClose={() => setPlanDetailsOpen(false)}
+                    onClose={() => {
+                        setPlanDetailsOpen(false);
+                        setOpenedFromFeedback(false);
+                    }}
                     maxWidth="lg"
                     fullWidth
                 >
-                    <DialogTitle>Plan Details</DialogTitle>
+                    <DialogTitle>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {openedFromFeedback && (
+                                <FeedbackIcon color="primary" />
+                            )}
+                            Plan Details
+                            {openedFromFeedback && (
+                                <Chip 
+                                    label="Viewing from Feedback" 
+                                    color="primary" 
+                                    size="small"
+                                    sx={{ ml: 1 }}
+                                />
+                            )}
+                        </Box>
+                    </DialogTitle>
                     <DialogContent>
                         {planLoading ? (
                             <Box sx={{ 
@@ -583,7 +613,7 @@ export default function AdminFormsPage() {
                             <Grid container spacing={3}>
                                 {/* Plan Overview */}
                                 <Grid item xs={12}>
-                                    <Card>
+                                    <Card data-testid="plan-overview">
                                         <CardContent>
                                             <Typography variant="h6" gutterBottom>
                                                 Plan Overview
@@ -738,11 +768,27 @@ export default function AdminFormsPage() {
 
                                 {/* User Feedback */}
                                 <Grid item xs={12} md={6}>
-                                    <Card>
+                                    <Card data-testid="user-feedback" sx={{
+                                        ...(openedFromFeedback && {
+                                            border: 2,
+                                            borderColor: 'primary.main',
+                                            backgroundColor: theme.palette.mode === 'dark' 
+                                                ? 'rgba(144, 202, 249, 0.1)' 
+                                                : 'rgba(25, 118, 210, 0.05)'
+                                        })
+                                    }}>
                                         <CardContent>
                                             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <FeedbackIcon color="primary" />
                                                 User Feedback
+                                                {openedFromFeedback && (
+                                                    <Chip 
+                                                        label="Focus" 
+                                                        color="primary" 
+                                                        size="small"
+                                                        variant="outlined"
+                                                    />
+                                                )}
                                             </Typography>
                                             {selectedPlan.feedback?.rating ? (
                                                 <Box>
@@ -779,6 +825,40 @@ export default function AdminFormsPage() {
                                                             Submitted on: {new Date(selectedPlan.feedback.submittedAt).toLocaleString()}
                                                         </Typography>
                                                     )}
+                                                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="primary"
+                                                            onClick={() => {
+                                                                const planOverviewElement = document.querySelector('[data-testid="plan-overview"]');
+                                                                if (planOverviewElement) {
+                                                                    planOverviewElement.scrollIntoView({ 
+                                                                        behavior: 'smooth', 
+                                                                        block: 'start' 
+                                                                    });
+                                                                }
+                                                            }}
+                                                            sx={{ fontSize: '0.75rem' }}
+                                                        >
+                                                            View Complete Plan Details
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="secondary"
+                                                            onClick={() => {
+                                                                const associatedForm = forms.find(form => form._id === selectedPlan.form._id || form._id === selectedPlan.form);
+                                                                if (associatedForm) {
+                                                                    sendPlan(associatedForm);
+                                                                    setPlanDetailsOpen(false);
+                                                                }
+                                                            }}
+                                                            sx={{ fontSize: '0.75rem' }}
+                                                        >
+                                                            Edit Plan Based on Feedback
+                                                        </Button>
+                                                    </Box>
                                                 </Box>
                                             ) : (
                                                 <Box sx={{ 
@@ -791,6 +871,23 @@ export default function AdminFormsPage() {
                                                     <Typography variant="body2" color="text.secondary">
                                                         No feedback submitted yet
                                                     </Typography>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        color="primary"
+                                                        onClick={() => {
+                                                            const planOverviewElement = document.querySelector('[data-testid="plan-overview"]');
+                                                            if (planOverviewElement) {
+                                                                planOverviewElement.scrollIntoView({ 
+                                                                    behavior: 'smooth', 
+                                                                    block: 'start' 
+                                                                });
+                                                            }
+                                                        }}
+                                                        sx={{ mt: 2, fontSize: '0.75rem' }}
+                                                    >
+                                                        View Complete Plan Details
+                                                    </Button>
                                                 </Box>
                                             )}
                                         </CardContent>
@@ -895,6 +992,7 @@ export default function AdminFormsPage() {
                                     if (associatedForm) {
                                         sendPlan(associatedForm);
                                         setPlanDetailsOpen(false);
+                                        setOpenedFromFeedback(false);
                                     }
                                 }}
                                 sx={{ mr: 1 }}
@@ -902,7 +1000,10 @@ export default function AdminFormsPage() {
                                 Edit Plan
                             </Button>
                         )}
-                        <Button onClick={() => setPlanDetailsOpen(false)}>Close</Button>
+                        <Button onClick={() => {
+                            setPlanDetailsOpen(false);
+                            setOpenedFromFeedback(false);
+                        }}>Close</Button>
                     </DialogActions>
                 </Dialog>
 
