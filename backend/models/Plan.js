@@ -101,7 +101,7 @@ const planSchema = new Schema({
         breakfast: [{
             category: {
                 type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
+                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
                 required: true
             },
             items: [{
@@ -112,7 +112,7 @@ const planSchema = new Schema({
         lunch: [{
             category: {
                 type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
+                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
                 required: true
             },
             items: [{
@@ -123,7 +123,7 @@ const planSchema = new Schema({
         dinner: [{
             category: {
                 type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
+                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
                 required: true
             },
             items: [{
