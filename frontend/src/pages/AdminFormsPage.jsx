@@ -28,7 +28,8 @@ import {
     Divider,
     Avatar,
     useMediaQuery,
-    Rating
+    Rating,
+    CircularProgress
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
@@ -181,6 +182,10 @@ export default function AdminFormsPage() {
         }
     };
 
+    const viewFeedback = async (form) => {
+        await viewPlan(form);
+    };
+
     const handleOpenActionsDialog = (form) => {
         setSelectedFormForActions(form);
         setActionsDialogOpen(true);
@@ -189,8 +194,18 @@ export default function AdminFormsPage() {
     if (loading && forms.length === 0) {
         return (
             <PageFade>
-                <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography>Loading forms...</Typography>
+                <Box sx={{ 
+                    p: 3, 
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60vh',
+                    gap: 2
+                }}>
+                    <CircularProgress size={60} />
+                    <Typography variant="h6" color="text.secondary">Loading forms...</Typography>
                 </Box>
             </PageFade>
         );
@@ -374,6 +389,7 @@ export default function AdminFormsPage() {
                     onViewPlan={viewPlan}
                     onEditPlan={sendPlan}
                     onMessageUser={handleMessageUser}
+                    onViewFeedback={viewFeedback}
                     planLoading={planLoading}
                 />
 
@@ -551,7 +567,19 @@ export default function AdminFormsPage() {
                 >
                     <DialogTitle>Plan Details</DialogTitle>
                     <DialogContent>
-                        {selectedPlan && (
+                        {planLoading ? (
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                minHeight: '300px',
+                                gap: 2
+                            }}>
+                                <CircularProgress size={60} />
+                                <Typography variant="h6" color="text.secondary">Loading plan details...</Typography>
+                            </Box>
+                        ) : selectedPlan && (
                             <Grid container spacing={3}>
                                 {/* Plan Overview */}
                                 <Grid item xs={12}>
@@ -843,9 +871,21 @@ export default function AdminFormsPage() {
                                 )}
                             </Grid>
                         )}
+                        {!planLoading && !selectedPlan && (
+                            <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                minHeight: '300px',
+                                gap: 2
+                            }}>
+                                <Typography variant="h6" color="text.secondary">No plan data available</Typography>
+                            </Box>
+                        )}
                     </DialogContent>
                     <DialogActions>
-                        {selectedPlan && (
+                        {selectedPlan && !planLoading && (
                             <Button 
                                 variant="contained" 
                                 color="primary"

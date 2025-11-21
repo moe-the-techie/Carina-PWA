@@ -15,7 +15,9 @@ import {
     Box,
     Chip,
     useMediaQuery,
-    useTheme
+    useTheme,
+    CircularProgress,
+    Backdrop
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
@@ -23,7 +25,8 @@ import {
     CheckCircle as CheckIcon,
     Assignment as PlanIcon,
     Edit as EditIcon,
-    Message as MessageIcon
+    Message as MessageIcon,
+    Feedback as FeedbackIcon
 } from '@mui/icons-material';
 
 export default function FormActionsDialog({ 
@@ -36,45 +39,52 @@ export default function FormActionsDialog({
     onViewPlan,
     onEditPlan,
     onMessageUser,
+    onViewFeedback,
     planLoading
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [selectedAction, setSelectedAction] = useState(null);
 
-    const handleActionClick = (action) => {
+    const handleActionClick = async (action) => {
         setSelectedAction(action);
-        onClose();
         
         // Execute the action
         switch(action) {
             case 'view':
-                onViewDetails(form);
+                await onViewDetails(form);
                 break;
             case 'send':
-                onSendPlan(form);
+                await onSendPlan(form);
                 break;
             case 'mark':
-                onMarkReviewed(form._id);
+                await onMarkReviewed(form._id);
                 break;
             case 'viewPlan':
-                onViewPlan(form);
+                await onViewPlan(form);
                 break;
             case 'editPlan':
-                onEditPlan(form);
+                await onEditPlan(form);
                 break;
             case 'message':
-                onMessageUser(form.user._id);
+                await onMessageUser(form.user._id);
+                break;
+            case 'viewFeedback':
+                await onViewFeedback(form);
                 break;
             default:
                 break;
         }
+        
+        // Close dialog after action completes
+        onClose();
     };
 
     const showSendPlan = !form?.reviewed;
     const showMarkReviewed = !form?.reviewed;
     const showViewPlan = form?.reviewed && form?.planSent;
     const showEditPlan = form?.reviewed && form?.planSent;
+    const showViewFeedback = form?.reviewed && form?.planSent;
 
     return (
         <Dialog 
@@ -217,7 +227,7 @@ export default function FormActionsDialog({
                                         <PlanIcon color="primary" />
                                     </ListItemIcon>
                                     <ListItemText 
-                                        primary={planLoading ? "Loading..." : "View Plan"} 
+                                        primary="View Plan" 
                                         secondary={!isMobile ? "See the sent meal plan" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
@@ -250,11 +260,47 @@ export default function FormActionsDialog({
                             </ListItem>
                         </>
                     )}
+
+                    {showViewFeedback && (
+                        <>
+                            <Divider />
+                            <ListItem disablePadding>
+                                <ListItemButton 
+                                    onClick={() => handleActionClick('viewFeedback')}
+                                    disabled={planLoading}
+                                    sx={{ py: { xs: 2, sm: 1.5 } }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                        <FeedbackIcon color="info" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="View Plan Feedback" 
+                                        secondary={!isMobile ? "See user's feedback on the plan" : null}
+                                        primaryTypographyProps={{ 
+                                            variant: isMobile ? 'body1' : 'body2' 
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        </>
+                    )}
                 </List>
             </DialogContent>
             <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 1 } }}>
                 <Button onClick={onClose} fullWidth={isMobile} size={isMobile ? "large" : "medium"}>Cancel</Button>
             </DialogActions>
+            
+            {/* Full screen loading backdrop */}
+            <Backdrop
+                sx={{ 
+                    color: '#fff', 
+                    zIndex: (theme) => theme.zIndex.modal + 1,
+                    position: 'absolute'
+                }}
+                open={planLoading}
+            >
+                <CircularProgress color="inherit" size={60} />
+            </Backdrop>
         </Dialog>
     );
 }
