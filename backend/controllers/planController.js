@@ -271,3 +271,66 @@ export async function getPlanByForm(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
+
+// Submit feedback for a plan
+export async function submitPlanFeedback(req, res) {
+    try {
+        const { planId } = req.params;
+        const { rating, comment } = req.body;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+        }
+
+        const plan = await Plan.findOne({ _id: planId, user: req.user._id });
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found or does not belong to user' });
+        }
+
+        plan.feedback = {
+            rating,
+            comment: comment || '',
+            submittedAt: new Date()
+        };
+
+        await plan.save();
+
+        res.status(200).json({ 
+            message: 'Feedback submitted successfully', 
+            feedback: plan.feedback 
+        });
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+// Get feedback for a plan (admin only)
+export async function getPlanFeedback(req, res) {
+    try {
+        const { planId } = req.params;
+        
+        const plan = await Plan.findById(planId)
+            .select('feedback user title')
+            .populate('user', 'name email');
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        if (!plan.feedback || !plan.feedback.rating) {
+            return res.status(404).json({ error: 'No feedback submitted for this plan' });
+        }
+
+        res.status(200).json({ 
+            planId: plan._id,
+            planTitle: plan.title,
+            user: plan.user,
+            feedback: plan.feedback 
+        });
+    } catch (error) {
+        console.error('Error fetching feedback:', error);
+        res.status(500).json({ error: error.message });
+    }
+}

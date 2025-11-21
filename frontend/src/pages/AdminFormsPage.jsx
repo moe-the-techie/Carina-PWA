@@ -27,9 +27,11 @@ import {
     CardActions,
     Divider,
     Avatar,
-    useMediaQuery
+    useMediaQuery,
+    Rating
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -702,6 +704,67 @@ export default function AdminFormsPage() {
                                             <Typography><strong>Email:</strong> {selectedPlan.user?.email}</Typography>
                                             <Typography><strong>Current Weight:</strong> {selectedPlan.form?.currentWeight}kg</Typography>
                                             <Typography><strong>Desired Weight:</strong> {selectedPlan.form?.desiredWeight}kg</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* User Feedback */}
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <FeedbackIcon color="primary" />
+                                                User Feedback
+                                            </Typography>
+                                            {selectedPlan.feedback?.rating ? (
+                                                <Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                        <Typography variant="body2" fontWeight="bold">Rating:</Typography>
+                                                        <Rating value={selectedPlan.feedback.rating} readOnly size="small" />
+                                                        <Chip 
+                                                            label={`${selectedPlan.feedback.rating}/5`}
+                                                            color={selectedPlan.feedback.rating >= 4 ? 'success' : selectedPlan.feedback.rating >= 3 ? 'warning' : 'error'}
+                                                            size="small"
+                                                        />
+                                                    </Box>
+                                                    {selectedPlan.feedback.comment && (
+                                                        <Box sx={{ mt: 2 }}>
+                                                            <Typography variant="body2" fontWeight="bold">Comment:</Typography>
+                                                            <Paper 
+                                                                elevation={0} 
+                                                                sx={{ 
+                                                                    p: 1.5, 
+                                                                    mt: 0.5, 
+                                                                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+                                                                    border: 1,
+                                                                    borderColor: 'divider'
+                                                                }}
+                                                            >
+                                                                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                                                                    "{selectedPlan.feedback.comment}"
+                                                                </Typography>
+                                                            </Paper>
+                                                        </Box>
+                                                    )}
+                                                    {selectedPlan.feedback.submittedAt && (
+                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                                                            Submitted on: {new Date(selectedPlan.feedback.submittedAt).toLocaleString()}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{ 
+                                                    p: 2, 
+                                                    textAlign: 'center',
+                                                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+                                                    borderRadius: 1
+                                                }}>
+                                                    <FeedbackIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        No feedback submitted yet
+                                                    </Typography>
+                                                </Box>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </Grid>

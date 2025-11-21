@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Box, Typography, Paper, Divider, Button, useTheme, Grid, Chip, Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Typography, Paper, Divider, Button, useTheme, Grid, Chip, Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Rating, Alert, Snackbar } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import FeedbackIcon from '@mui/icons-material/Feedback';
 import PageFade from '../components/PageFade';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -23,6 +24,15 @@ export default function ViewPlanPage () {
     const [selectedChipContent, setSelectedChipContent] = useState('');
     const [selectedChipTitle, setSelectedChipTitle] = useState('');
     const [selectedChipCategory, setSelectedChipCategory] = useState('');
+
+    // Feedback state
+    const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+    const [feedbackRating, setFeedbackRating] = useState(0);
+    const [feedbackComment, setFeedbackComment] = useState('');
+    const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
     useEffect(() => {
         if (form) {
@@ -55,12 +65,74 @@ export default function ViewPlanPage () {
 
             const data = await response.json();
             setPlan(data.plan);
+            
+            // Initialize feedback state if feedback exists
+            if (data.plan.feedback) {
+                setFeedbackRating(data.plan.feedback.rating || 0);
+                setFeedbackComment(data.plan.feedback.comment || '');
+            }
         } catch (error) {
             console.error('Error fetching plan:', error);
             setError('Error loading your plan. Please try again later.');
         } finally {
             setLoading(false);
         }
+    };
+
+    // Submit feedback
+    const handleSubmitFeedback = async () => {
+        if (feedbackRating === 0) {
+            setSnackbarMessage('Please provide a rating');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return;
+        }
+
+        try {
+            setFeedbackSubmitting(true);
+            const response = await fetch(`${apiBaseUrl}/api/plans/${plan._id}/feedback`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    rating: feedbackRating,
+                    comment: feedbackComment
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit feedback');
+            }
+
+            const data = await response.json();
+            
+            setPlan(prev => ({
+                ...prev,
+                feedback: data.feedback
+            }));
+
+            setSnackbarMessage('Feedback submitted successfully!');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
+            setFeedbackDialogOpen(false);
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            setSnackbarMessage('Failed to submit feedback. Please try again.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+        } finally {
+            setFeedbackSubmitting(false);
+        }
+    };
+
+    const handleOpenFeedbackDialog = () => {
+        if (plan?.feedback) {
+            setFeedbackRating(plan.feedback.rating || 0);
+            setFeedbackComment(plan.feedback.comment || '');
+        }
+        setFeedbackDialogOpen(true);
     };
 
     // Function to open chip detail dialog
@@ -163,6 +235,51 @@ export default function ViewPlanPage () {
                                 sx={{ ml: 1 }}
                             />
                         </Typography>
+                    </Paper>
+
+                    {/* Feedback Section */}
+                    <Paper elevation={2} sx={{ p: 2, backgroundColor: theme.palette.background.container }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6">Your Feedback</Typography>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<FeedbackIcon />}
+                                onClick={handleOpenFeedbackDialog}
+                                size="small"
+                            >
+                                {plan.feedback?.rating ? 'Update Feedback' : 'Give Feedback'}
+                            </Button>
+                        </Box>
+                        
+                        {plan.feedback?.rating ? (
+                            <Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                    <Typography variant="body2" fontWeight="bold">Rating:</Typography>
+                                    <Rating value={plan.feedback.rating} readOnly size="small" />
+                                    <Typography variant="body2" color="text.secondary">
+                                        ({plan.feedback.rating}/5)
+                                    </Typography>
+                                </Box>
+                                {plan.feedback.comment && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <Typography variant="body2" fontWeight="bold">Comment:</Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {plan.feedback.comment}
+                                        </Typography>
+                                    </Box>
+                                )}
+                                {plan.feedback.submittedAt && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                        Submitted on: {new Date(plan.feedback.submittedAt).toLocaleString()}
+                                    </Typography>
+                                )}
+                            </Box>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Share your experience with this nutrition plan to help us improve our services.
+                            </Typography>
+                        )}
                     </Paper>
 
                     {/* Important Warnings */}
@@ -829,6 +946,100 @@ export default function ViewPlanPage () {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Feedback Dialog */}
+            <Dialog 
+                open={feedbackDialogOpen} 
+                onClose={() => !feedbackSubmitting && setFeedbackDialogOpen(false)} 
+                maxWidth="sm" 
+                fullWidth
+                sx={{
+                    '& .MuiDialog-paper': {
+                        borderRadius: 2
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+                    borderBottom: 1,
+                    borderColor: 'divider'
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <FeedbackIcon color="primary" />
+                        <Typography variant="h6">
+                            {plan?.feedback?.rating ? 'Update Your Feedback' : 'Share Your Feedback'}
+                        </Typography>
+                    </Box>
+                </DialogTitle>
+                <DialogContent sx={{ p: 3, mt: 2 }}>
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                            How would you rate this nutrition plan?
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                            <Rating
+                                value={feedbackRating}
+                                onChange={(event, newValue) => setFeedbackRating(newValue)}
+                                size="large"
+                                disabled={feedbackSubmitting}
+                            />
+                            {feedbackRating > 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    ({feedbackRating}/5)
+                                </Typography>
+                            )}
+                        </Box>
+                    </Box>
+                    
+                    <Box>
+                        <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+                            Additional Comments (Optional)
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            placeholder="Share your thoughts about the plan, what worked well, or suggestions for improvement..."
+                            value={feedbackComment}
+                            onChange={(e) => setFeedbackComment(e.target.value)}
+                            disabled={feedbackSubmitting}
+                            variant="outlined"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: 1, borderColor: 'divider', gap: 1 }}>
+                    <Button 
+                        onClick={() => setFeedbackDialogOpen(false)}
+                        disabled={feedbackSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleSubmitFeedback}
+                        variant="contained"
+                        color="primary"
+                        disabled={feedbackSubmitting || feedbackRating === 0}
+                    >
+                        {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={4000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={() => setSnackbarOpen(false)} 
+                    severity={snackbarSeverity}
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
             </Box>
         </PageFade>
     );

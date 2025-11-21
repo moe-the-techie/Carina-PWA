@@ -9,7 +9,9 @@ import {
     activatePlan,
     deletePlan,
     getPlansForUser,
-    getPlanByForm
+    getPlanByForm,
+    submitPlanFeedback,
+    getPlanFeedback
 } from '../controllers/planController.js';
 
 router.post('/admin/plans', adminOnly, createPlan);
@@ -34,5 +36,11 @@ router.get('/plans/my', protect, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// User routes for feedback
+router.post('/plans/:planId/feedback', protect, submitPlanFeedback);
+
+// Admin routes for feedback
+router.get('/admin/plans/:planId/feedback', adminOnly, getPlanFeedback);
 
 export default router;

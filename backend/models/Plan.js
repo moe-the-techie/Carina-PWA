@@ -150,6 +150,20 @@ const planSchema = new Schema({
         ref: 'User',
         required: true
     },
+    feedback: {
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5
+        },
+        comment: {
+            type: String,
+            trim: true
+        },
+        submittedAt: {
+            type: Date
+        }
+    },
     createdAt: {
         type: Date,
         default: Date.now
