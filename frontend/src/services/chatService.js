@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const VOICE_CACHE_KEY_PREFIX = 'voice_msg_';
 const VOICE_CACHE_INDEX_KEY = 'voice_cache_index';
-const VOICE_CACHE_MAX_SIZE = 50 * 1024 * 1024; // 50MB 
+const VOICE_CACHE_MAX_SIZE = 3 * 1024 * 1024; // 3MB
 const VOICE_CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Helper function to get auth token
@@ -50,6 +50,16 @@ const getVoiceMessage = (messageId) => {
 const setVoiceMessage = (messageId, data) => {
     try {
         const messageKey = getMessageCacheKey(messageId);
+        const dataSize = data.audioData ? data.audioData.length : 0;
+        
+        // Proactively manage cache before storing
+        const currentSize = getCacheSize();
+        if (currentSize + dataSize > VOICE_CACHE_MAX_SIZE) {
+            console.log(`Cache size (${currentSize}) + new item (${dataSize}) exceeds limit, clearing space...`);
+            manageCacheSizeForNewItem(dataSize);
+        }
+        
+        // Try to store the message
         localStorage.setItem(messageKey, JSON.stringify(data));
         
         // Update index
@@ -57,12 +67,49 @@ const setVoiceMessage = (messageId, data) => {
         index[messageId] = {
             timestamp: data.timestamp,
             mimeType: data.mimeType,
-            size: data.audioData ? data.audioData.length : 0
+            size: dataSize
         };
         setCacheIndex(index);
         
         return true;
     } catch (error) {
+        // Handle quota exceeded error
+        if (error.name === 'QuotaExceededError') {
+            console.warn(`Quota exceeded when storing voice message ${messageId}, attempting recovery...`);
+            try {
+                // Aggressive cleanup: remove oldest 50% of cache
+                const { metadata } = getCacheMetadata();
+                const sortedEntries = Object.entries(metadata).sort((a, b) => 
+                    (a[1].timestamp || 0) - (b[1].timestamp || 0)
+                );
+                const entriesToRemove = Math.ceil(sortedEntries.length / 2);
+                
+                for (let i = 0; i < entriesToRemove; i++) {
+                    if (sortedEntries[i]) {
+                        removeVoiceMessage(sortedEntries[i][0]);
+                    }
+                }
+                
+                // Retry storage once
+                const messageKey = getMessageCacheKey(messageId);
+                localStorage.setItem(messageKey, JSON.stringify(data));
+                
+                const index = getCacheIndex();
+                index[messageId] = {
+                    timestamp: data.timestamp,
+                    mimeType: data.mimeType,
+                    size: data.audioData ? data.audioData.length : 0
+                };
+                setCacheIndex(index);
+                
+                console.log(`Successfully stored voice message ${messageId} after cleanup`);
+                return true;
+            } catch (retryError) {
+                console.error(`Failed to store voice message ${messageId} even after cleanup:`, retryError);
+                return false;
+            }
+        }
+        
         console.error(`Error storing voice message ${messageId}:`, error);
         return false;
     }
@@ -186,6 +233,46 @@ const manageCacheSize = () => {
     }
 };
 
+const manageCacheSizeForNewItem = (newItemSize) => {
+    try {
+        const currentSize = getCacheSize();
+        const targetSize = VOICE_CACHE_MAX_SIZE * 0.7; // Target 70% to leave room
+        const requiredSpace = currentSize + newItemSize - targetSize;
+        
+        if (requiredSpace <= 0) return;
+        
+        const { metadata } = getCacheMetadata();
+        
+        // Sort entries by timestamp (oldest first)
+        const sortedEntries = Object.entries(metadata).sort((a, b) => 
+            (a[1].timestamp || 0) - (b[1].timestamp || 0)
+        );
+        
+        let freedSpace = 0;
+        let removedCount = 0;
+        
+        // Remove oldest entries until we have enough space
+        for (const [messageId, meta] of sortedEntries) {
+            if (freedSpace >= requiredSpace) break;
+            
+            if (removeVoiceMessage(messageId)) {
+                freedSpace += (meta.size || 0);
+                removedCount++;
+            }
+        }
+        
+        if (removedCount > 0) {
+            console.log(`Freed ${freedSpace} bytes by removing ${removedCount} old voice messages`);
+        }
+        
+        if (removedCount > 0) {
+            console.log(`Removed ${removedCount} old voice messages to manage cache size`);
+        }
+    } catch (error) {
+        console.error('Error managing cache size:', error);
+    }
+};
+
 // Convert ArrayBuffer to base64 for storage
 const arrayBufferToBase64 = (buffer) => {
     const bytes = new Uint8Array(buffer);
@@ -269,10 +356,9 @@ const fetchAndCacheVoiceMessage = async (messageId) => {
         };
         
         if (setVoiceMessage(messageId, messageData)) {
-            manageCacheSize(); // Ensure we don't exceed cache size limit
             console.log(`Voice message cached: ${messageId}`);
         } else {
-            console.warn(`Failed to cache voice message: ${messageId}`);
+            console.warn(`Failed to cache voice message: ${messageId}, will play without caching`);
         }
     } catch (cacheError) {
         console.warn('Failed to cache voice message:', cacheError);
