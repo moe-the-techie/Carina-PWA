@@ -149,7 +149,7 @@ export const subscribeToChat = async (userId, onMessage) => {
 
         const channel = client.channels.get(channelName);
 
-        // Single subscription that calls all handlers
+        // Subscribe to new messages
         channel.subscribe('new-message', async (message) => {
             console.log('Received new message:', message.data);
             
@@ -192,6 +192,18 @@ export const subscribeToChat = async (userId, onMessage) => {
                 }
             });
         });
+        channel.subscribe('messages-read', (message) => {
+            console.log('Received read receipt:', message.data);
+            
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(message.data, 'messages-read');
+                } catch (error) {
+                    console.error('Error in read receipt handler:', error);
+                }
+            });
+        });
 
         activeSubscriptions.set(channelName, channel);
         console.log(`Subscribed to ${channelName}`);
@@ -227,7 +239,7 @@ export const subscribeToAdminChats = async (onMessage) => {
 
         const channel = client.channels.get(channelName);
 
-        // Single subscription that calls all handlers
+        // Subscribe to new messages
         channel.subscribe('new-message', async (message) => {
             console.log('Admin received new message:', message.data);
             
@@ -267,6 +279,18 @@ export const subscribeToAdminChats = async (onMessage) => {
                     handler(message.data);
                 } catch (error) {
                     console.error('Error in message handler:', error);
+                }
+            });
+        });
+        channel.subscribe('messages-read', (message) => {
+            console.log('Admin received read receipt:', message.data);
+            
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(message.data, 'messages-read');
+                } catch (error) {
+                    console.error('Error in read receipt handler:', error);
                 }
             });
         });

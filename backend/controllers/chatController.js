@@ -157,12 +157,23 @@ export const markMessagesAsRead = async (req, res) => {
                 { readByAdmins: true }
             );
             chat.unreadByAdmins = 0;
+            await publishMessage(`chat:${chat.userId}:messages`, 'messages-read', {
+                chatId: chat._id,
+                readBy: 'admin',
+                timestamp: new Date()
+            });
         } else {
             await Message.updateMany(
                 { chatId, readByUser: false },
                 { readByUser: true }
             );
             chat.unreadByUser = 0;
+            await publishMessage('admin:chats', 'messages-read', {
+                chatId: chat._id,
+                userId: chat.userId,
+                readBy: 'user',
+                timestamp: new Date()
+            });
         }
 
         await chat.save();

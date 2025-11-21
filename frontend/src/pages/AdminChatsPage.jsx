@@ -266,7 +266,21 @@ export default function AdminChatsPage() {
         if (!hasSubscribed.current) {
             hasSubscribed.current = true;
 
-            const handleNewMessage = (messageData) => {
+            const handleMessage = (messageData, eventType) => {
+                // Handle read receipts
+                if (eventType === 'messages-read') {
+                    console.log('Handling read receipt:', messageData);
+                    
+                    if (selectedChat && messageData.chatId === selectedChat.chatId && messageData.readBy === 'user') {
+                        setMessages(prev => 
+                            prev.map(msg => ({
+                                ...msg,
+                                readByUser: true
+                            }))
+                        );
+                    }
+                    return;
+                }
                 // Update messages if this is the selected chat
                 if (selectedChat && messageData.chatId === selectedChat.chatId) {
                     setMessages(prev => {
@@ -312,13 +326,13 @@ export default function AdminChatsPage() {
                 });
             };
 
-            subscribeToAdminChats(handleNewMessage).catch(error => {
+            subscribeToAdminChats(handleMessage).catch(error => {
                 console.error('Error subscribing to admin chats:', error);
             });
 
             // Cleanup function
             return () => {
-                removeMessageHandler('admin:chats', handleNewMessage);
+                removeMessageHandler('admin:chats', handleMessage);
                 hasSubscribed.current = false;
             };
         }

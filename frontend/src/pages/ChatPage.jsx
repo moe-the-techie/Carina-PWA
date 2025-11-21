@@ -92,7 +92,20 @@ export default function ChatPage() {
         if (chat?.userId && !hasSubscribed.current) {
             hasSubscribed.current = true;
 
-            const handleNewMessage = (messageData) => {
+            const handleMessage = (messageData, eventType) => {
+                if (eventType === 'messages-read') {
+                    console.log('User received read receipt:', messageData);
+                    
+                    if (messageData.readBy === 'admin') {
+                        setMessages(prev => 
+                            prev.map(msg => ({
+                                ...msg,
+                                readByAdmins: true
+                            }))
+                        );
+                    }
+                    return;
+                }
                 setMessages(prev => {
                     const exists = prev.some(m => m.messageId === messageData.messageId);
                     if (exists) return prev;
@@ -107,12 +120,12 @@ export default function ChatPage() {
                 }
             };
 
-            subscribeToChat(chat.userId, handleNewMessage).catch(error => {
+            subscribeToChat(chat.userId, handleMessage).catch(error => {
                 console.error('Error subscribing to chat:', error);
             });
 
             return () => {
-                removeMessageHandler(`chat:${chat.userId}:messages`, handleNewMessage);
+                removeMessageHandler(`chat:${chat.userId}:messages`, handleMessage);
                 hasSubscribed.current = false;
             };
         }
