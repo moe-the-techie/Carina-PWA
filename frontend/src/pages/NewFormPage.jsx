@@ -9,6 +9,8 @@ import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const MAX_GOALS = 5;
+const MAX_GOAL_LENGTH = 200;
 
 export default function NewFormPage () {
     const theme = useTheme();
@@ -19,6 +21,7 @@ export default function NewFormPage () {
         currentSmoker: false,
         healthConditions: [''],
         medications: [''],
+        goals: [''],
         minWeight: '',
         maxWeight: '',
         desiredWeight: '',
@@ -98,7 +101,7 @@ export default function NewFormPage () {
             newErrors.sugar = 'Please enter a valid sugar amount.';
         }
 
-        ['allergies', 'healthConditions', 'medications'].forEach(field => {
+        ['allergies', 'healthConditions', 'medications', 'goals'].forEach(field => {
             formData[field].forEach((item, index) => {
                 if (item.trim() !== '' && !isValidTextEntry(item)) {
                     newErrors[`${field}_${index}`] = 'Only letters, numbers, and spaces are allowed.';
@@ -123,7 +126,7 @@ export default function NewFormPage () {
         if (!validateForm()) return;
 
         const sanitizedData = { ...formData };
-        ['allergies', 'healthConditions', 'medications'].forEach(field => {
+        ['allergies', 'healthConditions', 'medications', 'goals'].forEach(field => {
             sanitizedData[field] = sanitizedData[field].filter(item => item.trim() !== '');
         });
 
@@ -213,6 +216,36 @@ export default function NewFormPage () {
                                     </Button>
                                 </Box>
                             ))}
+                        </Box>
+
+                        {/* Section 1.5 - Goals */}
+                        <Box sx={{ backgroundColor: theme.palette.background.container, p: 2, borderRadius: 3, width: { xs: '100%', md: '50%' } }}>
+                            <Typography variant="h5" sx={{ textAlign: 'left', mb: 2 }}>Your Goals</Typography>
+                            <Typography variant="body2" sx={{ mb: 2, color: theme.palette.contrastText.secondary }}>
+                                What are your health and fitness goals? (e.g., lose weight, build muscle, improve energy)
+                            </Typography>
+                            <Typography variant="caption" sx={{ mb: 2, display: 'block', color: theme.palette.contrastText.secondary }}>
+                                Maximum {MAX_GOALS} goals, {MAX_GOAL_LENGTH} characters each
+                            </Typography>
+                            {formData.goals.map((goal, index) => (
+                                <TextField
+                                    key={index}
+                                    fullWidth
+                                    variant="standard"
+                                    label={`Goal ${index + 1} (Leave blank if none)`}
+                                    value={goal}
+                                    onChange={(e) => handleListChange('goals', index, e.target.value)}
+                                    error={!!formErrors[`goals_${index}`]}
+                                    helperText={formErrors[`goals_${index}`] || `${goal.length}/${MAX_GOAL_LENGTH} characters`}
+                                    inputProps={{ maxLength: MAX_GOAL_LENGTH }}
+                                    sx={{ mb: 1 }}
+                                />
+                            ))}
+                            {formData.goals[formData.goals.length - 1]?.trim() !== '' && formData.goals.length < MAX_GOALS && (
+                                <Button onClick={() => addListItem('goals')} sx={{ mt: 1 }} variant="outlined" fullWidth>
+                                    Add Goal ({formData.goals.length}/{MAX_GOALS})
+                                </Button>
+                            )}
                         </Box>
 
                         {/* Section 2 - Weight data */}

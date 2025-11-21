@@ -28,6 +28,11 @@ const formSchema = new Schema ({
         type: String,
         default: []
     }],
+    goals: [{
+        type: String,
+        maxlength: 200,
+        default: []
+    }],
     minWeight: {
         type: Number,
         required: true
