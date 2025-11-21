@@ -13,15 +13,29 @@ import {
   Divider,
   IconButton,
   Alert,
-  Avatar
+  Avatar,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
-import { Edit as EditIcon } from '@mui/icons-material';
+import { 
+  Edit as EditIcon,
+  Storage as StorageIcon,
+  Delete as DeleteIcon 
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
 import EditAccountDialog from '../components/EditAccountDialog.jsx';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import { useThemeMode } from '../contexts/ThemeContext';
+import { 
+  clearVoiceCache, 
+  getVoiceCacheStats 
+} from '../services/chatService';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -34,6 +48,9 @@ export default function SettingsPage({ onLogout }) {
   const [error, setError] = useState('');
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [cacheStats, setCacheStats] = useState({ count: 0, size: 0, maxSize: 0, expiry: 0 });
+  const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -59,11 +76,32 @@ export default function SettingsPage({ onLogout }) {
       }
     };
 
+    const loadCacheStats = () => {
+      const stats = getVoiceCacheStats();
+      setCacheStats(stats);
+    };
+
     fetchUserProfile();
+    loadCacheStats();
   }, []);
 
   const handleUserUpdate = (updatedUser) => {
     setUser(updatedUser);
+  };
+
+  const handleClearCache = () => {
+    try {
+      clearVoiceCache();
+      setCacheStats({ count: 0, size: 0, maxSize: 0, expiry: 0 });
+      setSuccess('Voice message cache cleared successfully');
+      setClearCacheDialogOpen(false);
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      setError('Failed to clear voice message cache');
+      setClearCacheDialogOpen(false);
+    }
   };
 
   const formatUserInfo = () => {
@@ -98,6 +136,12 @@ export default function SettingsPage({ onLogout }) {
             {error && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
+              </Alert>
+            )}
+
+            {success && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {success}
               </Alert>
             )}
             
@@ -168,6 +212,28 @@ export default function SettingsPage({ onLogout }) {
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              {/* Voice Message Cache Section */}
+              <ListItem>
+                <ListItemText 
+                  primary="Voice Message Cache" 
+                  secondary={
+                    `${cacheStats.count} messages cached • ${cacheStats.size} KB used • Auto-expires after ${cacheStats.expiry} days`
+                  }
+                />
+                <ListItemSecondaryAction>
+                  <IconButton 
+                    edge="end" 
+                    onClick={() => setClearCacheDialogOpen(true)}
+                    disabled={cacheStats.count === 0}
+                    color="primary"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
             </List>
             
             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
@@ -195,6 +261,33 @@ export default function SettingsPage({ onLogout }) {
           imageUrl={selectedImage}
           onClose={() => setImageDialogOpen(false)}
         />
+
+        {/* Clear Cache Confirmation Dialog */}
+        <Dialog
+          open={clearCacheDialogOpen}
+          onClose={() => setClearCacheDialogOpen(false)}
+          aria-labelledby="clear-cache-dialog-title"
+          aria-describedby="clear-cache-dialog-description"
+        >
+          <DialogTitle id="clear-cache-dialog-title">
+            Clear Voice Message Cache
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="clear-cache-dialog-description">
+              This will remove all cached voice messages ({cacheStats.count} messages, {cacheStats.size} KB). 
+              Voice messages will need to be downloaded again when played. 
+              Are you sure you want to continue?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setClearCacheDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleClearCache} autoFocus color="primary">
+              Clear Cache
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </PageFade>
   );

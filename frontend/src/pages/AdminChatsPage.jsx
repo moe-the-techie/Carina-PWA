@@ -51,7 +51,8 @@ import {
     getOrCreateChatByUserId,
     deleteChat,
     uploadImage,
-    uploadVoice
+    uploadVoice,
+    getCachedVoiceMessage
 } from '../services/chatService';
 import { 
     subscribeToAdminChats, 
@@ -328,21 +329,9 @@ export default function AdminChatsPage() {
         
         if (!audio) {
             try {
-                const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-                const token = localStorage.getItem('token');
-                
-                const response = await fetch(`${API_URL}/api/chat/voice/${messageId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch voice audio');
-                }
-                
-                const audioBlob = await response.blob();
-                const audioUrl = URL.createObjectURL(audioBlob);
+                // Use cached voice message function
+                const result = await getCachedVoiceMessage(messageId);
+                const audioUrl = typeof result === 'string' ? result : result.url;
                 
                 const newAudio = new Audio(audioUrl);
                 audioRefs.current[messageId] = newAudio;
