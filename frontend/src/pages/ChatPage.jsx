@@ -198,6 +198,14 @@ export default function ChatPage() {
         
         if (!audio) {
             try {
+                // Pause all other playing audio
+                Object.entries(audioRefs.current).forEach(([id, audioElement]) => {
+                    if (id !== messageId && audioElement && !audioElement.paused) {
+                        audioElement.pause();
+                        setPlayingVoice(prev => ({ ...prev, [id]: false }));
+                    }
+                });
+
                 // Use cached voice message function
                 const result = await getCachedVoiceMessage(messageId);
                 const audioUrl = typeof result === 'string' ? result : result.url;
@@ -234,6 +242,14 @@ export default function ChatPage() {
                 audio.pause();
                 setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
             } else {
+                // Pause all other playing audio
+                Object.entries(audioRefs.current).forEach(([id, audioElement]) => {
+                    if (id !== messageId && audioElement && !audioElement.paused) {
+                        audioElement.pause();
+                        setPlayingVoice(prev => ({ ...prev, [id]: false }));
+                    }
+                });
+                
                 audio.play();
                 setPlayingVoice(prev => ({ ...prev, [messageId]: true }));
             }
