@@ -7,19 +7,25 @@ import {
     IconButton,
     Avatar,
     CircularProgress,
-    Chip
+    Chip,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import DoneIcon from '@mui/icons-material/Done';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 import {
     getOrCreateChat,
     getMessages,
     sendMessage,
-    markMessagesAsRead
+    markMessagesAsRead,
+    uploadImage
 } from '../services/chatService';
 import { 
     subscribeToChat, 
@@ -37,9 +43,16 @@ export default function ChatPage() {
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [expandedMessages, setExpandedMessages] = useState({});
+    const [imagePreview, setImagePreview] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [viewerOpen, setViewerOpen] = useState(false);
+    const [viewerImage, setViewerImage] = useState('');
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
     const messagesEndRef = useRef(null);
     const hasSubscribed = useRef(false);
+    const fileInputRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,24 +81,89 @@ export default function ChatPage() {
         }
     };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                setSnackbar({ open: true, message: 'Image size must be less than 5MB', severity: 'error' });
+                return;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setSnackbar({ open: true, message: 'Only JPEG, PNG, GIF, and WebP images are allowed', severity: 'error' });
+                return;
+            }
+
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setSelectedFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !chat || sending) return;
+        if ((!newMessage.trim() && !selectedFile) || !chat || sending || uploading) return;
 
         setSending(true);
         try {
-            const response = await sendMessage(chat.chatId, newMessage.trim());
+            let messageType = 'text';
+            let imageUrl = null;
+            let imageDeleteUrl = null;
+
+            if (selectedFile) {
+                setUploading(true);
+                try {
+                    const uploadResult = await uploadImage(selectedFile);
+                    imageUrl = uploadResult.imageUrl;
+                    imageDeleteUrl = uploadResult.deleteUrl;
+                    messageType = 'image';
+                } catch (uploadError) {
+                    setSnackbar({ open: true, message: 'Failed to upload image', severity: 'error' });
+                    console.error('Error uploading image:', uploadError);
+                    return;
+                } finally {
+                    setUploading(false);
+                }
+            }
+
+            const response = await sendMessage(
+                chat.chatId, 
+                newMessage.trim() || 'Sent an image', 
+                messageType,
+                imageUrl,
+                imageDeleteUrl
+            );
+            
             setMessages(prev => {
                 const exists = prev.some(m => m.messageId === response.messageId);
                 if (exists) return prev;
                 return [...prev, response];
             });
             setNewMessage('');
+            handleRemoveImage();
         } catch (error) {
             console.error('Error sending message:', error);
+            setSnackbar({ open: true, message: 'Failed to send message', severity: 'error' });
         } finally {
             setSending(false);
         }
+    };
+
+    const handleImageClick = (imageUrl) => {
+        setViewerImage(imageUrl);
+        setViewerOpen(true);
     };
 
     useEffect(() => {
@@ -233,6 +311,7 @@ export default function ChatPage() {
                         ) : (
                             messages.map((message, index) => {
                                 const isUser = message.senderRole === 'user';
+                                const isImage = message.messageType === 'image';
                                 return (
                                     <Box key={message.messageId || index} sx={{ 
                                         display: 'flex', 
@@ -261,39 +340,61 @@ export default function ChatPage() {
                                                     }} 
                                                 />
                                             )}
-                                            <Typography 
-                                                variant="body1" 
-                                                sx={{ 
-                                                    fontSize: { xs: '0.875rem', md: '1rem' },
-                                                    whiteSpace: 'pre-wrap',
-                                                    wordBreak: 'break-word'
-                                                }}
-                                            >
-                                                {message.content.length > 300 && !expandedMessages[message.messageId] 
-                                                    ? `${message.content.substring(0, 300)}...` 
-                                                    : message.content}
-                                            </Typography>
-                                            {message.content.length > 300 && (
-                                                <Typography
-                                                    variant="caption"
-                                                    onClick={() => setExpandedMessages(prev => ({
-                                                        ...prev,
-                                                        [message.messageId]: !prev[message.messageId]
-                                                    }))}
-                                                    sx={{
-                                                        display: 'inline-block',
-                                                        mt: 0.5,
+                                            {isImage && message.imageUrl && (
+                                                <Box 
+                                                    component="img" 
+                                                    src={message.imageUrl} 
+                                                    alt="Shared image" 
+                                                    onClick={() => handleImageClick(message.imageUrl)}
+                                                    sx={{ 
+                                                        width: '100%', 
+                                                        maxWidth: 300,
+                                                        borderRadius: 1, 
                                                         cursor: 'pointer',
-                                                        color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
-                                                        fontWeight: 'bold',
-                                                        fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                        mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
                                                         '&:hover': {
-                                                            textDecoration: 'underline'
+                                                            opacity: 0.9
                                                         }
-                                                    }}
-                                                >
-                                                    {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
-                                                </Typography>
+                                                    }} 
+                                                />
+                                            )}
+                                            {message.content && (!isImage || message.content !== 'Sent an image') && (
+                                                <>
+                                                    <Typography 
+                                                        variant="body1" 
+                                                        sx={{ 
+                                                            fontSize: { xs: '0.875rem', md: '1rem' },
+                                                            whiteSpace: 'pre-wrap',
+                                                            wordBreak: 'break-word'
+                                                        }}
+                                                    >
+                                                        {message.content.length > 300 && !expandedMessages[message.messageId] 
+                                                            ? `${message.content.substring(0, 300)}...` 
+                                                            : message.content}
+                                                    </Typography>
+                                                    {message.content.length > 300 && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            onClick={() => setExpandedMessages(prev => ({
+                                                                ...prev,
+                                                                [message.messageId]: !prev[message.messageId]
+                                                            }))}
+                                                            sx={{
+                                                                display: 'inline-block',
+                                                                mt: 0.5,
+                                                                cursor: 'pointer',
+                                                                color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
+                                                                fontWeight: 'bold',
+                                                                fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                                '&:hover': {
+                                                                    textDecoration: 'underline'
+                                                                }
+                                                            }}
+                                                        >
+                                                            {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
+                                                        </Typography>
+                                                    )}
+                                                </>
                                             )}
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                                                 <Typography variant="caption" sx={{ 
@@ -326,40 +427,115 @@ export default function ChatPage() {
                         )}
                         <div ref={messagesEndRef} />
                     </Box>
-                    <Box component="form" onSubmit={handleSendMessage} sx={{ 
+                    <Box sx={{ 
                         p: { xs: 1, md: 2 }, 
                         borderTop: 1, 
-                        borderColor: 'divider', 
-                        display: 'flex', 
-                        gap: 1 
+                        borderColor: 'divider'
                     }}>
-                        <TextField 
-                            fullWidth 
-                            placeholder="Type your message..." 
-                            value={newMessage} 
-                            onChange={(e) => setNewMessage(e.target.value)} 
-                            disabled={sending} 
-                            multiline 
-                            maxRows={4}
-                            size="small"
-                            sx={{ 
-                                '& .MuiInputBase-root': {
-                                    fontSize: { xs: '0.875rem', md: '1rem' }
-                                }
-                            }}
-                        />
-                        <IconButton 
-                            color="primary" 
-                            type="submit" 
-                            disabled={!newMessage.trim() || sending}
-                            sx={{ 
-                                width: { xs: 40, md: 48 },
-                                height: { xs: 40, md: 48 }
-                            }}
-                        >
-                            {sending ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
-                        </IconButton>
+                        {imagePreview && (
+                            <Box sx={{ 
+                                mb: 1, 
+                                position: 'relative', 
+                                display: 'inline-block' 
+                            }}>
+                                <Box 
+                                    component="img" 
+                                    src={imagePreview} 
+                                    alt="Preview" 
+                                    sx={{ 
+                                        maxWidth: 200, 
+                                        maxHeight: 150, 
+                                        borderRadius: 1,
+                                        display: 'block'
+                                    }} 
+                                />
+                                <IconButton 
+                                    size="small" 
+                                    onClick={handleRemoveImage}
+                                    sx={{ 
+                                        position: 'absolute', 
+                                        top: 4, 
+                                        right: 4, 
+                                        backgroundColor: 'rgba(0,0,0,0.6)',
+                                        color: 'white',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(0,0,0,0.8)'
+                                        }
+                                    }}
+                                >
+                                    <CloseIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                            </Box>
+                        )}
+                        <Box component="form" onSubmit={handleSendMessage} sx={{ 
+                            display: 'flex', 
+                            gap: 1,
+                            alignItems: 'flex-end'
+                        }}>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+                            <IconButton 
+                                color="primary" 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={sending || uploading}
+                                sx={{ 
+                                    width: { xs: 40, md: 48 },
+                                    height: { xs: 40, md: 48 }
+                                }}
+                            >
+                                <ImageIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                            </IconButton>
+                            <TextField 
+                                fullWidth 
+                                placeholder={selectedFile ? "Add a caption (optional)..." : "Type your message..."} 
+                                value={newMessage} 
+                                onChange={(e) => setNewMessage(e.target.value)} 
+                                disabled={sending || uploading} 
+                                multiline 
+                                maxRows={4}
+                                size="small"
+                                sx={{ 
+                                    '& .MuiInputBase-root': {
+                                        fontSize: { xs: '0.875rem', md: '1rem' }
+                                    }
+                                }}
+                            />
+                            <IconButton 
+                                color="primary" 
+                                type="submit" 
+                                disabled={(!newMessage.trim() && !selectedFile) || sending || uploading}
+                                sx={{ 
+                                    width: { xs: 40, md: 48 },
+                                    height: { xs: 40, md: 48 }
+                                }}
+                            >
+                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
+                            </IconButton>
+                        </Box>
                     </Box>
+                    <ImageViewerDialog 
+                        open={viewerOpen} 
+                        imageUrl={viewerImage} 
+                        onClose={() => setViewerOpen(false)} 
+                    />
+                    <Snackbar 
+                        open={snackbar.open} 
+                        autoHideDuration={6000} 
+                        onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    >
+                        <Alert 
+                            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+                            severity={snackbar.severity}
+                            sx={{ width: '100%' }}
+                        >
+                            {snackbar.message}
+                        </Alert>
+                    </Snackbar>
                 </Paper>
             </Box>
         </PageFade>

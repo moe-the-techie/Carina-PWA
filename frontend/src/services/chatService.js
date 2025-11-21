@@ -36,11 +36,39 @@ export const getOrCreateChat = async () => {
 };
 
 // Send a message
-export const sendMessage = async (chatId, content) => {
+export const sendMessage = async (chatId, content, messageType = 'text', imageUrl = null, imageDeleteUrl = null) => {
     return apiRequest('/chat/messages', {
         method: 'POST',
-        body: JSON.stringify({ chatId, content }),
+        body: JSON.stringify({ 
+            chatId, 
+            content, 
+            messageType, 
+            imageUrl, 
+            imageDeleteUrl 
+        }),
     });
+};
+
+// Upload image
+export const uploadImage = async (imageFile) => {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const response = await fetch(`${API_URL}/api/chat/upload-image`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload image');
+    }
+
+    return response.json();
 };
 
 // Get messages for a chat

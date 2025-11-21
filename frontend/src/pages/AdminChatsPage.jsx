@@ -34,6 +34,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DoneIcon from '@mui/icons-material/Done';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import ImageIcon from '@mui/icons-material/Image';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -43,7 +45,8 @@ import {
     sendMessage,
     markMessagesAsRead,
     getOrCreateChatByUserId,
-    deleteChat
+    deleteChat,
+    uploadImage
 } from '../services/chatService';
 import { 
     subscribeToAdminChats, 
@@ -75,9 +78,13 @@ export default function AdminChatsPage() {
     const [chatToDelete, setChatToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [expandedMessages, setExpandedMessages] = useState({});
+    const [uploading, setUploading] = useState(false);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
+    const fileInputRef = useRef(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -207,13 +214,70 @@ export default function AdminChatsPage() {
         }
     };
 
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image size must be less than 5MB');
+                return;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setError('Only JPEG, PNG, GIF, and WebP images are allowed');
+                return;
+            }
+
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setSelectedFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedChat || sending) return;
+        if ((!newMessage.trim() && !selectedFile) || !selectedChat || sending || uploading) return;
 
         setSending(true);
         try {
-            const response = await sendMessage(selectedChat.chatId, newMessage.trim());
+            let messageType = 'text';
+            let imageUrl = null;
+            let imageDeleteUrl = null;
+
+            if (selectedFile) {
+                setUploading(true);
+                try {
+                    const uploadResult = await uploadImage(selectedFile);
+                    imageUrl = uploadResult.imageUrl;
+                    imageDeleteUrl = uploadResult.deleteUrl;
+                    messageType = 'image';
+                } catch (uploadError) {
+                    setError('Failed to upload image');
+                    console.error('Error uploading image:', uploadError);
+                    return;
+                } finally {
+                    setUploading(false);
+                }
+            }
+
+            const response = await sendMessage(
+                selectedChat.chatId, 
+                newMessage.trim() || 'Sent an image',
+                messageType,
+                imageUrl,
+                imageDeleteUrl
+            );
             // Message will be added via Ably subscription, but add it locally for immediate feedback
             setMessages(prev => {
                 const exists = prev.some(m => m.messageId === response.messageId);
@@ -221,6 +285,7 @@ export default function AdminChatsPage() {
                 return [...prev, response];
             });
             setNewMessage('');
+            handleRemoveImage();
             
             // Update chats list
             setChats(prevChats => {
@@ -643,6 +708,7 @@ export default function AdminChatsPage() {
                     }}>
                         {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
+                            const isImage = message.messageType === 'image';
                             return (
                                 <Box 
                                     key={message.messageId || index} 
@@ -674,39 +740,61 @@ export default function AdminChatsPage() {
                                                 }} 
                                             />
                                         )}
-                                        <Typography 
-                                            variant="body1" 
-                                            sx={{ 
-                                                fontSize: { xs: '0.875rem', md: '1rem' },
-                                                whiteSpace: 'pre-wrap',
-                                                wordBreak: 'break-word'
-                                            }}
-                                        >
-                                            {message.content.length > 300 && !expandedMessages[message.messageId] 
-                                                ? `${message.content.substring(0, 300)}...` 
-                                                : message.content}
-                                        </Typography>
-                                        {message.content.length > 300 && (
-                                            <Typography
-                                                variant="caption"
-                                                onClick={() => setExpandedMessages(prev => ({
-                                                    ...prev,
-                                                    [message.messageId]: !prev[message.messageId]
-                                                }))}
-                                                sx={{
-                                                    display: 'inline-block',
-                                                    mt: 0.5,
+                                        {isImage && message.imageUrl && (
+                                            <Box 
+                                                component="img" 
+                                                src={message.imageUrl} 
+                                                alt="Shared image" 
+                                                onClick={() => handleImageClick(message.imageUrl)}
+                                                sx={{ 
+                                                    width: '100%', 
+                                                    maxWidth: 300,
+                                                    borderRadius: 1, 
                                                     cursor: 'pointer',
-                                                    color: isAdmin ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
-                                                    fontWeight: 'bold',
-                                                    fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                    mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
                                                     '&:hover': {
-                                                        textDecoration: 'underline'
+                                                        opacity: 0.9
                                                     }
-                                                }}
-                                            >
-                                                {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
-                                            </Typography>
+                                                }} 
+                                            />
+                                        )}
+                                        {message.content && (!isImage || message.content !== 'Sent an image') && (
+                                            <>
+                                                <Typography 
+                                                    variant="body1" 
+                                                    sx={{ 
+                                                        fontSize: { xs: '0.875rem', md: '1rem' },
+                                                        whiteSpace: 'pre-wrap',
+                                                        wordBreak: 'break-word'
+                                                    }}
+                                                >
+                                                    {message.content.length > 300 && !expandedMessages[message.messageId] 
+                                                        ? `${message.content.substring(0, 300)}...` 
+                                                        : message.content}
+                                                </Typography>
+                                                {message.content.length > 300 && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        onClick={() => setExpandedMessages(prev => ({
+                                                            ...prev,
+                                                            [message.messageId]: !prev[message.messageId]
+                                                        }))}
+                                                        sx={{
+                                                            display: 'inline-block',
+                                                            mt: 0.5,
+                                                            cursor: 'pointer',
+                                                            color: isAdmin ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
+                                                            fontWeight: 'bold',
+                                                            fontSize: { xs: '0.7rem', md: '0.75rem' },
+                                                            '&:hover': {
+                                                                textDecoration: 'underline'
+                                                            }
+                                                        }}
+                                                    >
+                                                        {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
+                                                    </Typography>
+                                                )}
+                                            </>
                                         )}
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                                             <Typography 
@@ -742,23 +830,79 @@ export default function AdminChatsPage() {
                         <div ref={messagesEndRef} />
                     </Box>
                     
-                    <Box 
-                        component="form" 
-                        onSubmit={handleSendMessage} 
-                        sx={{ 
-                            p: { xs: 1, md: 2 }, 
-                            borderTop: 1, 
-                            borderColor: 'divider', 
-                            display: 'flex', 
-                            gap: 1 
-                        }}
-                    >
-                        <TextField 
-                            fullWidth 
-                            placeholder="Type your message..." 
-                            value={newMessage} 
-                            onChange={(e) => setNewMessage(e.target.value)} 
-                            disabled={sending} 
+                    <Box sx={{ 
+                        p: { xs: 1, md: 2 }, 
+                        borderTop: 1, 
+                        borderColor: 'divider'
+                    }}>
+                        {imagePreview && (
+                            <Box sx={{ 
+                                mb: 1, 
+                                position: 'relative', 
+                                display: 'inline-block' 
+                            }}>
+                                <Box 
+                                    component="img" 
+                                    src={imagePreview} 
+                                    alt="Preview" 
+                                    sx={{ 
+                                        maxWidth: 200, 
+                                        maxHeight: 150, 
+                                        borderRadius: 1,
+                                        display: 'block'
+                                    }} 
+                                />
+                                <IconButton 
+                                    size="small" 
+                                    onClick={handleRemoveImage}
+                                    sx={{ 
+                                        position: 'absolute', 
+                                        top: 4, 
+                                        right: 4, 
+                                        backgroundColor: 'rgba(0,0,0,0.6)',
+                                        color: 'white',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(0,0,0,0.8)'
+                                        }
+                                    }}
+                                >
+                                    <CloseIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                            </Box>
+                        )}
+                        <Box 
+                            component="form" 
+                            onSubmit={handleSendMessage} 
+                            sx={{ 
+                                display: 'flex', 
+                                gap: 1,
+                                alignItems: 'flex-end'
+                            }}
+                        >
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                onChange={handleFileSelect}
+                                style={{ display: 'none' }}
+                            />
+                            <IconButton 
+                                color="primary" 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={sending || uploading}
+                                sx={{ 
+                                    width: { xs: 40, md: 48 },
+                                    height: { xs: 40, md: 48 }
+                                }}
+                            >
+                                <ImageIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                            </IconButton>
+                            <TextField 
+                                fullWidth 
+                                placeholder={selectedFile ? "Add a caption (optional)..." : "Type your message..."} 
+                                value={newMessage} 
+                                onChange={(e) => setNewMessage(e.target.value)} 
+                                disabled={sending || uploading} 
                             multiline 
                             maxRows={4}
                             size="small"
@@ -768,17 +912,18 @@ export default function AdminChatsPage() {
                                 }
                             }}
                         />
-                        <IconButton 
-                            color="primary" 
-                            type="submit" 
-                            disabled={!newMessage.trim() || sending}
-                            sx={{ 
-                                width: { xs: 40, md: 48 },
-                                height: { xs: 40, md: 48 }
-                            }}
-                        >
-                            {sending ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
-                        </IconButton>
+                            <IconButton 
+                                color="primary" 
+                                type="submit" 
+                                disabled={(!newMessage.trim() && !selectedFile) || sending || uploading}
+                                sx={{ 
+                                    width: { xs: 40, md: 48 },
+                                    height: { xs: 40, md: 48 }
+                                }}
+                            >
+                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 18, md: 24 } }} />}
+                            </IconButton>
+                        </Box>
                     </Box>
                 </>
             ) : (

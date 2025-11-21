@@ -18,9 +18,22 @@ const messageSchema = new Schema({
         enum: ['user', 'admin'],
         required: true
     },
+    messageType: {
+        type: String,
+        enum: ['text', 'image'],
+        default: 'text',
+        required: true
+    },
     content: {
         type: String,
-        required: true,
+        trim: true
+    },
+    imageUrl: {
+        type: String,
+        trim: true
+    },
+    imageDeleteUrl: {
+        type: String,
         trim: true
     },
     readByAdmins: {

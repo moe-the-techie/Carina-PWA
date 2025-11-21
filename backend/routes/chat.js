@@ -1,5 +1,6 @@
 import express from 'express';
 const router = express.Router();
+import multer from 'multer';
 import { protect, adminOnly } from '../middleware/auth.js';
 import {
     getOrCreateChat,
@@ -13,12 +14,30 @@ import {
     getOrCreateChatByUserId,
     getAdminUnreadCount,
     getAblyAuthToken,
-    deleteChat
+    deleteChat,
+    uploadImage
 } from '../controllers/chatController.js';
+
+// Configure multer for memory storage
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+        }
+    }
+});
 
 // User routes (protected)
 router.get('/chat', protect, getOrCreateChat);
 router.post('/chat/messages', protect, sendMessage);
+router.post('/chat/upload-image', protect, upload.single('image'), uploadImage);
 router.get('/chat/:chatId/messages', protect, getMessages);
 router.put('/chat/:chatId/read', protect, markMessagesAsRead);
 router.get('/chat/unread/count', protect, getUnreadCount);

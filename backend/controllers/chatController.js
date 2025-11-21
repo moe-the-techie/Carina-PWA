@@ -2,6 +2,7 @@ import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { publishMessage, generateAblyToken, generateAdminAblyToken } from '../config/ably.js';
+import { uploadToImgBB } from '../config/imgbb.js';
 
 // Get or create a chat for the current user
 export const getOrCreateChat = async (req, res) => {
@@ -31,12 +32,17 @@ export const getOrCreateChat = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
     try {
-        const { chatId, content } = req.body;
+        const { chatId, content, messageType = 'text', imageUrl, imageDeleteUrl } = req.body;
         const senderId = req.user._id;
         const senderRole = req.user.role;
 
-        if (!content || content.trim().length === 0) {
+        // Validate message based on type
+        if (messageType === 'text' && (!content || content.trim().length === 0)) {
             return res.status(400).json({ error: 'Message content is required' });
+        }
+        
+        if (messageType === 'image' && !imageUrl) {
+            return res.status(400).json({ error: 'Image URL is required for image messages' });
         }
 
         const chat = await Chat.findById(chatId);
@@ -48,14 +54,24 @@ export const sendMessage = async (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        const message = new Message({
+        const messageData = {
             chatId,
             senderId,
             senderRole,
-            content: content.trim(),
+            messageType,
             readByAdmins: senderRole === 'admin',
             readByUser: senderRole === 'user'
-        });
+        };
+
+        if (messageType === 'text') {
+            messageData.content = content.trim();
+        } else if (messageType === 'image') {
+            messageData.imageUrl = imageUrl;
+            messageData.imageDeleteUrl = imageDeleteUrl;
+            messageData.content = content ? content.trim() : 'Sent an image';
+        }
+
+        const message = new Message(messageData);
 
         await message.save();
 
@@ -70,28 +86,30 @@ export const sendMessage = async (req, res) => {
         await message.populate('senderId', 'name email');
 
         // Publish message to Ably for real-time updates
-        const messageData = {
+        const publishData = {
             messageId: message._id,
             chatId: message.chatId,
             senderId: message.senderId,
             senderRole: message.senderRole,
+            messageType: message.messageType,
             content: message.content,
+            imageUrl: message.imageUrl,
             createdAt: message.createdAt,
             readByAdmins: message.readByAdmins,
             readByUser: message.readByUser
         };
         
-        await publishMessage(`chat:${chat.userId}:messages`, 'new-message', messageData);
+        await publishMessage(`chat:${chat.userId}:messages`, 'new-message', publishData);
         
         await publishMessage('admin:chats', 'new-message', {
-            ...messageData,
+            ...publishData,
             chatId: chat._id,
             userId: chat.userId,
             unreadByAdmins: chat.unreadByAdmins,
             unreadByUser: chat.unreadByUser
         });
 
-        res.status(201).json(messageData);
+        res.status(201).json(publishData);
     } catch (error) {
         console.error('Error in sendMessage:', error);
         res.status(500).json({ error: 'Failed to send message' });
@@ -415,5 +433,32 @@ export const deleteChat = async (req, res) => {
     } catch (error) {
         console.error('Error in deleteChat:', error);
         res.status(500).json({ error: 'Failed to delete chat' });
+    }
+};
+
+// Upload image to ImgBB
+export const uploadImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image file provided' });
+        }
+
+        const userId = req.user._id;
+        const timestamp = Date.now();
+        const imageName = `chat-${userId}-${timestamp}`;
+
+        const uploadResult = await uploadToImgBB(req.file.buffer, imageName);
+
+        res.status(200).json({
+            imageUrl: uploadResult.url,
+            displayUrl: uploadResult.displayUrl,
+            deleteUrl: uploadResult.deleteUrl,
+            thumb: uploadResult.thumb,
+            medium: uploadResult.medium,
+            size: uploadResult.size
+        });
+    } catch (error) {
+        console.error('Error in uploadImage:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload image' });
     }
 };
