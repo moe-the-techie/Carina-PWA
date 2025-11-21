@@ -36,7 +36,7 @@ export const getOrCreateChat = async () => {
 };
 
 // Send a message
-export const sendMessage = async (chatId, content, messageType = 'text', imageUrl = null, imageDeleteUrl = null) => {
+export const sendMessage = async (chatId, content, messageType = 'text', imageUrl = null, imageDeleteUrl = null, voiceUrl = null, voiceDeleteUrl = null, voiceDuration = null) => {
     return apiRequest('/chat/messages', {
         method: 'POST',
         body: JSON.stringify({ 
@@ -44,7 +44,10 @@ export const sendMessage = async (chatId, content, messageType = 'text', imageUr
             content, 
             messageType, 
             imageUrl, 
-            imageDeleteUrl 
+            imageDeleteUrl,
+            voiceUrl,
+            voiceDeleteUrl,
+            voiceDuration
         }),
     });
 };
@@ -66,6 +69,28 @@ export const uploadImage = async (imageFile) => {
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to upload image');
+    }
+
+    return response.json();
+};
+
+// Upload voice message
+export const uploadVoice = async (voiceBlob) => {
+    const token = getAuthToken();
+    const formData = new FormData();
+    formData.append('voice', voiceBlob, 'voice-message.webm');
+
+    const response = await fetch(`${API_URL}/api/chat/upload-voice`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to upload voice message');
     }
 
     return response.json();

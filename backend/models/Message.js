@@ -20,7 +20,7 @@ const messageSchema = new Schema({
     },
     messageType: {
         type: String,
-        enum: ['text', 'image'],
+        enum: ['text', 'image', 'voice'],
         default: 'text',
         required: true
     },
@@ -35,6 +35,17 @@ const messageSchema = new Schema({
     imageDeleteUrl: {
         type: String,
         trim: true
+    },
+    voiceUrl: {
+        type: String,
+        trim: true
+    },
+    voiceDeleteUrl: {
+        type: String,
+        trim: true
+    },
+    voiceDuration: {
+        type: Number
     },
     readByAdmins: {
         type: Boolean,

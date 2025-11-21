@@ -36,6 +36,10 @@ import DoneIcon from '@mui/icons-material/Done';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ImageIcon from '@mui/icons-material/Image';
 import CloseIcon from '@mui/icons-material/Close';
+import MicIcon from '@mui/icons-material/Mic';
+import StopIcon from '@mui/icons-material/Stop';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -46,7 +50,8 @@ import {
     markMessagesAsRead,
     getOrCreateChatByUserId,
     deleteChat,
-    uploadImage
+    uploadImage,
+    uploadVoice
 } from '../services/chatService';
 import { 
     subscribeToAdminChats, 
@@ -81,10 +86,18 @@ export default function AdminChatsPage() {
     const [uploading, setUploading] = useState(false);
     const [imagePreview, setImagePreview] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [voiceBlob, setVoiceBlob] = useState(null);
+    const [playingVoice, setPlayingVoice] = useState({});
     const messagesEndRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
     const fileInputRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const recordingIntervalRef = useRef(null);
+    const audioChunksRef = useRef([]);
+    const audioRefs = useRef({});
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -245,17 +258,157 @@ export default function AdminChatsPage() {
         }
     };
 
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                setVoiceBlob(audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingTime(prev => {
+                    const newTime = prev + 1;
+                    // Auto-stop at 60 seconds
+                    if (newTime >= 60) {
+                        setTimeout(() => {
+                            stopRecording();
+                            setError('Maximum recording time reached (60s)');
+                        }, 0);
+                    }
+                    return newTime;
+                });
+            }, 1000);
+        } catch (error) {
+            console.error('Error starting recording:', error);
+            setError('Failed to access microphone');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+            recordingIntervalRef.current = null;
+        }
+    };
+
+    const cancelVoiceRecording = () => {
+        if (isRecording) {
+            stopRecording();
+        }
+        setVoiceBlob(null);
+        setRecordingTime(0);
+        audioChunksRef.current = [];
+    };
+
+    const toggleVoicePlayback = async (messageId) => {
+        const audio = audioRefs.current[messageId];
+        
+        if (!audio) {
+            try {
+                const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const token = localStorage.getItem('token');
+                
+                const response = await fetch(`${API_URL}/api/chat/voice/${messageId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch voice audio');
+                }
+                
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const newAudio = new Audio(audioUrl);
+                audioRefs.current[messageId] = newAudio;
+                
+                newAudio.onended = () => {
+                    setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
+                };
+                
+                newAudio.onerror = (e) => {
+                    console.error('Error playing audio:', e);
+                    setError('Failed to play voice message');
+                    setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
+                };
+                
+                await newAudio.play();
+                setPlayingVoice(prev => ({ ...prev, [messageId]: true }));
+            } catch (err) {
+                console.error('Error loading/playing audio:', err);
+                setError('Failed to play voice message');
+            }
+        } else {
+            if (playingVoice[messageId]) {
+                audio.pause();
+                setPlayingVoice(prev => ({ ...prev, [messageId]: false }));
+            } else {
+                audio.play();
+                setPlayingVoice(prev => ({ ...prev, [messageId]: true }));
+            }
+        }
+    };
+
+    const formatRecordingTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if ((!newMessage.trim() && !selectedFile) || !selectedChat || sending || uploading) return;
+        if ((!newMessage.trim() && !selectedFile && !voiceBlob) || !selectedChat || sending || uploading) return;
 
         setSending(true);
         try {
             let messageType = 'text';
             let imageUrl = null;
             let imageDeleteUrl = null;
+            let voiceUrl = null;
+            let voiceDeleteUrl = null;
+            let voiceDuration = null;
 
-            if (selectedFile) {
+            if (voiceBlob) {
+                setUploading(true);
+                try {
+                    const uploadResult = await uploadVoice(voiceBlob);
+                    voiceUrl = uploadResult.voiceUrl;
+                    voiceDeleteUrl = uploadResult.deleteUrl;
+                    voiceDuration = recordingTime;
+                    messageType = 'voice';
+                } catch (uploadError) {
+                    setError('Failed to upload voice message');
+                    console.error('Error uploading voice:', uploadError);
+                    return;
+                } finally {
+                    setUploading(false);
+                }
+            } else if (selectedFile) {
                 setUploading(true);
                 try {
                     const uploadResult = await uploadImage(selectedFile);
@@ -271,21 +424,31 @@ export default function AdminChatsPage() {
                 }
             }
 
+            let content = newMessage.trim();
+            if (!content) {
+                if (messageType === 'image') content = 'Sent an image';
+                else if (messageType === 'voice') content = 'Sent a voice message';
+            }
+
             const response = await sendMessage(
                 selectedChat.chatId, 
-                newMessage.trim() || 'Sent an image',
+                content,
                 messageType,
                 imageUrl,
-                imageDeleteUrl
+                imageDeleteUrl,
+                voiceUrl,
+                voiceDeleteUrl,
+                voiceDuration
             );
             // Message will be added via Ably subscription, but add it locally for immediate feedback
             setMessages(prev => {
-                const exists = prev.some(m => m.messageId === response.messageId);
+                const exists = prev.some(m => m._id === response._id);
                 if (exists) return prev;
                 return [...prev, response];
             });
             setNewMessage('');
             handleRemoveImage();
+            cancelVoiceRecording();
             
             // Update chats list
             setChats(prevChats => {
@@ -349,7 +512,7 @@ export default function AdminChatsPage() {
                 // Update messages if this is the selected chat
                 if (selectedChat && messageData.chatId === selectedChat.chatId) {
                     setMessages(prev => {
-                        const exists = prev.some(m => m.messageId === messageData.messageId);
+                        const exists = prev.some(m => m._id === messageData._id);
                         if (exists) return prev;
                         return [...prev, messageData];
                     });
@@ -753,9 +916,10 @@ export default function AdminChatsPage() {
                         {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
                             const isImage = message.messageType === 'image';
+                            const isVoice = message.messageType === 'voice';
                             return (
                                 <Box 
-                                    key={message.messageId || index} 
+                                    key={message._id || index} 
                                     sx={{ 
                                         display: 'flex', 
                                         justifyContent: isAdmin ? 'flex-end' : 'flex-start',
@@ -786,6 +950,38 @@ export default function AdminChatsPage() {
                                                 }} 
                                             />
                                         )}
+                                        {isVoice && message.voiceUrl && (
+                                            <Box sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                gap: 1,
+                                                mb: message.content && message.content !== 'Sent a voice message' ? 1 : 0
+                                            }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => toggleVoicePlayback(message._id)}
+                                                    sx={{
+                                                        color: isAdmin ? 'white' : theme.palette.primary.main,
+                                                        backgroundColor: isAdmin ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
+                                                        '&:hover': {
+                                                            backgroundColor: isAdmin ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)'
+                                                        }
+                                                    }}
+                                                >
+                                                    {playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />}
+                                                </IconButton>
+                                                <Box sx={{ 
+                                                    flex: 1, 
+                                                    height: 4, 
+                                                    backgroundColor: isAdmin ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
+                                                    borderRadius: 2,
+                                                    minWidth: 100
+                                                }} />
+                                                <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
+                                                    {message.voiceDuration ? formatRecordingTime(message.voiceDuration) : '0:00'}
+                                                </Typography>
+                                            </Box>
+                                        )}
                                         {isImage && message.imageUrl && (
                                             <Box 
                                                 component="img" 
@@ -810,7 +1006,7 @@ export default function AdminChatsPage() {
                                                 }} 
                                             />
                                         )}
-                                        {message.content && (!isImage || message.content !== 'Sent an image') && (
+                                        {message.content && (!isImage || message.content !== 'Sent an image') && (!isVoice || message.content !== 'Sent a voice message') && (
                                             <>
                                                 <Typography 
                                                     variant="body1" 
@@ -821,7 +1017,7 @@ export default function AdminChatsPage() {
                                                         lineHeight: { xs: 1.5, md: 1.6 }
                                                     }}
                                                 >
-                                                    {message.content.length > 300 && !expandedMessages[message.messageId] 
+                                                    {message.content.length > 300 && !expandedMessages[message._id] 
                                                         ? `${message.content.substring(0, 300)}...` 
                                                         : message.content}
                                                 </Typography>
@@ -830,7 +1026,7 @@ export default function AdminChatsPage() {
                                                         variant="caption"
                                                         onClick={() => setExpandedMessages(prev => ({
                                                             ...prev,
-                                                            [message.messageId]: !prev[message.messageId]
+                                                            [message._id]: !prev[message._id]
                                                         }))}
                                                         sx={{
                                                             display: 'inline-flex',
@@ -850,7 +1046,7 @@ export default function AdminChatsPage() {
                                                             }
                                                         }}
                                                     >
-                                                        {expandedMessages[message.messageId] ? 'Read less' : 'Read more'}
+                                                        {expandedMessages[message._id] ? 'Read less' : 'Read more'}
                                                     </Typography>
                                                 )}
                                             </>
@@ -937,6 +1133,53 @@ export default function AdminChatsPage() {
                                 </IconButton>
                             </Box>
                         )}
+                        {voiceBlob && (
+                            <Box sx={{ 
+                                mb: 1, 
+                                p: 1.5,
+                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                borderRadius: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                            }}>
+                                <MicIcon color="primary" />
+                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                    Voice message ({formatRecordingTime(recordingTime)})
+                                </Typography>
+                                <IconButton 
+                                    size="small" 
+                                    onClick={cancelVoiceRecording}
+                                    sx={{ color: 'error.main' }}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                            </Box>
+                        )}
+                        {isRecording && (
+                            <Box sx={{ 
+                                mb: 1, 
+                                p: 1.5,
+                                backgroundColor: 'error.main',
+                                color: 'white',
+                                borderRadius: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                            }}>
+                                <MicIcon sx={{ animation: 'pulse 1.5s infinite' }} />
+                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                    Recording... {formatRecordingTime(recordingTime)}
+                                </Typography>
+                                <IconButton 
+                                    size="small" 
+                                    onClick={stopRecording}
+                                    sx={{ color: 'white' }}
+                                >
+                                    <StopIcon />
+                                </IconButton>
+                            </Box>
+                        )}
                         <Box 
                             component="form" 
                             onSubmit={handleSendMessage} 
@@ -953,25 +1196,42 @@ export default function AdminChatsPage() {
                                 onChange={handleFileSelect}
                                 style={{ display: 'none' }}
                             />
-                            <IconButton 
-                                color="primary" 
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={sending || uploading}
-                                aria-label="Attach image"
-                                sx={{ 
-                                    width: { xs: 44, sm: 46, md: 48 },
-                                    height: { xs: 44, sm: 46, md: 48 },
-                                    flexShrink: 0
-                                }}
-                            >
-                                <ImageIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
-                            </IconButton>
+                            {!voiceBlob && !isRecording && (
+                                <>
+                                    <IconButton 
+                                        color="primary" 
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={sending || uploading}
+                                        aria-label="Attach image"
+                                        sx={{ 
+                                            width: { xs: 44, sm: 46, md: 48 },
+                                            height: { xs: 44, sm: 46, md: 48 },
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        <ImageIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                    </IconButton>
+                                    <IconButton 
+                                        color="error" 
+                                        onClick={startRecording}
+                                        disabled={sending || uploading || selectedFile}
+                                        aria-label="Record voice"
+                                        sx={{ 
+                                            width: { xs: 44, sm: 46, md: 48 },
+                                            height: { xs: 44, sm: 46, md: 48 },
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        <MicIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                    </IconButton>
+                                </>
+                            )}
                             <TextField 
                                 fullWidth 
-                                placeholder={selectedFile ? "Add a caption (optional)..." : "Type your message..."} 
+                                placeholder={selectedFile ? "Add a caption (optional)..." : voiceBlob ? "Add a caption (optional)..." : "Type your message..."} 
                                 value={newMessage} 
                                 onChange={(e) => setNewMessage(e.target.value)} 
-                                disabled={sending || uploading} 
+                                disabled={sending || uploading || isRecording} 
                             multiline 
                             maxRows={4}
                             size="small"
@@ -988,7 +1248,7 @@ export default function AdminChatsPage() {
                             <IconButton 
                                 color="primary" 
                                 type="submit" 
-                                disabled={(!newMessage.trim() && !selectedFile) || sending || uploading}
+                                disabled={(!newMessage.trim() && !selectedFile && !voiceBlob) || sending || uploading || isRecording}
                                 aria-label="Send message"
                                 sx={{ 
                                     width: { xs: 44, sm: 46, md: 48 },

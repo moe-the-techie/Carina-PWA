@@ -15,7 +15,9 @@ import {
     getAdminUnreadCount,
     getAblyAuthToken,
     deleteChat,
-    uploadImage
+    uploadImage,
+    uploadVoice,
+    getVoiceAudio
 } from '../controllers/chatController.js';
 
 // Configure multer for memory storage
@@ -34,10 +36,28 @@ const upload = multer({
     }
 });
 
+// Configure multer for voice messages
+const voiceUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/x-m4a'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only audio files are allowed.'));
+        }
+    }
+});
+
 // User routes (protected)
 router.get('/chat', protect, getOrCreateChat);
 router.post('/chat/messages', protect, sendMessage);
 router.post('/chat/upload-image', protect, upload.single('image'), uploadImage);
+router.post('/chat/upload-voice', protect, voiceUpload.single('voice'), uploadVoice);
+router.get('/chat/voice/:messageId', protect, getVoiceAudio);
 router.get('/chat/:chatId/messages', protect, getMessages);
 router.put('/chat/:chatId/read', protect, markMessagesAsRead);
 router.get('/chat/unread/count', protect, getUnreadCount);

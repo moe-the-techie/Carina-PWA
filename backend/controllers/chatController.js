@@ -2,7 +2,7 @@ import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
 import { publishMessage, generateAblyToken, generateAdminAblyToken } from '../config/ably.js';
-import { uploadToImgBB } from '../config/imgbb.js';
+import { uploadToImgBB, hideAudioInImage, extractAudioFromImage } from '../config/imgbb.js';
 
 // Get or create a chat for the current user
 export const getOrCreateChat = async (req, res) => {
@@ -32,7 +32,7 @@ export const getOrCreateChat = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
     try {
-        const { chatId, content, messageType = 'text', imageUrl, imageDeleteUrl } = req.body;
+        const { chatId, content, messageType = 'text', imageUrl, imageDeleteUrl, voiceUrl, voiceDeleteUrl, voiceDuration } = req.body;
         const senderId = req.user._id;
         const senderRole = req.user.role;
 
@@ -43,6 +43,10 @@ export const sendMessage = async (req, res) => {
         
         if (messageType === 'image' && !imageUrl) {
             return res.status(400).json({ error: 'Image URL is required for image messages' });
+        }
+        
+        if (messageType === 'voice' && !voiceUrl) {
+            return res.status(400).json({ error: 'Voice URL is required for voice messages' });
         }
 
         const chat = await Chat.findById(chatId);
@@ -69,6 +73,11 @@ export const sendMessage = async (req, res) => {
             messageData.imageUrl = imageUrl;
             messageData.imageDeleteUrl = imageDeleteUrl;
             messageData.content = content ? content.trim() : 'Sent an image';
+        } else if (messageType === 'voice') {
+            messageData.voiceUrl = voiceUrl;
+            messageData.voiceDeleteUrl = voiceDeleteUrl;
+            messageData.voiceDuration = voiceDuration;
+            messageData.content = content ? content.trim() : 'Sent a voice message';
         }
 
         const message = new Message(messageData);
@@ -87,13 +96,15 @@ export const sendMessage = async (req, res) => {
 
         // Publish message to Ably for real-time updates
         const publishData = {
-            messageId: message._id,
+            _id: message._id,
             chatId: message.chatId,
             senderId: message.senderId,
             senderRole: message.senderRole,
             messageType: message.messageType,
             content: message.content,
             imageUrl: message.imageUrl,
+            voiceUrl: message.voiceUrl,
+            voiceDuration: message.voiceDuration,
             createdAt: message.createdAt,
             readByAdmins: message.readByAdmins,
             readByUser: message.readByUser
@@ -460,5 +471,68 @@ export const uploadImage = async (req, res) => {
     } catch (error) {
         console.error('Error in uploadImage:', error);
         res.status(500).json({ error: error.message || 'Failed to upload image' });
+    }
+};
+
+// Upload voice message to ImgBB (hide audio data inside a PNG image)
+export const uploadVoice = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No voice file provided' });
+        }
+
+        const userId = req.user._id;
+        const timestamp = Date.now();
+        const voiceName = `voice-${userId}-${timestamp}`;
+        const imageBuffer = hideAudioInImage(req.file.buffer);
+        const uploadResult = await uploadToImgBB(imageBuffer, voiceName);
+
+        res.status(200).json({
+            voiceUrl: uploadResult.url,
+            displayUrl: uploadResult.displayUrl,
+            deleteUrl: uploadResult.deleteUrl,
+            size: uploadResult.size,
+            originalSize: req.file.buffer.length
+        });
+    } catch (error) {
+        console.error('Error in uploadVoice:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload voice message' });
+    }
+};
+
+// Get voice audio by extracting from image
+export const getVoiceAudio = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const userId = req.user._id;
+        const userRole = req.user.role;
+
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ error: 'Message not found' });
+        }
+
+        if (message.messageType !== 'voice' || !message.voiceUrl) {
+            return res.status(400).json({ error: 'Not a voice message' });
+        }
+
+        const chat = await Chat.findById(message.chatId);
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat not found' });
+        }
+
+        if (userRole !== 'admin' && chat.userId.toString() !== userId.toString()) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const audioBuffer = await extractAudioFromImage(message.voiceUrl);
+
+        // Send as audio file
+        res.setHeader('Content-Type', 'audio/webm');
+        res.setHeader('Content-Length', audioBuffer.length);
+        res.send(audioBuffer);
+    } catch (error) {
+        console.error('Error in getVoiceAudio:', error);
+        res.status(500).json({ error: error.message || 'Failed to get voice audio' });
     }
 };
