@@ -30,10 +30,14 @@ import {
     useMediaQuery,
     Rating,
     CircularProgress,
-    Backdrop
+    Backdrop,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -62,6 +66,12 @@ export default function AdminFormsPage() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
     const [selectedFormForActions, setSelectedFormForActions] = useState(null);
+    
+    // Chip detail dialog state
+    const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
+    const [selectedChipContent, setSelectedChipContent] = useState('');
+    const [selectedChipTitle, setSelectedChipTitle] = useState('');
+    const [selectedChipCategory, setSelectedChipCategory] = useState('');
 
     useEffect(() => {
         fetchForms();
@@ -118,6 +128,14 @@ export default function AdminFormsPage() {
             console.error('Error marking form as reviewed:', error);
             setError(error.message);
         }
+    };
+
+    // Function to open chip detail dialog
+    const openChipDetailDialog = (content, title, category) => {
+        setSelectedChipContent(content);
+        setSelectedChipTitle(title);
+        setSelectedChipCategory(category);
+        setChipDetailDialogOpen(true);
     };
 
     const sendPlan = async (form) => {
@@ -587,19 +605,41 @@ export default function AdminFormsPage() {
                     }}
                     maxWidth="lg"
                     fullWidth
+                    fullScreen={isMobile}
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            margin: { xs: 0, sm: 2 },
+                            maxHeight: { xs: '100vh', sm: 'calc(100vh - 64px)' }
+                        }
+                    }}
                 >
-                    <DialogTitle>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DialogTitle sx={{ 
+                        p: { xs: 2, sm: 3 },
+                        position: 'sticky',
+                        top: 0,
+                        backgroundColor: theme.palette.mode === 'dark' ? 'background.paper' : 'background.default',
+                        zIndex: 1,
+                        borderBottom: 1,
+                        borderColor: 'divider'
+                    }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: { xs: 0.5, sm: 1 },
+                            flexWrap: 'wrap'
+                        }}>
                             {openedFromFeedback && (
-                                <FeedbackIcon color="primary" />
+                                <FeedbackIcon color="primary" sx={{ fontSize: { xs: 20, sm: 24 } }} />
                             )}
-                            Plan Details
+                            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                                Plan Details
+                            </Typography>
                             {openedFromFeedback && (
                                 <Chip 
                                     label="Viewing from Feedback" 
                                     color="primary" 
                                     size="small"
-                                    sx={{ ml: 1 }}
+                                    sx={{ ml: { xs: 0, sm: 1 }, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
                                 />
                             )}
                         </Box>
@@ -611,34 +651,64 @@ export default function AdminFormsPage() {
                                 flexDirection: 'column',
                                 alignItems: 'center', 
                                 justifyContent: 'center',
-                                minHeight: '300px',
-                                gap: 2
+                                minHeight: { xs: '200px', sm: '300px' },
+                                gap: 2,
+                                p: 2
                             }}>
-                                <CircularProgress size={60} />
-                                <Typography variant="h6" color="text.secondary">Loading plan details...</Typography>
+                                <CircularProgress size={{ xs: 40, sm: 60 }} />
+                                <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, textAlign: 'center' }}>
+                                    Loading plan details...
+                                </Typography>
                             </Box>
                         ) : selectedPlan && (
                             <Grid container spacing={3}>
                                 {/* Plan Overview */}
                                 <Grid item xs={12}>
                                     <Card data-testid="plan-overview">
-                                        <CardContent>
-                                            <Typography variant="h6" gutterBottom>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                 Plan Overview
                                             </Typography>
-                                            <Typography><strong>Title:</strong> {selectedPlan.title}</Typography>
-                                            <Typography><strong>Description:</strong> {selectedPlan.description || 'No description'}</Typography>
-                                            <Typography><strong>Duration:</strong> {selectedPlan.duration} week(s)</Typography>
-                                            <Typography><strong>Status:</strong> 
-                                                <Chip 
-                                                    label={selectedPlan.status} 
-                                                    color={selectedPlan.status === 'active' ? 'success' : 'default'}
-                                                    size="small"
-                                                    sx={{ ml: 1 }}
-                                                />
-                                            </Typography>
-                                            <Typography><strong>Created by:</strong> {selectedPlan.createdBy?.name}</Typography>
-                                            <Typography><strong>Created:</strong> {new Date(selectedPlan.createdAt).toLocaleDateString()}</Typography>
+                                            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                        <strong>Title:</strong> {selectedPlan.title}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5, wordBreak: 'break-word' }}>
+                                                        <strong>Description:</strong> {selectedPlan.description || 'No description'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                        <strong>Duration:</strong> {selectedPlan.duration} week(s)
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        <strong>Status:</strong> 
+                                                        <Chip 
+                                                            label={selectedPlan.status} 
+                                                            color={selectedPlan.status === 'active' ? 'success' : selectedPlan.status === 'completed' ? 'info' : selectedPlan.status === 'paused' ? 'warning' : 'default'}
+                                                            size="small"
+                                                            sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                                                        />
+                                                    </Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                        <strong>Created by:</strong> {selectedPlan.createdBy?.name || 'Unknown'}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                        <strong>Created:</strong> {new Date(selectedPlan.createdAt).toLocaleString()}
+                                                    </Typography>
+                                                    {selectedPlan.activatedAt && (
+                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                            <strong>Activated:</strong> {new Date(selectedPlan.activatedAt).toLocaleString()}
+                                                        </Typography>
+                                                    )}
+                                                    {selectedPlan.completedAt && (
+                                                        <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                            <strong>Completed:</strong> {new Date(selectedPlan.completedAt).toLocaleString()}
+                                                        </Typography>
+                                                    )}
+                                                </Grid>
+                                            </Grid>
                                         </CardContent>
                                     </Card>
                                 </Grid>
@@ -646,86 +716,164 @@ export default function AdminFormsPage() {
                                 {/* Goals */}
                                 <Grid item xs={12} md={6}>
                                     <Card>
-                                        <CardContent>
-                                            <Typography variant="h6" gutterBottom>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                 Goals
                                             </Typography>
-                                            <Typography><strong>Target Weight:</strong> {selectedPlan.goals?.targetWeight || 'Not set'}kg</Typography>
-                                            <Typography><strong>Target Calories:</strong> {selectedPlan.goals?.targetCalories || 'Not set'}</Typography>
-                                            <Typography><strong>Target Protein:</strong> {selectedPlan.goals?.targetProtein || 'Not set'}g</Typography>
-                                            <Typography><strong>Target Carbs:</strong> {selectedPlan.goals?.targetCarbs || 'Not set'}g</Typography>
-                                            <Typography><strong>Target Fats:</strong> {selectedPlan.goals?.targetFats || 'Not set'}g</Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Target Weight:</strong> {selectedPlan.goals?.targetWeight || 'Not set'}kg
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Target Calories:</strong> {selectedPlan.goals?.targetCalories || 'Not set'}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Target Protein:</strong> {selectedPlan.goals?.targetProtein || 'Not set'}g
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Target Carbs:</strong> {selectedPlan.goals?.targetCarbs || 'Not set'}g
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Target Fats:</strong> {selectedPlan.goals?.targetFats || 'Not set'}g
+                                            </Typography>
                                         </CardContent>
                                     </Card>
                                 </Grid>
 
                                 {/* Recommendations */}
-                                <Grid item xs={12} md={6}>
+                                <Grid item xs={12}>
                                     <Card>
-                                        <CardContent>
-                                            <Typography variant="h6" gutterBottom>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                 Dietary Recommendations
                                             </Typography>
                                             
-                                            <Box sx={{ mb: 2 }}>
-                                                <Typography variant="subtitle2" color="error.main" gutterBottom>
-                                                    Foods to Avoid:
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                                                    {selectedPlan.recommendations?.avoid?.length > 0 ? (
-                                                        selectedPlan.recommendations.avoid.map((item, index) => (
-                                                            <Chip key={index} label={item} color="error" size="small" />
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
-                                                    )}
-                                                </Box>
-                                            </Box>
+                                            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                                                {/* General Recommendations */}
+                                                <Grid item xs={12} md={6}>
+                                                    <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                                                        <Typography variant="subtitle2" color="error.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                            Foods to Avoid:
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                                                            {selectedPlan.recommendations?.avoid?.length > 0 ? (
+                                                                selectedPlan.recommendations.avoid.map((item, index) => (
+                                                                    <Chip 
+                                                                        key={index} 
+                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                        onClick={() => openChipDetailDialog(item, 'Avoid Item', 'Avoid')}
+                                                                        color="error" 
+                                                                        size="small"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
 
-                                            <Box sx={{ mb: 2 }}>
-                                                <Typography variant="subtitle2" color="warning.main" gutterBottom>
-                                                    Use Carefully:
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                                                    {selectedPlan.recommendations?.useCarefully?.length > 0 ? (
-                                                        selectedPlan.recommendations.useCarefully.map((item, index) => (
-                                                            <Chip key={index} label={item} color="warning" size="small" />
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
-                                                    )}
-                                                </Box>
-                                            </Box>
+                                                    <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                                                        <Typography variant="subtitle2" color="warning.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                            Use Carefully:
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap', mb: { xs: 0.5, sm: 1 } }}>
+                                                            {selectedPlan.recommendations?.useCarefully?.length > 0 ? (
+                                                                selectedPlan.recommendations.useCarefully.map((item, index) => (
+                                                                    <Chip 
+                                                                        key={index} 
+                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                        onClick={() => openChipDetailDialog(item, 'Use Carefully Item', 'Use Carefully')}
+                                                                        color="warning" 
+                                                                        size="small"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
 
-                                            <Box sx={{ mb: 2 }}>
-                                                <Typography variant="subtitle2" color="success.main" gutterBottom>
-                                                    Recommended Daily:
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
-                                                    {selectedPlan.recommendations?.eatDaily?.length > 0 ? (
-                                                        selectedPlan.recommendations.eatDaily.map((item, index) => (
-                                                            <Chip key={index} label={item} color="success" size="small" />
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
-                                                    )}
-                                                </Box>
-                                            </Box>
+                                                    <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                                                        <Typography variant="subtitle2" color="success.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                            Recommended Daily:
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap', mb: { xs: 0.5, sm: 1 } }}>
+                                                            {selectedPlan.recommendations?.eatDaily?.length > 0 ? (
+                                                                selectedPlan.recommendations.eatDaily.map((item, index) => (
+                                                                    <Chip 
+                                                                        key={index} 
+                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                        onClick={() => openChipDetailDialog(item, 'Recommended Daily Item', 'Eat Daily')}
+                                                                        color="success" 
+                                                                        size="small"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
 
-                                            <Box sx={{ mb: 1 }}>
-                                                <Typography variant="subtitle2" color="info.main" gutterBottom>
-                                                    Exercise Recommendations:
-                                                </Typography>
-                                                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                    {selectedPlan.recommendations?.exercise?.length > 0 ? (
-                                                        selectedPlan.recommendations.exercise.map((item, index) => (
-                                                            <Chip key={index} label={item} color="info" size="small" />
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">None specified</Typography>
-                                                    )}
-                                                </Box>
-                                            </Box>
+                                                    <Box sx={{ mb: { xs: 0.5, sm: 1 } }}>
+                                                        <Typography variant="subtitle2" color="info.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                            Exercise Recommendations:
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
+                                                            {selectedPlan.recommendations?.exercise?.length > 0 ? (
+                                                                selectedPlan.recommendations.exercise.map((item, index) => (
+                                                                    <Chip 
+                                                                        key={index} 
+                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                        onClick={() => openChipDetailDialog(item, 'Exercise Recommendation', 'Exercise')}
+                                                                        color="info" 
+                                                                        size="small"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                </Grid>
+
+                                                {/* Meal-specific Recommendations */}
+                                                <Grid item xs={12} md={6}>
+                                                    {['breakfast', 'lunch', 'dinner'].map((mealType) => (
+                                                        selectedPlan.recommendations?.[mealType]?.some(cat => cat.items?.length > 0) && (
+                                                            <Box key={mealType} sx={{ mb: 2 }}>
+                                                                <Typography variant="subtitle2" color="primary.main" gutterBottom sx={{ textTransform: 'capitalize' }}>
+                                                                    {mealType} Recommendations:
+                                                                </Typography>
+                                                                {selectedPlan.recommendations[mealType].map((category, catIndex) => (
+                                                                    category.items?.length > 0 && (
+                                                                        <Box key={catIndex} sx={{ mb: 1 }}>
+                                                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                                                                {category.category}:
+                                                                            </Typography>
+                                                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                                                                                {category.items.map((item, itemIndex) => (
+                                                                                    <Chip 
+                                                                                        key={itemIndex} 
+                                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                                        onClick={() => openChipDetailDialog(item, `${category.category} Item`, `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} - ${category.category}`)}
+                                                                                        size="small"
+                                                                                        variant="outlined"
+                                                                                        color="primary"
+                                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                                    />
+                                                                                ))}
+                                                                            </Box>
+                                                                        </Box>
+                                                                    )
+                                                                ))}
+                                                            </Box>
+                                                        )
+                                                    ))}
+                                                </Grid>
+                                            </Grid>
                                         </CardContent>
                                     </Card>
                                 </Grid>
@@ -734,19 +882,22 @@ export default function AdminFormsPage() {
                                 {selectedPlan.warnings && selectedPlan.warnings.length > 0 && (
                                     <Grid item xs={12}>
                                         <Card>
-                                            <CardContent>
-                                                <Typography variant="h6" gutterBottom sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                                <Typography variant="h6" gutterBottom sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                     ⚠️ Important Warnings
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                                                     {selectedPlan.warnings.map((warning, index) => (
                                                         <Chip 
                                                             key={index} 
-                                                            label={warning} 
+                                                            label={warning.length > 30 ? `${warning.substring(0, 30)}...` : warning}
+                                                            onClick={() => openChipDetailDialog(warning, 'Important Warning', 'Warnings')}
                                                             color="error" 
                                                             variant="outlined"
                                                             sx={{ 
                                                                 fontWeight: 'bold',
+                                                                cursor: 'pointer',
+                                                                '&:hover': { opacity: 0.8 },
                                                                 '& .MuiChip-label': {
                                                                     fontWeight: 'bold'
                                                                 }
@@ -762,17 +913,158 @@ export default function AdminFormsPage() {
                                 {/* User Info */}
                                 <Grid item xs={12} md={6}>
                                     <Card>
-                                        <CardContent>
-                                            <Typography variant="h6" gutterBottom>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                 User Information
                                             </Typography>
-                                            <Typography><strong>Name:</strong> {selectedPlan.user?.name}</Typography>
-                                            <Typography><strong>Email:</strong> {selectedPlan.user?.email}</Typography>
-                                            <Typography><strong>Current Weight:</strong> {selectedPlan.form?.currentWeight}kg</Typography>
-                                            <Typography><strong>Desired Weight:</strong> {selectedPlan.form?.desiredWeight}kg</Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Name:</strong> {selectedPlan.user?.name || 'N/A'}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                <strong>Email:</strong> {selectedPlan.user?.email || 'N/A'}
+                                            </Typography>
+                                            {selectedPlan.form?.currentWeight && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Current Weight:</strong> {selectedPlan.form.currentWeight}kg
+                                                </Typography>
+                                            )}
+                                            {selectedPlan.form?.desiredWeight && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Desired Weight:</strong> {selectedPlan.form.desiredWeight}kg
+                                                </Typography>
+                                            )}
+                                            {selectedPlan.form?.height && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Height:</strong> {selectedPlan.form.height}cm
+                                                </Typography>
+                                            )}
+                                            {selectedPlan.form?.age && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Age:</strong> {selectedPlan.form.age}
+                                                </Typography>
+                                            )}
+                                            {selectedPlan.form?.gender && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Gender:</strong> {selectedPlan.form.gender}
+                                                </Typography>
+                                            )}
+                                            {selectedPlan.form?.activityLevel && (
+                                                <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' }, mb: 0.5 }}>
+                                                    <strong>Activity Level:</strong> {selectedPlan.form.activityLevel}
+                                                </Typography>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </Grid>
+
+                                {/* Health & Dietary Info */}
+                                {selectedPlan.form && (selectedPlan.form.healthConditions?.length > 0 || 
+                                    selectedPlan.form.allergies?.length > 0 || 
+                                    selectedPlan.form.dietaryRestrictions?.length > 0 ||
+                                    selectedPlan.form.currentDiet ||
+                                    selectedPlan.form.supplementsOrMedications?.length > 0) && (
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                                    Health & Dietary Information
+                                                </Typography>
+                                                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                                                    {selectedPlan.form.healthConditions?.length > 0 && (
+                                                        <Grid item xs={12} sm={6} md={4}>
+                                                            <Typography variant="subtitle2" color="error.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Health Conditions:
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                                {selectedPlan.form.healthConditions.map((condition, idx) => (
+                                                                    <Chip 
+                                                                        key={idx} 
+                                                                        label={condition.length > 30 ? `${condition.substring(0, 30)}...` : condition}
+                                                                        onClick={() => openChipDetailDialog(condition, 'Health Condition', 'Health Information')}
+                                                                        size="small" 
+                                                                        color="error" 
+                                                                        variant="outlined"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))}
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                    {selectedPlan.form.allergies?.length > 0 && (
+                                                        <Grid item xs={12} sm={6} md={4}>
+                                                            <Typography variant="subtitle2" color="warning.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Allergies:
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
+                                                                {selectedPlan.form.allergies.map((allergy, idx) => (
+                                                                    <Chip 
+                                                                        key={idx} 
+                                                                        label={allergy.length > 30 ? `${allergy.substring(0, 30)}...` : allergy}
+                                                                        onClick={() => openChipDetailDialog(allergy, 'Allergy', 'Health Information')}
+                                                                        size="small" 
+                                                                        color="warning" 
+                                                                        variant="outlined"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))}
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                    {selectedPlan.form.dietaryRestrictions?.length > 0 && (
+                                                        <Grid item xs={12} sm={6} md={4}>
+                                                            <Typography variant="subtitle2" color="info.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Dietary Restrictions:
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
+                                                                {selectedPlan.form.dietaryRestrictions.map((restriction, idx) => (
+                                                                    <Chip 
+                                                                        key={idx} 
+                                                                        label={restriction.length > 30 ? `${restriction.substring(0, 30)}...` : restriction}
+                                                                        onClick={() => openChipDetailDialog(restriction, 'Dietary Restriction', 'Health Information')}
+                                                                        size="small" 
+                                                                        color="info" 
+                                                                        variant="outlined"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))}
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                    {selectedPlan.form.currentDiet && (
+                                                        <Grid item xs={12} sm={6} md={4}>
+                                                            <Typography variant="subtitle2" color="primary.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Current Diet:
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                                                                {selectedPlan.form.currentDiet}
+                                                            </Typography>
+                                                        </Grid>
+                                                    )}
+                                                    {selectedPlan.form.supplementsOrMedications?.length > 0 && (
+                                                        <Grid item xs={12} sm={6} md={4}>
+                                                            <Typography variant="subtitle2" color="secondary.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Supplements/Medications:
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
+                                                                {selectedPlan.form.supplementsOrMedications.map((item, idx) => (
+                                                                    <Chip 
+                                                                        key={idx} 
+                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
+                                                                        onClick={() => openChipDetailDialog(item, 'Supplement/Medication', 'Health Information')}
+                                                                        size="small" 
+                                                                        color="secondary" 
+                                                                        variant="outlined"
+                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                    />
+                                                                ))}
+                                                            </Box>
+                                                        </Grid>
+                                                    )}
+                                                </Grid>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
 
                                 {/* User Feedback */}
                                 <Grid item xs={12} md={6}>
@@ -907,51 +1199,335 @@ export default function AdminFormsPage() {
                                 {selectedPlan.weeklyPlans && selectedPlan.weeklyPlans.length > 0 && (
                                     <Grid item xs={12}>
                                         <Card>
-                                            <CardContent>
-                                                <Typography variant="h6" gutterBottom>
+                                            <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                                <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                                     Weekly Meal Plans
                                                 </Typography>
                                                 {selectedPlan.weeklyPlans.map((day, index) => (
-                                                    <Box key={index} sx={{ mb: 2 }}>
-                                                        <Typography variant="subtitle1" fontWeight="bold">
+                                                    <Box key={index} sx={{ mb: { xs: 2, sm: 3 } }}>
+                                                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: { xs: 1, sm: 2 }, color: 'primary.main', fontSize: { xs: '1rem', sm: '1.1rem' } }}>
                                                             Day {day.day}
                                                         </Typography>
-                                                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                                                        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mt: { xs: 0.5, sm: 1 } }}>
+                                                            {/* Breakfast */}
                                                             {day.breakfast && (
                                                                 <Grid item xs={12} sm={6} md={3}>
-                                                                    <Paper sx={{ p: 2 }}>
-                                                                        <Typography variant="subtitle2" color="primary">Breakfast</Typography>
-                                                                        <Typography variant="body2">{day.breakfast.name}</Typography>
-                                                                        <Typography variant="caption">{day.breakfast.calories} cal</Typography>
+                                                                    <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%', borderLeft: 3, borderColor: 'primary.main' }}>
+                                                                        <Box sx={{ mb: 1.5 }}>
+                                                                            <Chip label="Breakfast" color="primary" size="small" sx={{ mb: 1, fontWeight: 'bold' }} />
+                                                                            <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                                                                                {day.breakfast.name}
+                                                                            </Typography>
+                                                                            {day.breakfast.description && (
+                                                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, lineHeight: 1.4 }}>
+                                                                                    {day.breakfast.description}
+                                                                                </Typography>
+                                                                            )}
+                                                                        </Box>
+                                                                        
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, p: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
+                                                                            <Typography variant="body2" fontWeight="bold" color="success.dark">
+                                                                                {day.breakfast.calories} cal
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        
+                                                                        {day.breakfast.nutrients && (day.breakfast.nutrients.protein > 0 || day.breakfast.nutrients.carbs > 0 || day.breakfast.nutrients.fats > 0 || day.breakfast.nutrients.fiber > 0) && (
+                                                                            <Box sx={{ mb: 1.5 }}>
+                                                                                <Typography variant="caption" fontWeight="bold" display="block" sx={{ mb: 0.5, color: 'text.secondary' }}>
+                                                                                    Nutrients:
+                                                                                </Typography>
+                                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                                    {day.breakfast.nutrients.protein > 0 && (
+                                                                                        <Chip label={`P: ${day.breakfast.nutrients.protein}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.breakfast.nutrients.carbs > 0 && (
+                                                                                        <Chip label={`C: ${day.breakfast.nutrients.carbs}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.breakfast.nutrients.fats > 0 && (
+                                                                                        <Chip label={`F: ${day.breakfast.nutrients.fats}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.breakfast.nutrients.fiber > 0 && (
+                                                                                        <Chip label={`Fiber: ${day.breakfast.nutrients.fiber}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                </Box>
+                                                                            </Box>
+                                                                        )}
+                                                                        
+                                                                        {day.breakfast.ingredients && day.breakfast.ingredients.length > 0 && (
+                                                                            <Accordion sx={{ mt: 1, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Ingredients ({day.breakfast.ingredients.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.breakfast.ingredients.map((ing, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3, pl: 1 }}>
+                                                                                            • {ing}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
+                                                                        
+                                                                        {day.breakfast.instructions && day.breakfast.instructions.length > 0 && (
+                                                                            <Accordion sx={{ mt: 0.5, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Instructions ({day.breakfast.instructions.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.breakfast.instructions.map((inst, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.5, lineHeight: 1.4 }}>
+                                                                                            {idx + 1}. {inst}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
                                                                     </Paper>
                                                                 </Grid>
                                                             )}
+                                                            
+                                                            {/* Lunch */}
                                                             {day.lunch && (
                                                                 <Grid item xs={12} sm={6} md={3}>
-                                                                    <Paper sx={{ p: 2 }}>
-                                                                        <Typography variant="subtitle2" color="primary">Lunch</Typography>
-                                                                        <Typography variant="body2">{day.lunch.name}</Typography>
-                                                                        <Typography variant="caption">{day.lunch.calories} cal</Typography>
+                                                                    <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%', borderLeft: 3, borderColor: 'warning.main' }}>
+                                                                        <Box sx={{ mb: 1.5 }}>
+                                                                            <Chip label="Lunch" color="warning" size="small" sx={{ mb: 1, fontWeight: 'bold' }} />
+                                                                            <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                                                                                {day.lunch.name}
+                                                                            </Typography>
+                                                                            {day.lunch.description && (
+                                                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, lineHeight: 1.4 }}>
+                                                                                    {day.lunch.description}
+                                                                                </Typography>
+                                                                            )}
+                                                                        </Box>
+                                                                        
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, p: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
+                                                                            <Typography variant="body2" fontWeight="bold" color="success.dark">
+                                                                                {day.lunch.calories} cal
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        
+                                                                        {day.lunch.nutrients && (day.lunch.nutrients.protein > 0 || day.lunch.nutrients.carbs > 0 || day.lunch.nutrients.fats > 0 || day.lunch.nutrients.fiber > 0) && (
+                                                                            <Box sx={{ mb: 1.5 }}>
+                                                                                <Typography variant="caption" fontWeight="bold" display="block" sx={{ mb: 0.5, color: 'text.secondary' }}>
+                                                                                    Nutrients:
+                                                                                </Typography>
+                                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                                    {day.lunch.nutrients.protein > 0 && (
+                                                                                        <Chip label={`P: ${day.lunch.nutrients.protein}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.lunch.nutrients.carbs > 0 && (
+                                                                                        <Chip label={`C: ${day.lunch.nutrients.carbs}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.lunch.nutrients.fats > 0 && (
+                                                                                        <Chip label={`F: ${day.lunch.nutrients.fats}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.lunch.nutrients.fiber > 0 && (
+                                                                                        <Chip label={`Fiber: ${day.lunch.nutrients.fiber}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                </Box>
+                                                                            </Box>
+                                                                        )}
+                                                                        
+                                                                        {day.lunch.ingredients && day.lunch.ingredients.length > 0 && (
+                                                                            <Accordion sx={{ mt: 1, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Ingredients ({day.lunch.ingredients.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.lunch.ingredients.map((ing, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3, pl: 1 }}>
+                                                                                            • {ing}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
+                                                                        
+                                                                        {day.lunch.instructions && day.lunch.instructions.length > 0 && (
+                                                                            <Accordion sx={{ mt: 0.5, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Instructions ({day.lunch.instructions.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.lunch.instructions.map((inst, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.5, lineHeight: 1.4 }}>
+                                                                                            {idx + 1}. {inst}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
                                                                     </Paper>
                                                                 </Grid>
                                                             )}
+                                                            
+                                                            {/* Dinner */}
                                                             {day.dinner && (
                                                                 <Grid item xs={12} sm={6} md={3}>
-                                                                    <Paper sx={{ p: 2 }}>
-                                                                        <Typography variant="subtitle2" color="primary">Dinner</Typography>
-                                                                        <Typography variant="body2">{day.dinner.name}</Typography>
-                                                                        <Typography variant="caption">{day.dinner.calories} cal</Typography>
+                                                                    <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%', borderLeft: 3, borderColor: 'secondary.main' }}>
+                                                                        <Box sx={{ mb: 1.5 }}>
+                                                                            <Chip label="Dinner" color="secondary" size="small" sx={{ mb: 1, fontWeight: 'bold' }} />
+                                                                            <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                                                                                {day.dinner.name}
+                                                                            </Typography>
+                                                                            {day.dinner.description && (
+                                                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, lineHeight: 1.4 }}>
+                                                                                    {day.dinner.description}
+                                                                                </Typography>
+                                                                            )}
+                                                                        </Box>
+                                                                        
+                                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, p: 1, backgroundColor: 'success.light', borderRadius: 1 }}>
+                                                                            <Typography variant="body2" fontWeight="bold" color="success.dark">
+                                                                                {day.dinner.calories} cal
+                                                                            </Typography>
+                                                                        </Box>
+                                                                        
+                                                                        {day.dinner.nutrients && (day.dinner.nutrients.protein > 0 || day.dinner.nutrients.carbs > 0 || day.dinner.nutrients.fats > 0 || day.dinner.nutrients.fiber > 0) && (
+                                                                            <Box sx={{ mb: 1.5 }}>
+                                                                                <Typography variant="caption" fontWeight="bold" display="block" sx={{ mb: 0.5, color: 'text.secondary' }}>
+                                                                                    Nutrients:
+                                                                                </Typography>
+                                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                                    {day.dinner.nutrients.protein > 0 && (
+                                                                                        <Chip label={`P: ${day.dinner.nutrients.protein}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.dinner.nutrients.carbs > 0 && (
+                                                                                        <Chip label={`C: ${day.dinner.nutrients.carbs}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.dinner.nutrients.fats > 0 && (
+                                                                                        <Chip label={`F: ${day.dinner.nutrients.fats}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                    {day.dinner.nutrients.fiber > 0 && (
+                                                                                        <Chip label={`Fiber: ${day.dinner.nutrients.fiber}g`} size="small" variant="outlined" />
+                                                                                    )}
+                                                                                </Box>
+                                                                            </Box>
+                                                                        )}
+                                                                        
+                                                                        {day.dinner.ingredients && day.dinner.ingredients.length > 0 && (
+                                                                            <Accordion sx={{ mt: 1, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Ingredients ({day.dinner.ingredients.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.dinner.ingredients.map((ing, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3, pl: 1 }}>
+                                                                                            • {ing}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
+                                                                        
+                                                                        {day.dinner.instructions && day.dinner.instructions.length > 0 && (
+                                                                            <Accordion sx={{ mt: 0.5, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                                                                        Instructions ({day.dinner.instructions.length})
+                                                                                    </Typography>
+                                                                                </AccordionSummary>
+                                                                                <AccordionDetails sx={{ p: 1, pt: 0 }}>
+                                                                                    {day.dinner.instructions.map((inst, idx) => (
+                                                                                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.5, lineHeight: 1.4 }}>
+                                                                                            {idx + 1}. {inst}
+                                                                                        </Typography>
+                                                                                    ))}
+                                                                                </AccordionDetails>
+                                                                            </Accordion>
+                                                                        )}
                                                                     </Paper>
                                                                 </Grid>
                                                             )}
+                                                            
+                                                            {/* Snacks */}
                                                             {day.snacks && day.snacks.length > 0 && (
                                                                 <Grid item xs={12} sm={6} md={3}>
-                                                                    <Paper sx={{ p: 2 }}>
-                                                                        <Typography variant="subtitle2" color="primary">Snacks</Typography>
+                                                                    <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2 }, height: '100%', borderLeft: 3, borderColor: 'info.main' }}>
+                                                                        <Chip label={`Snacks (${day.snacks.length})`} color="info" size="small" sx={{ mb: 1.5, fontWeight: 'bold' }} />
                                                                         {day.snacks.map((snack, snackIndex) => (
-                                                                            <Box key={snackIndex}>
-                                                                                <Typography variant="body2">{snack.name}</Typography>
-                                                                                <Typography variant="caption">{snack.calories} cal</Typography>
+                                                                            <Box key={snackIndex} sx={{ mb: snackIndex < day.snacks.length - 1 ? 2 : 0 }}>
+                                                                                <Typography variant="body2" fontWeight="bold" sx={{ fontSize: { xs: '0.875rem', sm: '0.95rem' } }}>
+                                                                                    {snack.name}
+                                                                                </Typography>
+                                                                                {snack.description && (
+                                                                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, lineHeight: 1.4 }}>
+                                                                                        {snack.description}
+                                                                                    </Typography>
+                                                                                )}
+                                                                                
+                                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, mb: 0.5, p: 0.5, backgroundColor: 'success.light', borderRadius: 1 }}>
+                                                                                    <Typography variant="caption" fontWeight="bold" color="success.dark">
+                                                                                        {snack.calories} cal
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                                
+                                                                                {snack.nutrients && (snack.nutrients.protein > 0 || snack.nutrients.carbs > 0 || snack.nutrients.fats > 0 || snack.nutrients.fiber > 0) && (
+                                                                                    <Box sx={{ mt: 0.5, mb: 1 }}>
+                                                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.3 }}>
+                                                                                            {snack.nutrients.protein > 0 && (
+                                                                                                <Chip label={`P: ${snack.nutrients.protein}g`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                                                                            )}
+                                                                                            {snack.nutrients.carbs > 0 && (
+                                                                                                <Chip label={`C: ${snack.nutrients.carbs}g`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                                                                            )}
+                                                                                            {snack.nutrients.fats > 0 && (
+                                                                                                <Chip label={`F: ${snack.nutrients.fats}g`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                                                                            )}
+                                                                                            {snack.nutrients.fiber > 0 && (
+                                                                                                <Chip label={`Fiber: ${snack.nutrients.fiber}g`} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                                                                            )}
+                                                                                        </Box>
+                                                                                    </Box>
+                                                                                )}
+                                                                                
+                                                                                {snack.ingredients && snack.ingredients.length > 0 && (
+                                                                                    <Accordion sx={{ mt: 0.5, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
+                                                                                                Ingredients ({snack.ingredients.length})
+                                                                                            </Typography>
+                                                                                        </AccordionSummary>
+                                                                                        <AccordionDetails sx={{ p: 0.5, pt: 0 }}>
+                                                                                            {snack.ingredients.map((ing, idx) => (
+                                                                                                <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3, pl: 0.5, fontSize: '0.7rem' }}>
+                                                                                                    • {ing}
+                                                                                                </Typography>
+                                                                                            ))}
+                                                                                        </AccordionDetails>
+                                                                                    </Accordion>
+                                                                                )}
+                                                                                
+                                                                                {snack.instructions && snack.instructions.length > 0 && (
+                                                                                    <Accordion sx={{ mt: 0.5, boxShadow: 0, '&:before': { display: 'none' } }}>
+                                                                                        <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 'auto', p: 0.5, '& .MuiAccordionSummary-content': { margin: '8px 0' } }}>
+                                                                                            <Typography variant="caption" fontWeight="bold" sx={{ fontSize: '0.7rem' }}>
+                                                                                                Instructions ({snack.instructions.length})
+                                                                                            </Typography>
+                                                                                        </AccordionSummary>
+                                                                                        <AccordionDetails sx={{ p: 0.5, pt: 0 }}>
+                                                                                            {snack.instructions.map((inst, idx) => (
+                                                                                                <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.3, lineHeight: 1.3, fontSize: '0.7rem' }}>
+                                                                                                    {idx + 1}. {inst}
+                                                                                                </Typography>
+                                                                                            ))}
+                                                                                        </AccordionDetails>
+                                                                                    </Accordion>
+                                                                                )}
+                                                                                
+                                                                                {snackIndex < day.snacks.length - 1 && <Divider sx={{ my: 1.5 }} />}
                                                                             </Box>
                                                                         ))}
                                                                     </Paper>
@@ -959,16 +1535,21 @@ export default function AdminFormsPage() {
                                                             )}
                                                         </Grid>
                                                         {day.totalCalories && (
-                                                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 'bold' }}>
+                                                            <Typography variant="body2" sx={{ mt: { xs: 1.5, sm: 2 }, fontWeight: 'bold', color: 'primary.main', fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                                                                 Total Daily Calories: {day.totalCalories}
                                                             </Typography>
                                                         )}
                                                         {day.notes && (
-                                                            <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                                                                Notes: {day.notes}
-                                                            </Typography>
+                                                            <Paper elevation={0} sx={{ mt: { xs: 1.5, sm: 2 }, p: { xs: 1, sm: 1.5 }, backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50' }}>
+                                                                <Typography variant="body2" fontWeight="bold" color="info.main" sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                    Notes:
+                                                                </Typography>
+                                                                <Typography variant="body2" sx={{ mt: 0.5, fontStyle: 'italic', fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+                                                                    {day.notes}
+                                                                </Typography>
+                                                            </Paper>
                                                         )}
-                                                        <Divider sx={{ my: 2 }} />
+                                                        {index < selectedPlan.weeklyPlans.length - 1 && <Divider sx={{ my: { xs: 2, sm: 3 } }} />}
                                                     </Box>
                                                 ))}
                                             </CardContent>
@@ -983,10 +1564,13 @@ export default function AdminFormsPage() {
                                 flexDirection: 'column',
                                 alignItems: 'center', 
                                 justifyContent: 'center',
-                                minHeight: '300px',
-                                gap: 2
+                                minHeight: { xs: '200px', sm: '300px' },
+                                gap: 2,
+                                p: 2
                             }}>
-                                <Typography variant="h6" color="text.secondary">No plan data available</Typography>
+                                <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                                    No plan data available
+                                </Typography>
                             </Box>
                         )}
                     </DialogContent>
@@ -1022,6 +1606,74 @@ export default function AdminFormsPage() {
                     imageUrl={selectedImage}
                     onClose={() => setImageDialogOpen(false)}
                 />
+
+                {/* Chip Detail Dialog */}
+                <Dialog 
+                    open={chipDetailDialogOpen} 
+                    onClose={() => setChipDetailDialogOpen(false)} 
+                    maxWidth="sm" 
+                    fullWidth
+                    fullScreen={isSmallMobile}
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            borderRadius: { xs: 0, sm: 2 },
+                            maxHeight: { xs: '100vh', sm: '80vh' },
+                            margin: { xs: 0, sm: 2 }
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: { xs: 0.5, sm: 1 },
+                        p: { xs: 2, sm: 2.5 },
+                        backgroundColor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.50',
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        flexWrap: 'wrap'
+                    }}>
+                        <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                            {selectedChipTitle}
+                        </Typography>
+                        {selectedChipCategory && (
+                            <Chip 
+                                label={selectedChipCategory} 
+                                size="small" 
+                                color="primary" 
+                                variant="outlined"
+                            />
+                        )}
+                    </DialogTitle>
+                    <DialogContent sx={{ p: { xs: 2, sm: 3 }, mt: { xs: 0.5, sm: 1 } }}>
+                        <Typography 
+                            variant="body1" 
+                            sx={{ 
+                                lineHeight: 1.6,
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                fontSize: { xs: '0.875rem', sm: '1rem' }
+                            }}
+                        >
+                            {selectedChipContent}
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions sx={{ 
+                        p: { xs: 2, sm: 2 }, 
+                        borderTop: 1, 
+                        borderColor: 'divider',
+                        '& .MuiButton-root': {
+                            width: { xs: '100%', sm: 'auto' }
+                        }
+                    }}>
+                        <Button 
+                            onClick={() => setChipDetailDialogOpen(false)}
+                            variant="contained"
+                            color="primary"
+                        >
+                            Close
+                        </Button>
+                    </DialogActions>
+                </Dialog>
 
                 {/* Navigation Loading Backdrop */}
                 <Backdrop
