@@ -293,13 +293,18 @@ export default function FormActionsDialog({
             {/* Full screen loading backdrop */}
             <Backdrop
                 sx={{ 
-                    color: '#fff', 
+                    color: (theme) => theme.palette.primary.main,
                     zIndex: (theme) => theme.zIndex.modal + 1,
                     position: 'absolute'
                 }}
                 open={planLoading}
             >
-                <CircularProgress color="inherit" size={60} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <CircularProgress color="primary" size={60} />
+                    <Typography sx={{ mt: 2, color: 'primary.main' }}>
+                        {selectedAction === 'editPlan' ? 'Loading Plan Builder...' : 'Processing...'}
+                    </Typography>
+                </Box>
             </Backdrop>
         </Dialog>
     );

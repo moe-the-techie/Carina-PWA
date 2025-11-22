@@ -29,7 +29,8 @@ import {
     Avatar,
     useMediaQuery,
     Rating,
-    CircularProgress
+    CircularProgress,
+    Backdrop
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
@@ -119,15 +120,21 @@ export default function AdminFormsPage() {
         }
     };
 
-    const sendPlan = (form) => {
-        // Navigate to plan builder with form data
-        navigate('/admin/plan-builder', { 
-            state: { 
-                selectedUser: form.user._id,
-                selectedForm: form._id,
-                formData: form
-            }
-        });
+    const sendPlan = async (form) => {
+        try {
+            setPlanLoading(true);
+            // Navigate to plan builder with form data
+            navigate('/admin/plan-builder', { 
+                state: { 
+                    selectedUser: form.user._id,
+                    selectedForm: form._id,
+                    formData: form
+                }
+            });
+        } finally {
+            // Reset loading state after a short delay to allow navigation
+            setTimeout(() => setPlanLoading(false), 500);
+        }
     };
 
     const handleFilterChange = (event) => {
@@ -543,13 +550,14 @@ export default function AdminFormsPage() {
                                                 <Button 
                                                     variant="contained" 
                                                     color="primary"
+                                                    disabled={planLoading}
                                                     onClick={() => {
                                                         sendPlan(selectedForm);
                                                         setFormDetailsOpen(false);
                                                     }}
                                                     sx={{ mr: 1 }}
                                                 >
-                                                    Send Plan
+                                                    {planLoading ? 'Loading...' : 'Send Plan'}
                                                 </Button>
                                                 <Button 
                                                     variant="contained" 
@@ -847,6 +855,7 @@ export default function AdminFormsPage() {
                                                             size="small"
                                                             variant="outlined"
                                                             color="secondary"
+                                                            disabled={planLoading}
                                                             onClick={() => {
                                                                 const associatedForm = forms.find(form => form._id === selectedPlan.form._id || form._id === selectedPlan.form);
                                                                 if (associatedForm) {
@@ -856,7 +865,7 @@ export default function AdminFormsPage() {
                                                             }}
                                                             sx={{ fontSize: '0.75rem' }}
                                                         >
-                                                            Edit Plan Based on Feedback
+                                                            {planLoading ? 'Loading...' : 'Edit Plan Based on Feedback'}
                                                         </Button>
                                                     </Box>
                                                 </Box>
@@ -986,6 +995,7 @@ export default function AdminFormsPage() {
                             <Button 
                                 variant="contained" 
                                 color="primary"
+                                disabled={planLoading}
                                 onClick={() => {
                                     // Find the form associated with this plan
                                     const associatedForm = forms.find(form => form._id === selectedPlan.form._id || form._id === selectedPlan.form);
@@ -997,7 +1007,7 @@ export default function AdminFormsPage() {
                                 }}
                                 sx={{ mr: 1 }}
                             >
-                                Edit Plan
+                                {planLoading ? 'Loading...' : 'Edit Plan'}
                             </Button>
                         )}
                         <Button onClick={() => {
@@ -1012,6 +1022,20 @@ export default function AdminFormsPage() {
                     imageUrl={selectedImage}
                     onClose={() => setImageDialogOpen(false)}
                 />
+
+                {/* Navigation Loading Backdrop */}
+                <Backdrop
+                    sx={{ 
+                        color: (theme) => theme.palette.primary.main,
+                        zIndex: (theme) => theme.zIndex.modal + 1 
+                    }}
+                    open={planLoading}
+                >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <CircularProgress color="primary" size={60} />
+                        <Typography sx={{ mt: 2, color: 'primary.main' }}>Loading Plan Builder...</Typography>
+                    </Box>
+                </Backdrop>
             </Box>
         </PageFade>
     );

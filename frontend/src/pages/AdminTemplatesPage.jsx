@@ -23,7 +23,9 @@ import {
     Menu,
     MenuItem as MenuOption,
     Divider,
-    Alert
+    Alert,
+    CircularProgress,
+    Backdrop
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -49,6 +51,7 @@ export default function AdminTemplatesPage() {
     // State
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [navigationLoading, setNavigationLoading] = useState(false);
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -241,16 +244,28 @@ export default function AdminTemplatesPage() {
         setViewDialogOpen(true);
     };
 
-    const handleUseTemplate = (template) => {
-        navigate('/admin/plan-builder', {
-            state: { templateId: template._id, templateData: template }
-        });
+    const handleUseTemplate = async (template) => {
+        try {
+            setNavigationLoading(true);
+            navigate('/admin/plan-builder', {
+                state: { templateId: template._id, templateData: template }
+            });
+        } finally {
+            // Reset loading state after a short delay to allow navigation
+            setTimeout(() => setNavigationLoading(false), 500);
+        }
     };
 
-    const handleEditTemplate = (template) => {
-        navigate('/admin/plan-builder', {
-            state: { editTemplateId: template._id, templateData: template }
-        });
+    const handleEditTemplate = async (template) => {
+        try {
+            setNavigationLoading(true);
+            navigate('/admin/plan-builder', {
+                state: { editTemplateId: template._id, templateData: template }
+            });
+        } finally {
+            // Reset loading state after a short delay to allow navigation
+            setTimeout(() => setNavigationLoading(false), 500);
+        }
     };
 
     if (loading && templates.length === 0) {
@@ -657,6 +672,20 @@ export default function AdminTemplatesPage() {
                         )}
                     </DialogActions>
                 </Dialog>
+
+                {/* Navigation Loading Backdrop */}
+                <Backdrop
+                    sx={{ 
+                        color: (theme) => theme.palette.primary.main,
+                        zIndex: (theme) => theme.zIndex.modal + 1 
+                    }}
+                    open={navigationLoading}
+                >
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <CircularProgress color="primary" size={60} />
+                        <Typography sx={{ mt: 2, color: 'primary.main' }}>Loading Plan Builder...</Typography>
+                    </Box>
+                </Backdrop>
             </Box>
         </PageFade>
     );
