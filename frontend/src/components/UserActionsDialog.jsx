@@ -21,7 +21,8 @@ import {
     Visibility as ViewIcon,
     Message as MessageIcon,
     Block as BanIcon,
-    Delete as DeleteIcon
+    Delete as DeleteIcon,
+    Category as CategoryIcon
 } from '@mui/icons-material';
 
 export default function UserActionsDialog({ 
@@ -31,7 +32,8 @@ export default function UserActionsDialog({
     onViewDetails,
     onMessage,
     onBan,
-    onDelete
+    onDelete,
+    onAssignClass
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -48,6 +50,9 @@ export default function UserActionsDialog({
                 break;
             case 'message':
                 onMessage(user._id);
+                break;
+            case 'assignClass':
+                onAssignClass(user);
                 break;
             case 'ban':
                 onBan(user);
@@ -124,6 +129,24 @@ export default function UserActionsDialog({
                             <ListItemText 
                                 primary="Message User" 
                                 secondary={!isMobile ? "Send a direct message" : null}
+                                primaryTypographyProps={{ 
+                                    variant: isMobile ? 'body1' : 'body2' 
+                                }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                    <Divider />
+                    <ListItem disablePadding>
+                        <ListItemButton 
+                            onClick={() => handleActionClick('assignClass')}
+                            sx={{ py: { xs: 2, sm: 1.5 } }}
+                        >
+                            <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                <CategoryIcon color="info" />
+                            </ListItemIcon>
+                            <ListItemText 
+                                primary="Assign Class" 
+                                secondary={!isMobile ? "Set user classification" : null}
                                 primaryTypographyProps={{ 
                                     variant: isMobile ? 'body1' : 'body2' 
                                 }}

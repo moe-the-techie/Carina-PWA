@@ -26,8 +26,13 @@ import {
     Alert,
     Snackbar,
     useMediaQuery,
-    useTheme
+    useTheme,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel
 } from '@mui/material';
+import { Circle as CircleIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -58,6 +63,10 @@ export default function AdminUsersPage() {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
     const [selectedUserForActions, setSelectedUserForActions] = useState(null);
+    const [classDialogOpen, setClassDialogOpen] = useState(false);
+    const [userToAssignClass, setUserToAssignClass] = useState(null);
+    const [availableClasses, setAvailableClasses] = useState([]);
+    const [selectedClassId, setSelectedClassId] = useState('');
 
     // Debounce search input
     useEffect(() => {
@@ -70,7 +79,25 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         fetchUsers();
+        fetchClasses();
     }, [page, debouncedSearch]);
+
+    const fetchClasses = async () => {
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/classes`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setAvailableClasses(data.classes.filter(c => c.isActive));
+            }
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -223,6 +250,50 @@ export default function AdminUsersPage() {
         setActionsDialogOpen(true);
     };
 
+    const handleAssignClassClick = (user) => {
+        setUserToAssignClass(user);
+        setSelectedClassId(user.userClass?._id || '');
+        setClassDialogOpen(true);
+    };
+
+    const handleAssignClassConfirm = async () => {
+        if (!userToAssignClass) return;
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/users/${userToAssignClass._id}/class`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ classId: selectedClassId || null })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to assign class');
+            }
+
+            setSnackbar({
+                open: true,
+                message: selectedClassId ? 'Class assigned successfully' : 'Class removed successfully',
+                severity: 'success'
+            });
+            
+            setClassDialogOpen(false);
+            setUserToAssignClass(null);
+            setSelectedClassId('');
+            fetchUsers();
+        } catch (error) {
+            console.error('Error assigning class:', error);
+            setSnackbar({
+                open: true,
+                message: error.message || 'Failed to assign class',
+                severity: 'error'
+            });
+        }
+    };
+
     if (loading && users.length === 0) {
         return (
             <PageFade>
@@ -294,6 +365,18 @@ export default function AdminUsersPage() {
                                                 {user.email}
                                             </Typography>
                                             <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+                                                {user.userClass && (
+                                                    <Chip 
+                                                        icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
+                                                        label={user.userClass.name}
+                                                        size="small"
+                                                        sx={{ 
+                                                            borderColor: user.userClass.color,
+                                                            color: user.userClass.color
+                                                        }}
+                                                        variant="outlined"
+                                                    />
+                                                )}
                                                 <Chip 
                                                     label={user.gender || 'Not specified'} 
                                                     size="small"
@@ -354,6 +437,7 @@ export default function AdminUsersPage() {
                                     <TableCell>Photo</TableCell>
                                     <TableCell>Name</TableCell>
                                     <TableCell>Email</TableCell>
+                                    <TableCell>Class</TableCell>
                                     <TableCell>Gender</TableCell>
                                     <TableCell>Date of Birth</TableCell>
                                     <TableCell>Is Mother</TableCell>
@@ -389,6 +473,24 @@ export default function AdminUsersPage() {
                                         </TableCell>
                                         <TableCell>{user.name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            {user.userClass ? (
+                                                <Chip 
+                                                    icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
+                                                    label={user.userClass.name}
+                                                    size="small"
+                                                    sx={{ 
+                                                        borderColor: user.userClass.color,
+                                                        color: user.userClass.color
+                                                    }}
+                                                    variant="outlined"
+                                                />
+                                            ) : (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    None
+                                                </Typography>
+                                            )}
+                                        </TableCell>
                                         <TableCell>
                                             <Chip 
                                                 label={user.gender || 'Not specified'} 
@@ -594,9 +696,53 @@ export default function AdminUsersPage() {
                     user={selectedUserForActions}
                     onViewDetails={fetchUserDetails}
                     onMessage={handleMessageUser}
+                    onAssignClass={handleAssignClassClick}
                     onBan={handleBanClick}
                     onDelete={handleDeleteClick}
                 />
+
+                {/* Class Assignment Dialog */}
+                <Dialog
+                    open={classDialogOpen}
+                    onClose={() => setClassDialogOpen(false)}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>Assign User Class</DialogTitle>
+                    <DialogContent>
+                        <Typography sx={{ mb: 2 }}>
+                            Assign a class to <strong>{userToAssignClass?.name}</strong>
+                        </Typography>
+                        <FormControl fullWidth sx={{ mt: 2 }}>
+                            <InputLabel>User Class</InputLabel>
+                            <Select
+                                value={selectedClassId}
+                                onChange={(e) => setSelectedClassId(e.target.value)}
+                                label="User Class"
+                            >
+                                <MenuItem value="">
+                                    <em>None</em>
+                                </MenuItem>
+                                {availableClasses.map((classOption) => (
+                                    <MenuItem key={classOption._id} value={classOption._id}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <CircleIcon sx={{ fontSize: 16, color: classOption.color }} />
+                                            {classOption.name}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setClassDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAssignClassConfirm} variant="contained">
+                            Assign
+                        </Button>
+                    </DialogActions>
+                </Dialog>
 
                 {/* Delete Confirmation Dialog */}
                 <Dialog

@@ -11,6 +11,7 @@ import FormSuccessPage from './pages/FormSuccessPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminLayout from './components/AdminLayout';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminClassesPage from './pages/AdminClassesPage';
 import AdminFormsPage from './pages/AdminFormsPage';
 import AdminTemplatesPage from './pages/AdminTemplatesPage';
 import AdminPlanBuilderPage from './pages/AdminPlanBuilderPage';
@@ -104,6 +105,7 @@ function App() {
                 {/* Admin*/}
                 <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminUsersPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/classes" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminClassesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminFormsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/templates" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />

@@ -71,6 +71,11 @@ const userSchema = new Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    userClass: {
+        type: Schema.Types.ObjectId,
+        ref: 'UserClass',
+        default: null
+    },
     isBanned: {
         type: Boolean,
         default: false
