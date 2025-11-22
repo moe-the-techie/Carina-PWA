@@ -1883,27 +1883,52 @@ export default function AdminPlanBuilderPage() {
                     <Grid item xs={12}>
                         <Card>
                             <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6">
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    justifyContent: 'space-between', 
+                                    alignItems: { xs: 'stretch', sm: 'center' },
+                                    gap: { xs: 2, sm: 1 },
+                                    mb: 2 
+                                }}>
+                                    <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                         Weekly Meal Plan
                                     </Typography>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        gap: 1,
+                                        alignItems: { xs: 'stretch', sm: 'center' }
+                                    }}>
                                         {planData.weeklyPlans.length > 0 && (
                                             <>
                                                 <Chip 
                                                     label={`Weekly Total: ${calculateWeeklyStats().total} kcal`}
                                                     color="secondary"
                                                     size="small"
+                                                    sx={{ 
+                                                        minHeight: { xs: '32px', sm: '24px' },
+                                                        fontSize: { xs: '0.8rem', sm: '0.8125rem' }
+                                                    }}
                                                 />
                                                 <Chip 
                                                     label={`Daily Avg: ${calculateWeeklyStats().average} kcal`}
                                                     color="primary"
                                                     size="small"
+                                                    sx={{ 
+                                                        minHeight: { xs: '32px', sm: '24px' },
+                                                        fontSize: { xs: '0.8rem', sm: '0.8125rem' }
+                                                    }}
                                                 />
                                             </>
                                         )}
                                         {planData.weeklyPlans.length === 0 && (
-                                            <Button variant="contained" onClick={initializePlan}>
+                                            <Button 
+                                                variant="contained" 
+                                                onClick={initializePlan}
+                                                fullWidth={{ xs: true, sm: false }}
+                                                sx={{ minHeight: { xs: '44px', sm: '36px' } }}
+                                            >
                                                 Initialize 7-Day Plan
                                             </Button>
                                         )}
@@ -1914,117 +1939,351 @@ export default function AdminPlanBuilderPage() {
                                     const dayCalories = calculateDayCalories(day);
                                     return (
                                         <Accordion key={dayIndex}>
-                                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mr: 2 }}>
-                                                    <Typography variant="h6">
+                                            <AccordionSummary 
+                                                expandIcon={<ExpandMoreIcon />}
+                                                sx={{
+                                                    '& .MuiAccordionSummary-content': {
+                                                        my: { xs: 1.5, sm: 1 }
+                                                    }
+                                                }}
+                                            >
+                                                <Box sx={{ 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: 'center',
+                                                    width: '100%', 
+                                                    mr: 2,
+                                                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                                                    gap: 1
+                                                }}>
+                                                    <Typography 
+                                                        variant="h6"
+                                                        sx={{ 
+                                                            fontSize: { xs: '1rem', sm: '1.1rem', md: '1.25rem' },
+                                                            fontWeight: 600
+                                                        }}
+                                                    >
                                                         Day {day.day} - {getDayName(day.day)}
                                                     </Typography>
                                                     <Chip 
                                                         label={`${dayCalories} kcal`}
                                                         color="primary"
                                                         size="small"
+                                                        sx={{ 
+                                                            minHeight: { xs: '28px', sm: '24px' },
+                                                            fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                                                            fontWeight: 600
+                                                        }}
                                                     />
                                                 </Box>
                                             </AccordionSummary>
-                                        <AccordionDetails sx={{ p: { xs: 1, sm: 2 } }}>
-                                            <Grid container spacing={{ xs: 1, sm: 2 }}>
+                                        <AccordionDetails sx={{ p: { xs: 1.5, sm: 2 } }}>
+                                            <Grid container spacing={{ xs: 2, sm: 2 }}>
                                                 {/* Breakfast */}
                                                 <Grid item xs={12} sm={6} md={3}>
-                                                    <Typography variant="subtitle2" gutterBottom>Breakfast</Typography>
-                                                    {day.breakfast ? (
-                                                        <Chip 
-                                                            label={day.breakfast.name} 
-                                                            onClick={() => editMeal(dayIndex, 'breakfast', day.breakfast)}
-                                                            onDelete={() => {
-                                                                const newPlans = [...planData.weeklyPlans];
-                                                                newPlans[dayIndex].breakfast = null;
-                                                                setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                    <Box sx={{ 
+                                                        p: { xs: 1.5, sm: 1 },
+                                                        border: { xs: '1px solid', sm: 'none' },
+                                                        borderColor: { xs: 'divider' },
+                                                        borderRadius: { xs: 1, sm: 0 },
+                                                        backgroundColor: { xs: 'action.hover', sm: 'transparent' }
+                                                    }}>
+                                                        <Typography 
+                                                            variant="subtitle2" 
+                                                            gutterBottom
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                fontSize: { xs: '0.9rem', sm: '0.875rem' },
+                                                                color: 'warning.main'
                                                             }}
-                                                            sx={{ cursor: 'pointer' }}
-                                                        />
-                                                    ) : (
-                                                        <Button 
-                                                            startIcon={<AddIcon />}
-                                                            onClick={() => openMealDialog(dayIndex, 'breakfast')}
                                                         >
-                                                            Add Breakfast
-                                                        </Button>
-                                                    )}
+                                                            Breakfast
+                                                        </Typography>
+                                                        {day.breakfast ? (
+                                                            <Box 
+                                                                onClick={() => editMeal(dayIndex, 'breakfast', day.breakfast)}
+                                                                sx={{ 
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 1,
+                                                                    cursor: 'pointer',
+                                                                    p: 1,
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'primary.main',
+                                                                    backgroundColor: 'primary.lighter',
+                                                                    '&:hover': {
+                                                                        backgroundColor: 'primary.light'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Typography 
+                                                                    sx={{ 
+                                                                        flex: 1,
+                                                                        fontSize: { xs: '0.85rem', sm: '0.875rem' },
+                                                                        fontWeight: 500,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                >
+                                                                    {day.breakfast.name}
+                                                                </Typography>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newPlans = [...planData.weeklyPlans];
+                                                                        newPlans[dayIndex].breakfast = null;
+                                                                        setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                                    }}
+                                                                    sx={{ p: 0.5 }}
+                                                                >
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Box>
+                                                        ) : (
+                                                            <Button 
+                                                                startIcon={<AddIcon />}
+                                                                onClick={() => openMealDialog(dayIndex, 'breakfast')}
+                                                                size="small"
+                                                                fullWidth
+                                                                variant="outlined"
+                                                                sx={{ 
+                                                                    minHeight: { xs: '44px', sm: '36px' },
+                                                                    fontSize: { xs: '0.85rem', sm: '0.8125rem' }
+                                                                }}
+                                                            >
+                                                                Add Breakfast
+                                                            </Button>
+                                                        )}
+                                                    </Box>
                                                 </Grid>
 
                                                 {/* Lunch */}
                                                 <Grid item xs={12} sm={6} md={3}>
-                                                    <Typography variant="subtitle2" gutterBottom>Lunch</Typography>
-                                                    {day.lunch ? (
-                                                        <Chip 
-                                                            label={day.lunch.name} 
-                                                            onClick={() => editMeal(dayIndex, 'lunch', day.lunch)}
-                                                            onDelete={() => {
-                                                                const newPlans = [...planData.weeklyPlans];
-                                                                newPlans[dayIndex].lunch = null;
-                                                                setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                    <Box sx={{ 
+                                                        p: { xs: 1.5, sm: 1 },
+                                                        border: { xs: '1px solid', sm: 'none' },
+                                                        borderColor: { xs: 'divider' },
+                                                        borderRadius: { xs: 1, sm: 0 },
+                                                        backgroundColor: { xs: 'action.hover', sm: 'transparent' }
+                                                    }}>
+                                                        <Typography 
+                                                            variant="subtitle2" 
+                                                            gutterBottom
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                fontSize: { xs: '0.9rem', sm: '0.875rem' },
+                                                                color: 'secondary.main'
                                                             }}
-                                                            sx={{ cursor: 'pointer' }}
-                                                        />
-                                                    ) : (
-                                                        <Button 
-                                                            startIcon={<AddIcon />}
-                                                            onClick={() => openMealDialog(dayIndex, 'lunch')}
                                                         >
-                                                            Add Lunch
-                                                        </Button>
-                                                    )}
+                                                            Lunch
+                                                        </Typography>
+                                                        {day.lunch ? (
+                                                            <Box 
+                                                                onClick={() => editMeal(dayIndex, 'lunch', day.lunch)}
+                                                                sx={{ 
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 1,
+                                                                    cursor: 'pointer',
+                                                                    p: 1,
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'secondary.main',
+                                                                    backgroundColor: 'secondary.lighter',
+                                                                    '&:hover': {
+                                                                        backgroundColor: 'secondary.light'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Typography 
+                                                                    sx={{ 
+                                                                        flex: 1,
+                                                                        fontSize: { xs: '0.85rem', sm: '0.875rem' },
+                                                                        fontWeight: 500,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                >
+                                                                    {day.lunch.name}
+                                                                </Typography>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newPlans = [...planData.weeklyPlans];
+                                                                        newPlans[dayIndex].lunch = null;
+                                                                        setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                                    }}
+                                                                    sx={{ p: 0.5 }}
+                                                                >
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Box>
+                                                        ) : (
+                                                            <Button 
+                                                                startIcon={<AddIcon />}
+                                                                onClick={() => openMealDialog(dayIndex, 'lunch')}
+                                                                size="small"
+                                                                fullWidth
+                                                                variant="outlined"
+                                                                sx={{ 
+                                                                    minHeight: { xs: '44px', sm: '36px' },
+                                                                    fontSize: { xs: '0.85rem', sm: '0.8125rem' }
+                                                                }}
+                                                            >
+                                                                Add Lunch
+                                                            </Button>
+                                                        )}
+                                                    </Box>
                                                 </Grid>
 
                                                 {/* Dinner */}
                                                 <Grid item xs={12} sm={6} md={3}>
-                                                    <Typography variant="subtitle2" gutterBottom>Dinner</Typography>
-                                                    {day.dinner ? (
-                                                        <Chip 
-                                                            label={day.dinner.name} 
-                                                            onClick={() => editMeal(dayIndex, 'dinner', day.dinner)}
-                                                            onDelete={() => {
-                                                                const newPlans = [...planData.weeklyPlans];
-                                                                newPlans[dayIndex].dinner = null;
-                                                                setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                    <Box sx={{ 
+                                                        p: { xs: 1.5, sm: 1 },
+                                                        border: { xs: '1px solid', sm: 'none' },
+                                                        borderColor: { xs: 'divider' },
+                                                        borderRadius: { xs: 1, sm: 0 },
+                                                        backgroundColor: { xs: 'action.hover', sm: 'transparent' }
+                                                    }}>
+                                                        <Typography 
+                                                            variant="subtitle2" 
+                                                            gutterBottom
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                fontSize: { xs: '0.9rem', sm: '0.875rem' },
+                                                                color: 'success.main'
                                                             }}
-                                                            sx={{ cursor: 'pointer' }}
-                                                        />
-                                                    ) : (
-                                                        <Button 
-                                                            startIcon={<AddIcon />}
-                                                            onClick={() => openMealDialog(dayIndex, 'dinner')}
                                                         >
-                                                            Add Dinner
-                                                        </Button>
-                                                    )}
+                                                            Dinner
+                                                        </Typography>
+                                                        {day.dinner ? (
+                                                            <Box 
+                                                                onClick={() => editMeal(dayIndex, 'dinner', day.dinner)}
+                                                                sx={{ 
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 1,
+                                                                    cursor: 'pointer',
+                                                                    p: 1,
+                                                                    borderRadius: 1,
+                                                                    border: '1px solid',
+                                                                    borderColor: 'success.main',
+                                                                    backgroundColor: 'success.lighter',
+                                                                    '&:hover': {
+                                                                        backgroundColor: 'success.light'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Typography 
+                                                                    sx={{ 
+                                                                        flex: 1,
+                                                                        fontSize: { xs: '0.85rem', sm: '0.875rem' },
+                                                                        fontWeight: 500,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                >
+                                                                    {day.dinner.name}
+                                                                </Typography>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newPlans = [...planData.weeklyPlans];
+                                                                        newPlans[dayIndex].dinner = null;
+                                                                        setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                                    }}
+                                                                    sx={{ p: 0.5 }}
+                                                                >
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Box>
+                                                        ) : (
+                                                            <Button 
+                                                                startIcon={<AddIcon />}
+                                                                onClick={() => openMealDialog(dayIndex, 'dinner')}
+                                                                size="small"
+                                                                fullWidth
+                                                                variant="outlined"
+                                                                sx={{ 
+                                                                    minHeight: { xs: '44px', sm: '36px' },
+                                                                    fontSize: { xs: '0.85rem', sm: '0.8125rem' }
+                                                                }}
+                                                            >
+                                                                Add Dinner
+                                                            </Button>
+                                                        )}
+                                                    </Box>
                                                 </Grid>
 
                                                 {/* Snacks */}
                                                 <Grid item xs={12} sm={6} md={3}>
-                                                    <Typography variant="subtitle2" gutterBottom>Snacks</Typography>
-                                                    {day.snacks.map((snack, snackIndex) => (
-                                                        <Chip 
-                                                            key={snackIndex}
-                                                            label={snack.name} 
-                                                            size="small"
-                                                            onClick={() => editMeal(dayIndex, 'snack', snack, snackIndex)}
-                                                            sx={{ mr: 1, mb: 1, cursor: 'pointer' }}
-                                                            onDelete={() => {
-                                                                const newPlans = [...planData.weeklyPlans];
-                                                                newPlans[dayIndex].snacks.splice(snackIndex, 1);
-                                                                setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                    <Box sx={{ 
+                                                        p: { xs: 1.5, sm: 1 },
+                                                        border: { xs: '1px solid', sm: 'none' },
+                                                        borderColor: { xs: 'divider' },
+                                                        borderRadius: { xs: 1, sm: 0 },
+                                                        backgroundColor: { xs: 'action.hover', sm: 'transparent' }
+                                                    }}>
+                                                        <Typography 
+                                                            variant="subtitle2" 
+                                                            gutterBottom
+                                                            sx={{ 
+                                                                fontWeight: 600,
+                                                                fontSize: { xs: '0.9rem', sm: '0.875rem' },
+                                                                color: 'info.main'
                                                             }}
-                                                        />
-                                                    ))}
-                                                    <br />
-                                                    <Button 
-                                                        size="small"
-                                                        startIcon={<AddIcon />}
-                                                        onClick={() => openMealDialog(dayIndex, 'snack')}
-                                                    >
-                                                        Add Snack
-                                                    </Button>
+                                                        >
+                                                            Snacks
+                                                        </Typography>
+                                                        <Box sx={{ mb: day.snacks.length > 0 ? 1 : 0 }}>
+                                                            {day.snacks.map((snack, snackIndex) => (
+                                                                <Chip 
+                                                                    key={snackIndex}
+                                                                    label={snack.name} 
+                                                                    size="small"
+                                                                    onClick={() => editMeal(dayIndex, 'snack', snack, snackIndex)}
+                                                                    sx={{ 
+                                                                        mr: 0.5, 
+                                                                        mb: 0.5, 
+                                                                        cursor: 'pointer',
+                                                                        minHeight: { xs: '32px', sm: '28px' },
+                                                                        fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                                                                        maxWidth: '100%',
+                                                                        '& .MuiChip-label': {
+                                                                            px: { xs: 1, sm: 0.75 },
+                                                                            whiteSpace: 'normal',
+                                                                            wordBreak: 'break-word'
+                                                                        }
+                                                                    }}
+                                                                    onDelete={() => {
+                                                                        const newPlans = [...planData.weeklyPlans];
+                                                                        newPlans[dayIndex].snacks.splice(snackIndex, 1);
+                                                                        setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                        </Box>
+                                                        <Button 
+                                                            size="small"
+                                                            startIcon={<AddIcon />}
+                                                            onClick={() => openMealDialog(dayIndex, 'snack')}
+                                                            fullWidth
+                                                            variant="outlined"
+                                                            sx={{ 
+                                                                minHeight: { xs: '44px', sm: '36px' },
+                                                                fontSize: { xs: '0.85rem', sm: '0.8125rem' }
+                                                            }}
+                                                        >
+                                                            Add Snack
+                                                        </Button>
+                                                    </Box>
                                                 </Grid>
 
                                                 {/* Notes */}
@@ -2032,13 +2291,19 @@ export default function AdminPlanBuilderPage() {
                                                     <TextField
                                                         fullWidth
                                                         multiline
-                                                        rows={2}
+                                                        rows={{ xs: 3, sm: 2 }}
                                                         label="Daily Notes"
                                                         value={day.notes}
                                                         onChange={(e) => {
                                                             const newPlans = [...planData.weeklyPlans];
                                                             newPlans[dayIndex].notes = e.target.value;
                                                             setPlanData(prev => ({ ...prev, weeklyPlans: newPlans }));
+                                                        }}
+                                                        size="small"
+                                                        sx={{
+                                                            '& .MuiInputBase-root': {
+                                                                fontSize: { xs: '0.9rem', sm: '1rem' }
+                                                            }
                                                         }}
                                                     />
                                                 </Grid>
@@ -2140,18 +2405,30 @@ export default function AdminPlanBuilderPage() {
                     onClose={() => setMealDialogOpen(false)} 
                     maxWidth="md" 
                     fullWidth
-                    fullScreen={{ xs: true, sm: false }}
+                    fullScreen
                     sx={{
                         '& .MuiDialog-paper': {
                             margin: { xs: 0, sm: 2 },
-                            maxHeight: { xs: '100vh', sm: 'calc(100% - 64px)' }
+                            maxHeight: { xs: '100vh', sm: 'calc(100% - 64px)' },
+                            borderRadius: { xs: 0, sm: 2 }
+                        },
+                        '@media (min-width: 600px)': {
+                            '& .MuiDialog-paper': {
+                                maxWidth: '900px'
+                            }
                         }
                     }}
                 >
-                    <DialogTitle>
-                        {mealDialogMode === 'edit' ? 'Edit' : 'Add'} {currentMealType}
+                    <DialogTitle sx={{ 
+                        fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                        fontWeight: 600,
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        pb: 2
+                    }}>
+                        {mealDialogMode === 'edit' ? 'Edit' : 'Add'} {currentMealType.charAt(0).toUpperCase() + currentMealType.slice(1)}
                     </DialogTitle>
-                    <DialogContent sx={{ p: { xs: 1, sm: 2 } }}>
+                    <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
                         <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mt: { xs: 0, sm: 1 } }}>
                             <Grid item xs={12} sm={6}>
                                 <TextField
