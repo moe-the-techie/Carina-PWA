@@ -1,4 +1,4 @@
-// Service Worker for PWA with Ably support and notifications
+// Service Worker for PWA with Ably support and notifications.
 
 const CACHE_NAME = 'carina-pwa-v1';
 
