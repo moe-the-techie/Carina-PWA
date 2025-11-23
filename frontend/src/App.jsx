@@ -16,12 +16,15 @@ import AdminFormsPage from './pages/AdminFormsPage';
 import AdminTemplatesPage from './pages/AdminTemplatesPage';
 import AdminPlanBuilderPage from './pages/AdminPlanBuilderPage';
 import AdminChatsPage from './pages/AdminChatsPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
+import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import { disconnectAbly } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
+import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function App() {
@@ -89,8 +92,9 @@ function App() {
     return (
         <Router>
             <UnreadCountProvider user={user}>
-                <ScrollToTop />
-                <Routes>
+                <AnnouncementNotificationProvider user={user}>
+                    <ScrollToTop />
+                    <Routes>
                 <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
                 <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <SignUpPage onLogin={handleLogin} />} />
@@ -98,6 +102,7 @@ function App() {
                 <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogout={handleLogout} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/announcements" element={isLoggedIn ? <AuthenticatedLayout><AnnouncementsPage user={user} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
                 <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
                 <Route path="/view-plan/:id" element={isLoggedIn ? <ViewPlanPage /> : <Navigate to="/" replace/>} />
@@ -110,7 +115,9 @@ function App() {
                 <Route path="/admin/templates" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/announcements" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 </Routes>
+                </AnnouncementNotificationProvider>
             </UnreadCountProvider>
         </Router>
     );

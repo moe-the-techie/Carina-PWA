@@ -23,6 +23,7 @@ import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import TemplateIcon from '@mui/icons-material/FileCopy';
 import ChatIcon from '@mui/icons-material/Chat';
 import CategoryIcon from '@mui/icons-material/Category';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -43,6 +44,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
         { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes' },
         { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
         { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
+        { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements' },
         { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates' },
         { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
     ];

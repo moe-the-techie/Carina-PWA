@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.js';
 import planRoutes from './routes/plan.js';
 import templateRoutes from './routes/templates.js';
 import chatRoutes from './routes/chat.js';
+import announcementRoutes from './routes/announcements.js';
 
 dotenv.config();
 connectDB();
@@ -56,6 +57,7 @@ app.use('/api', adminRoutes);
 app.use('/api', planRoutes);
 app.use('/api', templateRoutes);
 app.use('/api', chatRoutes);
+app.use('/api', announcementRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 

@@ -51,6 +51,8 @@ export const generateAblyToken = async (userId) => {
             capability: {
                 [`chat:${userId}`]: ['subscribe', 'presence'],
                 [`chat:${userId}:messages`]: ['subscribe'],
+                [`user:${userId}:announcements`]: ['subscribe'],
+                'announcements': ['subscribe'],
             },
             ttl: 3600000, // 1 hour
         };
@@ -77,6 +79,8 @@ export const generateAdminAblyToken = async (userId) => {
                 'chat:*': ['subscribe', 'presence'],
                 'chat:*:messages': ['subscribe'],
                 'admin:chats': ['subscribe'],
+                'announcements': ['subscribe', 'publish'],
+                'user:*:announcements': ['publish'],
             },
             ttl: 3600000, // 1 hour
         };

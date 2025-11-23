@@ -7,6 +7,8 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import CampaignIcon from '@mui/icons-material/Campaign';
 import Badge from '@mui/material/Badge';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -14,14 +16,17 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
+import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
 
 export default function NavigationBar() {
   const location = useLocation();
   const theme = useTheme();
   const { unreadCount } = useUnreadCount();
+  const { unreadCount: announcementUnreadCount } = useAnnouncementNotifications();
 
   const navItems = [
     { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Home' },
+    { to: '/announcements', outlinedIcon: <CampaignOutlinedIcon />, filledIcon: <CampaignIcon />, label: 'News' },
     { to: '/chat', outlinedIcon: <ChatBubbleOutlineIcon />, filledIcon: <ChatBubbleIcon />, label: 'Chat' },
     { to: '/settings', outlinedIcon: <SettingsOutlinedIcon />, filledIcon: <SettingsIcon />, label: 'Settings' }
   ];
@@ -88,6 +93,13 @@ export default function NavigationBar() {
                   >
                     {to === '/chat' ? (
                       <Badge badgeContent={unreadCount} color="error" max={99}>
+                        {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
+                          fontSize: 'inherit',
+                          sx: { fontSize: { xs: '20px', md: '24px' } }
+                        })}
+                      </Badge>
+                    ) : to === '/announcements' ? (
+                      <Badge badgeContent={announcementUnreadCount} color="error" max={99}>
                         {React.cloneElement(isActive ? filledIcon : outlinedIcon, {
                           fontSize: 'inherit',
                           sx: { fontSize: { xs: '20px', md: '24px' } }

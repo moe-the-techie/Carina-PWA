@@ -55,13 +55,36 @@ self.localStorageSet = function(key, value) {
 };
 
 self.addEventListener('message', event => {
-  const { type, key, value } = event.data;
+  const { type, key, value, data } = event.data;
   
   if (type === 'SET_LOCALSTORAGE') {
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
         client.postMessage({ type: 'UPDATE_LOCALSTORAGE', key, value });
       });
+    });
+  } else if (type === 'SHOW_PUSH_NOTIFICATION') {
+    console.log('[SW] Showing push notification:', data);
+    
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon || '/icons/manifest-icon-192.maskable.png',
+      badge: data.badge || '/icons/manifest-icon-192.maskable.png',
+      tag: data.tag,
+      renotify: true,
+      requireInteraction: data.requireInteraction || false,
+      vibrate: data.vibrate || [200, 100, 200],
+      actions: [
+        {
+          action: 'open',
+          title: data.data?.type === 'announcement' ? 'View Announcement' : 'Open'
+        },
+        {
+          action: 'close',
+          title: 'Dismiss'
+        }
+      ],
+      data: data.data
     });
   } else if (type === 'ABLY_MESSAGE') {
     console.log('[SW] Ably message received:', event.data);
@@ -93,27 +116,70 @@ self.addEventListener('message', event => {
           data: {
             url: senderRole === 'user' ? '/admin/chats' : '/chat',
             messageData: event.data.messageData,
-            chatId: chatId
+            chatId: chatId,
+            type: 'chat'
           }
         });
       }
+    } else if (event.data.announcementData) {
+      const { title, message, priority } = event.data.announcementData;
+      
+      const notificationTitle = `New Announcement: ${title}`;
+      
+      self.registration.showNotification(notificationTitle, {
+        body: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+        icon: '/icons/manifest-icon-192.maskable.png',
+        badge: '/icons/manifest-icon-192.maskable.png',
+        tag: `announcement-${event.data.announcementData._id}`,
+        renotify: true,
+        requireInteraction: priority === 'urgent',
+        vibrate: priority === 'urgent' ? [200, 100, 200, 100, 200] : [200, 100, 200],
+        actions: [
+          {
+            action: 'open',
+            title: 'View Announcement'
+          },
+          {
+            action: 'close',
+            title: 'Dismiss'
+          }
+        ],
+        data: {
+          url: '/announcements',
+          announcementData: event.data.announcementData,
+          type: 'announcement'
+        }
+      });
     }
   }
 });
 
 // Handle notification clicks
 self.addEventListener('notificationclick', event => {
-  console.log('[SW] Notification clicked:', event.action);
+  console.log('[SW] Notification clicked:', event.action, event.notification.data);
   event.notification.close();
   
-  if (event.action === 'close') {
+  if (event.action === 'close' || event.action === 'dismiss') {
     return;
   }
   
-  const urlToOpen = event.notification.data?.url || '/chat';
+  const notificationData = event.notification.data;
+  let urlToOpen = '/';
+  
+  if (notificationData) {
+    if (notificationData.type === 'announcement') {
+      urlToOpen = '/announcements';
+    } else if (notificationData.url) {
+      urlToOpen = notificationData.url;
+    } else {
+      // Legacy chat notification
+      urlToOpen = notificationData.senderRole === 'user' ? '/admin/chats' : '/chat';
+    }
+  }
   
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      // Check if there's already a window/tab open with the target URL
       for (const client of clients) {
         if (client.url.includes(urlToOpen.split('?')[0]) && 'focus' in client) {
           return client.focus();

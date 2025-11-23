@@ -382,9 +382,154 @@ export const reconnect = async () => {
     }
 };
 
+// Subscribe to announcements for a user
+export const subscribeToAnnouncements = async (userId, onAnnouncement) => {
+    try {
+        const client = await initializeAbly();
+        const channelName = `user:${userId}:announcements`;
+
+        // Initialize handlers array for this channel if not exists
+        if (!messageHandlers.has(channelName)) {
+            messageHandlers.set(channelName, []);
+        }
+
+        // Add the handler to the list (if provided)
+        if (onAnnouncement && !messageHandlers.get(channelName).includes(onAnnouncement)) {
+            messageHandlers.get(channelName).push(onAnnouncement);
+        }
+
+        // If already subscribed, just add the handler and return
+        if (activeSubscriptions.has(channelName)) {
+            console.log(`Already subscribed to ${channelName}, added new handler`);
+            return activeSubscriptions.get(channelName);
+        }
+
+        const channel = client.channels.get(channelName);
+
+        // Subscribe to new announcements for real-time updates and notifications
+        channel.subscribe('new-announcement', async (message) => {
+            console.log('Received new announcement:', message.data);
+            
+            const announcementData = message.data;
+            
+            // Show browser notification if app is active, or send to service worker if background
+            if (document.visibilityState === 'visible') {
+                const notificationTitle = `New Announcement: ${announcementData.title}`;
+                const notificationOptions = {
+                    body: announcementData.message.substring(0, 100) + (announcementData.message.length > 100 ? '...' : ''),
+                    icon: '/icons/manifest-icon-192.maskable.png',
+                    badge: '/icons/manifest-icon-192.maskable.png',
+                    tag: `announcement-${announcementData._id}`,
+                    renotify: true,
+                    requireInteraction: announcementData.priority === 'urgent',
+                    vibrate: announcementData.priority === 'urgent' ? [200, 100, 200, 100, 200] : [200, 100, 200],
+                    data: {
+                        url: '/announcements',
+                        announcementData: announcementData,
+                        type: 'announcement'
+                    }
+                };
+
+                await showNotification(notificationTitle, notificationOptions);
+            } else {
+                // Send to service worker for background notification
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_PUSH_NOTIFICATION',
+                        data: {
+                            title: `New Announcement: ${announcementData.title}`,
+                            body: announcementData.message.substring(0, 100) + (announcementData.message.length > 100 ? '...' : ''),
+                            icon: '/icons/manifest-icon-192.maskable.png',
+                            badge: '/icons/manifest-icon-192.maskable.png',
+                            tag: `announcement-${announcementData._id}`,
+                            requireInteraction: announcementData.priority === 'urgent',
+                            vibrate: announcementData.priority === 'urgent' ? [200, 100, 200, 100, 200] : [200, 100, 200],
+                            data: {
+                                url: '/announcements',
+                                announcementId: announcementData._id,
+                                type: 'announcement',
+                                priority: announcementData.priority
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Call all registered handlers for this channel
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(message.data);
+                } catch (error) {
+                    console.error('Error in announcement handler:', error);
+                }
+            });
+        });
+
+        activeSubscriptions.set(channelName, channel);
+        console.log(`Subscribed to ${channelName}`);
+
+        return { channel };
+    } catch (error) {
+        console.error('Error subscribing to announcements:', error);
+        throw error;
+    }
+};
+
+// Subscribe to general announcements channel
+export const subscribeToGeneralAnnouncements = async (onAnnouncement) => {
+    try {
+        const client = await initializeAbly();
+        const channelName = 'announcements';
+
+        // Initialize handlers array for this channel if not exists
+        if (!messageHandlers.has(channelName)) {
+            messageHandlers.set(channelName, []);
+        }
+
+        // Add the handler to the list (if provided)
+        if (onAnnouncement && !messageHandlers.get(channelName).includes(onAnnouncement)) {
+            messageHandlers.get(channelName).push(onAnnouncement);
+        }
+
+        // If already subscribed, just add the handler and return
+        if (activeSubscriptions.has(channelName)) {
+            console.log(`Already subscribed to ${channelName}, added new handler`);
+            return activeSubscriptions.get(channelName);
+        }
+
+        const channel = client.channels.get(channelName);
+
+        // Subscribe to new announcements
+        channel.subscribe('new-announcement', async (message) => {
+            console.log('Received general announcement:', message.data);
+            
+            // Call all registered handlers for this channel
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(message.data);
+                } catch (error) {
+                    console.error('Error in general announcement handler:', error);
+                }
+            });
+        });
+
+        activeSubscriptions.set(channelName, channel);
+        console.log(`Subscribed to ${channelName}`);
+
+        return channel;
+    } catch (error) {
+        console.error('Error subscribing to general announcements:', error);
+        throw error;
+    }
+};
+
 export default {
     subscribeToChat,
     subscribeToAdminChats,
+    subscribeToAnnouncements,
+    subscribeToGeneralAnnouncements,
     unsubscribeFromChannel,
     removeMessageHandler,
     disconnectAbly,
