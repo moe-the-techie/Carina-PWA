@@ -236,11 +236,30 @@ export default function AdminAnnouncementsPage() {
     return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
             <PageFade>
-                <Box sx={{ p: { xs: 2, md: 3 } }}>
-                    <Typography variant="h4" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-                        <AnnouncementIcon sx={{ mr: 2 }} />
-                        Announcements
-                    </Typography>
+                <Box sx={{ 
+                    p: { xs: 2, sm: 3, md: 3 },
+                    minHeight: '100vh'
+                }}>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', sm: 'center' },
+                        mb: { xs: 2, sm: 3 },
+                        gap: { xs: 2, sm: 0 }
+                    }}>
+                        <Typography 
+                            variant="h4" 
+                            sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center',
+                                fontSize: { xs: '1.75rem', sm: '2.125rem' }
+                            }}
+                        >
+                            <AnnouncementIcon sx={{ mr: 2, fontSize: { xs: '1.75rem', sm: '2.125rem' } }} />
+                            Announcements
+                        </Typography>
+                    </Box>
 
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
@@ -254,18 +273,34 @@ export default function AdminAnnouncementsPage() {
                         </Alert>
                     )}
 
-                    <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item>
+                    <Grid 
+                        container 
+                        spacing={{ xs: 1, sm: 2 }} 
+                        sx={{ 
+                            mb: { xs: 2, sm: 3 },
+                            alignItems: 'center'
+                        }}
+                    >
+                        <Grid item xs={12} sm="auto">
                             <Button
                                 variant="contained"
                                 startIcon={<AddIcon />}
                                 onClick={() => setCreateDialogOpen(true)}
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                fullWidth={window.innerWidth < 600}
+                                sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
                             >
-                                Create Announcement
+                                {window.innerWidth < 600 ? 'New Announcement' : 'Create Announcement'}
                             </Button>
                         </Grid>
-                        <Grid item>
-                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <Grid item xs={12} sm="auto">
+                            <FormControl 
+                                size="small" 
+                                sx={{ 
+                                    minWidth: { xs: '100%', sm: 120 },
+                                    width: { xs: '100%', sm: 'auto' }
+                                }}
+                            >
                                 <InputLabel>Status</InputLabel>
                                 <Select
                                     value={statusFilter}
@@ -280,108 +315,290 @@ export default function AdminAnnouncementsPage() {
                         </Grid>
                     </Grid>
 
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Title</TableCell>
-                                    <TableCell>Priority</TableCell>
-                                    <TableCell>Target</TableCell>
-                                    <TableCell>Author</TableCell>
-                                    <TableCell>Created</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Read Count</TableCell>
-                                    <TableCell>Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {announcements.map((announcement) => (
-                                    <TableRow key={announcement._id}>
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight="medium">
+                    {/* Desktop Table - Hidden on mobile */}
+                    <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                        <TableContainer component={Paper}>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Title</TableCell>
+                                        <TableCell>Priority</TableCell>
+                                        <TableCell>Target</TableCell>
+                                        <TableCell>Author</TableCell>
+                                        <TableCell>Created</TableCell>
+                                        <TableCell>Status</TableCell>
+                                        <TableCell>Read Count</TableCell>
+                                        <TableCell>Actions</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {announcements.map((announcement) => (
+                                        <TableRow key={announcement._id}>
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight="medium">
+                                                    {announcement.title}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {announcement.message.substring(0, 60)}
+                                                    {announcement.message.length > 60 ? '...' : ''}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={announcement.priority.toUpperCase()}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: getPriorityColor(announcement.priority),
+                                                        color: 'white'
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                {announcement.targetAudience === 'all' ? (
+                                                    <Chip
+                                                        icon={<GroupsIcon />}
+                                                        label="All Users"
+                                                        size="small"
+                                                        color="primary"
+                                                    />
+                                                ) : (
+                                                    <Box>
+                                                        <Chip
+                                                            icon={<PersonIcon />}
+                                                            label={`${announcement.targetClasses.length} Classes`}
+                                                            size="small"
+                                                            color="secondary"
+                                                        />
+                                                        <Typography variant="caption" display="block">
+                                                            {announcement.targetClasses.map(cls => cls.name).join(', ')}
+                                                        </Typography>
+                                                    </Box>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>{announcement.authorId?.name}</TableCell>
+                                            <TableCell>{formatDate(announcement.createdAt)}</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={announcement.isActive ? 'Active' : 'Inactive'}
+                                                    size="small"
+                                                    color={announcement.isActive ? 'success' : 'default'}
+                                                />
+                                            </TableCell>
+                                            <TableCell>{announcement.readCount || 0}</TableCell>
+                                            <TableCell>
+                                                <Tooltip title="View Statistics">
+                                                    <IconButton onClick={() => handleViewStats(announcement)} size="small">
+                                                        <ViewIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Edit">
+                                                    <IconButton onClick={() => openEditDialog(announcement)} size="small">
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete">
+                                                    <IconButton 
+                                                        onClick={() => openDeleteDialog(announcement)} 
+                                                        size="small"
+                                                        color="error"
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+
+                    {/* Mobile Cards - Hidden on desktop */}
+                    <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                        {announcements.map((announcement) => (
+                            <Card key={announcement._id} sx={{ mb: 2 }}>
+                                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                    {/* Header */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between', 
+                                        alignItems: 'flex-start',
+                                        mb: 2
+                                    }}>
+                                        <Box sx={{ flex: 1, mr: 2 }}>
+                                            <Typography 
+                                                variant="h6" 
+                                                fontWeight="medium"
+                                                sx={{ 
+                                                    fontSize: { xs: '1rem', sm: '1.125rem' },
+                                                    lineHeight: 1.3,
+                                                    mb: 0.5
+                                                }}
+                                            >
                                                 {announcement.title}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {announcement.message.substring(0, 60)}
-                                                {announcement.message.length > 60 ? '...' : ''}
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary"
+                                                sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                            >
+                                                {announcement.message.substring(0, 100)}
+                                                {announcement.message.length > 100 ? '...' : ''}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
+                                        </Box>
+                                        
+                                        <Chip
+                                            label={announcement.priority.toUpperCase()}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: getPriorityColor(announcement.priority),
+                                                color: 'white',
+                                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                                minWidth: 'fit-content'
+                                            }}
+                                        />
+                                    </Box>
+
+                                    {/* Meta Information */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexWrap: 'wrap',
+                                        gap: { xs: 1, sm: 2 },
+                                        mb: 2
+                                    }}>
+                                        {announcement.targetAudience === 'all' ? (
                                             <Chip
-                                                label={announcement.priority.toUpperCase()}
+                                                icon={<GroupsIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
+                                                label="All Users"
                                                 size="small"
-                                                sx={{
-                                                    bgcolor: getPriorityColor(announcement.priority),
-                                                    color: 'white'
-                                                }}
+                                                color="primary"
+                                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            {announcement.targetAudience === 'all' ? (
-                                                <Chip
-                                                    icon={<GroupsIcon />}
-                                                    label="All Users"
-                                                    size="small"
-                                                    color="primary"
-                                                />
-                                            ) : (
-                                                <Box>
+                                        ) : (
+                                            <Chip
+                                                icon={<PersonIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />}
+                                                label={`${announcement.targetClasses.length} Classes`}
+                                                size="small"
+                                                color="secondary"
+                                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                            />
+                                        )}
+                                        
+                                        <Chip
+                                            label={announcement.isActive ? 'Active' : 'Inactive'}
+                                            size="small"
+                                            color={announcement.isActive ? 'success' : 'default'}
+                                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                        />
+                                        
+                                        <Typography 
+                                            variant="caption" 
+                                            color="text.secondary"
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center',
+                                                fontSize: { xs: '0.7rem', sm: '0.75rem' }
+                                            }}
+                                        >
+                                            Read: {announcement.readCount || 0}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Footer */}
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        gap: { xs: 1, sm: 0 }
+                                    }}>
+                                        <Typography 
+                                            variant="caption" 
+                                            color="text.secondary"
+                                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                        >
+                                            {announcement.authorId?.name} • {formatDate(announcement.createdAt)}
+                                        </Typography>
+                                        
+                                        <Box sx={{ 
+                                            display: 'flex',
+                                            gap: 0.5,
+                                            alignSelf: { xs: 'stretch', sm: 'auto' },
+                                            justifyContent: { xs: 'space-evenly', sm: 'flex-end' }
+                                        }}>
+                                            <IconButton 
+                                                onClick={() => handleViewStats(announcement)} 
+                                                size="small"
+                                                sx={{ p: { xs: 1, sm: 1 } }}
+                                            >
+                                                <ViewIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                                            </IconButton>
+                                            <IconButton 
+                                                onClick={() => openEditDialog(announcement)} 
+                                                size="small"
+                                                sx={{ p: { xs: 1, sm: 1 } }}
+                                            >
+                                                <EditIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                                            </IconButton>
+                                            <IconButton 
+                                                onClick={() => openDeleteDialog(announcement)} 
+                                                size="small"
+                                                color="error"
+                                                sx={{ p: { xs: 1, sm: 1 } }}
+                                            >
+                                                <DeleteIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                                            </IconButton>
+                                        </Box>
+                                    </Box>
+                                    
+                                    {/* Show target classes for mobile if not all users */}
+                                    {announcement.targetAudience !== 'all' && announcement.targetClasses.length > 0 && (
+                                        <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                                            <Typography 
+                                                variant="caption" 
+                                                color="text.secondary" 
+                                                display="block"
+                                                sx={{ mb: 0.5, fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                            >
+                                                Target Classes:
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {announcement.targetClasses.map((cls) => (
                                                     <Chip
-                                                        icon={<PersonIcon />}
-                                                        label={`${announcement.targetClasses.length} Classes`}
+                                                        key={cls._id}
+                                                        label={cls.name}
                                                         size="small"
-                                                        color="secondary"
+                                                        sx={{
+                                                            bgcolor: cls.color + '20',
+                                                            color: cls.color,
+                                                            border: `1px solid ${cls.color}40`,
+                                                            fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                                                        }}
                                                     />
-                                                    <Typography variant="caption" display="block">
-                                                        {announcement.targetClasses.map(cls => cls.name).join(', ')}
-                                                    </Typography>
-                                                </Box>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>{announcement.authorId?.name}</TableCell>
-                                        <TableCell>{formatDate(announcement.createdAt)}</TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={announcement.isActive ? 'Active' : 'Inactive'}
-                                                size="small"
-                                                color={announcement.isActive ? 'success' : 'default'}
-                                            />
-                                        </TableCell>
-                                        <TableCell>{announcement.readCount || 0}</TableCell>
-                                        <TableCell>
-                                            <Tooltip title="View Statistics">
-                                                <IconButton onClick={() => handleViewStats(announcement)} size="small">
-                                                    <ViewIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Edit">
-                                                <IconButton onClick={() => openEditDialog(announcement)} size="small">
-                                                    <EditIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton 
-                                                    onClick={() => openDeleteDialog(announcement)} 
-                                                    size="small"
-                                                    color="error"
-                                                >
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
 
                     {totalPages > 1 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            justifyContent: 'center', 
+                            mt: { xs: 2, sm: 3 },
+                            px: { xs: 1, sm: 0 }
+                        }}>
                             <Pagination
                                 count={totalPages}
                                 page={page}
                                 onChange={(e, value) => setPage(value)}
                                 color="primary"
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                siblingCount={window.innerWidth < 600 ? 0 : 1}
+                                boundaryCount={window.innerWidth < 600 ? 1 : 2}
                             />
                         </Box>
                     )}
@@ -396,12 +613,17 @@ export default function AdminAnnouncementsPage() {
                         }}
                         maxWidth="md"
                         fullWidth
+                        fullScreen={window.innerWidth < 600}
+                        sx={{ '& .MuiDialog-paper': { margin: { xs: 1, sm: 2 } } }}
                     >
-                        <DialogTitle>
+                        <DialogTitle sx={{ 
+                            fontSize: { xs: '1.125rem', sm: '1.25rem' },
+                            pb: { xs: 1, sm: 2 }
+                        }}>
                             {createDialogOpen ? 'Create Announcement' : 'Edit Announcement'}
                         </DialogTitle>
-                        <DialogContent>
-                            <Grid container spacing={2} sx={{ mt: 1 }}>
+                        <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
+                            <Grid container spacing={{ xs: 2, sm: 2 }} sx={{ mt: { xs: 0.5, sm: 1 } }}>
                                 <Grid item xs={12}>
                                     <TextField
                                         fullWidth
@@ -409,6 +631,7 @@ export default function AdminAnnouncementsPage() {
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                         required
+                                        size={window.innerWidth < 600 ? "small" : "medium"}
                                     />
                                 </Grid>
                                 <Grid item xs={12}>
@@ -418,12 +641,13 @@ export default function AdminAnnouncementsPage() {
                                         value={formData.message}
                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                         multiline
-                                        rows={4}
+                                        rows={window.innerWidth < 600 ? 3 : 4}
                                         required
+                                        size={window.innerWidth < 600 ? "small" : "medium"}
                                     />
                                 </Grid>
-                                <Grid item xs={6}>
-                                    <FormControl fullWidth>
+                                <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size={window.innerWidth < 600 ? "small" : "medium"}>
                                         <InputLabel>Priority</InputLabel>
                                         <Select
                                             value={formData.priority}
@@ -437,8 +661,8 @@ export default function AdminAnnouncementsPage() {
                                         </Select>
                                     </FormControl>
                                 </Grid>
-                                <Grid item xs={6}>
-                                    <FormControl fullWidth>
+                                <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size={window.innerWidth < 600 ? "small" : "medium"}>
                                         <InputLabel>Target Audience</InputLabel>
                                         <Select
                                             value={formData.targetAudience}
@@ -456,7 +680,7 @@ export default function AdminAnnouncementsPage() {
                                 </Grid>
                                 {formData.targetAudience === 'classes' && (
                                     <Grid item xs={12}>
-                                        <FormControl fullWidth>
+                                        <FormControl fullWidth size={window.innerWidth < 600 ? "small" : "medium"}>
                                             <InputLabel>Target Classes</InputLabel>
                                             <Select
                                                 multiple
@@ -471,7 +695,8 @@ export default function AdminAnnouncementsPage() {
                                                                 <Chip 
                                                                     key={value} 
                                                                     label={cls?.name || value}
-                                                                    size="small"
+                                                                    size={window.innerWidth < 600 ? "small" : "small"}
+                                                                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                                                 />
                                                             );
                                                         })}
@@ -492,24 +717,35 @@ export default function AdminAnnouncementsPage() {
                                         label="Expires At (Optional)"
                                         value={formData.expiresAt}
                                         onChange={(newValue) => setFormData({ ...formData, expiresAt: newValue })}
-                                        renderInput={(params) => <TextField {...params} fullWidth />}
+                                        renderInput={(params) => <TextField {...params} fullWidth size={window.innerWidth < 600 ? "small" : "medium"} />}
                                     />
                                 </Grid>
                             </Grid>
                         </DialogContent>
-                        <DialogActions>
+                        <DialogActions sx={{ 
+                            px: { xs: 2, sm: 3 },
+                            pb: { xs: 2, sm: 3 },
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            gap: { xs: 1, sm: 0 }
+                        }}>
                             <Button 
                                 onClick={() => {
                                     setCreateDialogOpen(false);
                                     setEditDialogOpen(false);
                                     resetForm();
                                 }}
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                fullWidth={window.innerWidth < 600}
+                                sx={{ order: { xs: 2, sm: 1 } }}
                             >
                                 Cancel
                             </Button>
                             <Button 
                                 onClick={createDialogOpen ? handleCreateAnnouncement : handleUpdateAnnouncement}
                                 variant="contained"
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                fullWidth={window.innerWidth < 600}
+                                sx={{ order: { xs: 1, sm: 2 } }}
                             >
                                 {createDialogOpen ? 'Create' : 'Update'}
                             </Button>
@@ -517,17 +753,45 @@ export default function AdminAnnouncementsPage() {
                     </Dialog>
 
                     {/* Delete Dialog */}
-                    <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                        <DialogTitle>Delete Announcement</DialogTitle>
-                        <DialogContent>
-                            <Typography>
+                    <Dialog 
+                        open={deleteDialogOpen} 
+                        onClose={() => setDeleteDialogOpen(false)}
+                        maxWidth="sm"
+                        fullWidth
+                        fullScreen={window.innerWidth < 600}
+                        sx={{ '& .MuiDialog-paper': { margin: { xs: 1, sm: 2 } } }}
+                    >
+                        <DialogTitle sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
+                            Delete Announcement
+                        </DialogTitle>
+                        <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
+                            <Typography sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
                                 Are you sure you want to delete the announcement "{currentAnnouncement?.title}"?
                                 This action cannot be undone.
                             </Typography>
                         </DialogContent>
-                        <DialogActions>
-                            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                            <Button onClick={handleDeleteAnnouncement} color="error" variant="contained">
+                        <DialogActions sx={{ 
+                            px: { xs: 2, sm: 3 },
+                            pb: { xs: 2, sm: 3 },
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            gap: { xs: 1, sm: 0 }
+                        }}>
+                            <Button 
+                                onClick={() => setDeleteDialogOpen(false)}
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                fullWidth={window.innerWidth < 600}
+                                sx={{ order: { xs: 2, sm: 1 } }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={handleDeleteAnnouncement} 
+                                color="error" 
+                                variant="contained"
+                                size={window.innerWidth < 600 ? "small" : "medium"}
+                                fullWidth={window.innerWidth < 600}
+                                sx={{ order: { xs: 1, sm: 2 } }}
+                            >
                                 Delete
                             </Button>
                         </DialogActions>
@@ -539,20 +803,33 @@ export default function AdminAnnouncementsPage() {
                         onClose={() => setStatsDialogOpen(false)}
                         maxWidth="md"
                         fullWidth
+                        fullScreen={window.innerWidth < 600}
+                        sx={{ '& .MuiDialog-paper': { margin: { xs: 1, sm: 2 } } }}
                     >
-                        <DialogTitle>Announcement Statistics</DialogTitle>
-                        <DialogContent>
+                        <DialogTitle sx={{ fontSize: { xs: '1.125rem', sm: '1.25rem' } }}>
+                            Announcement Statistics
+                        </DialogTitle>
+                        <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
                             {announcementStats && (
-                                <Grid container spacing={3}>
+                                <Grid container spacing={{ xs: 2, sm: 3 }}>
                                     <Grid item xs={12}>
-                                        <Typography variant="h6">{announcementStats.announcement.title}</Typography>
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography 
+                                            variant="h6"
+                                            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                                        >
+                                            {announcementStats.announcement.title}
+                                        </Typography>
+                                        <Typography 
+                                            variant="body2" 
+                                            color="text.secondary"
+                                            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                                        >
                                             {announcementStats.announcement.message}
                                         </Typography>
                                     </Grid>
-                                    <Grid item xs={6}>
+                                    <Grid item xs={12} sm={6}>
                                         <Card>
-                                            <CardContent>
+                                            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                                 <Typography variant="h4" color="primary">
                                                     {announcementStats.stats.readCount}
                                                 </Typography>

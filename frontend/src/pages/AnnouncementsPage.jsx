@@ -195,12 +195,19 @@ export default function AnnouncementsPage({ user }) {
 
     return (
         <PageFade>
-            <Container maxWidth="md" sx={{ py: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <Badge badgeContent={unreadCount} color="error" sx={{ mr: 2 }}>
-                        <AnnouncementIcon />
+            <Container maxWidth="lg" sx={{ py: { xs: 1, sm: 2, md: 3 }, px: { xs: 1, sm: 2 } }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    mb: { xs: 2, sm: 3 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: { xs: 1, sm: 2 },
+                    textAlign: { xs: 'center', sm: 'left' }
+                }}>
+                    <Badge badgeContent={unreadCount} color="error" sx={{ mr: { xs: 0, sm: 2 } }}>
+                        <AnnouncementIcon sx={{ fontSize: { xs: 28, sm: 32 } }} />
                     </Badge>
-                    <Typography variant="h4">
+                    <Typography variant="h4" sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' } }}>
                         Announcements
                     </Typography>
                     {unreadCount > 0 && (
@@ -208,7 +215,7 @@ export default function AnnouncementsPage({ user }) {
                             label={`${unreadCount} unread`}
                             color="error"
                             size="small"
-                            sx={{ ml: 2 }}
+                            sx={{ ml: { xs: 0, sm: 2 } }}
                         />
                     )}
                 </Box>
@@ -222,19 +229,35 @@ export default function AnnouncementsPage({ user }) {
                 {announcements.length === 0 ? (
                     <Card>
                         <CardContent>
-                            <Box sx={{ textAlign: 'center', py: 4 }}>
-                                <AnnouncementIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                                <Typography variant="h6" color="text.secondary">
+                            <Box sx={{ 
+                                textAlign: 'center', 
+                                py: { xs: 3, sm: 4 },
+                                px: { xs: 2, sm: 3 }
+                            }}>
+                                <AnnouncementIcon sx={{ 
+                                    fontSize: { xs: 48, sm: 64 }, 
+                                    color: 'text.secondary', 
+                                    mb: { xs: 1, sm: 2 } 
+                                }} />
+                                <Typography 
+                                    variant="h6" 
+                                    color="text.secondary"
+                                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                                >
                                     No announcements yet
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography 
+                                    variant="body2" 
+                                    color="text.secondary"
+                                    sx={{ mt: 1, fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                                >
                                     Check back later for updates from administrators
                                 </Typography>
                             </Box>
                         </CardContent>
                     </Card>
                 ) : (
-                    <Grid container spacing={3}>
+                    <Grid container spacing={{ xs: 2, sm: 3 }}>
                         {announcements.map((announcement) => {
                             const isCardExpanded = expandedCards.has(announcement._id);
                             const expired = isExpired(announcement);
@@ -246,16 +269,21 @@ export default function AnnouncementsPage({ user }) {
                                             position: 'relative',
                                             opacity: expired ? 0.6 : 1,
                                             border: !announcement.isRead ? `2px solid ${theme.palette.primary.main}` : 'none',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                transform: 'translateY(-1px)',
+                                                boxShadow: theme.shadows[4]
+                                            }
                                         }}
                                     >
                                         {!announcement.isRead && (
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
-                                                    top: 8,
-                                                    right: 8,
-                                                    width: 12,
-                                                    height: 12,
+                                                    top: { xs: 6, sm: 8 },
+                                                    right: { xs: 6, sm: 8 },
+                                                    width: { xs: 8, sm: 12 },
+                                                    height: { xs: 8, sm: 12 },
                                                     borderRadius: '50%',
                                                     bgcolor: 'error.main',
                                                     zIndex: 1
@@ -263,43 +291,75 @@ export default function AnnouncementsPage({ user }) {
                                             />
                                         )}
                                         
-                                        <CardContent>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                                                <Box sx={{ flexGrow: 1 }}>
-                                                    <Typography variant="h6" component="div">
+                                        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                            <Box sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'flex-start', 
+                                                mb: { xs: 1.5, sm: 2 },
+                                                flexDirection: { xs: 'column', sm: 'row' },
+                                                gap: { xs: 1, sm: 2 }
+                                            }}>
+                                                <Box sx={{ flexGrow: 1, width: '100%' }}>
+                                                    <Typography 
+                                                        variant="h6" 
+                                                        component="div"
+                                                        sx={{ 
+                                                            fontSize: { xs: '1rem', sm: '1.25rem' },
+                                                            lineHeight: 1.3,
+                                                            mb: { xs: 1, sm: 1.5 }
+                                                        }}
+                                                    >
                                                         {announcement.title}
                                                     </Typography>
                                                     
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                                    <Box sx={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: { xs: 0.5, sm: 1 }, 
+                                                        flexWrap: 'wrap',
+                                                        '& > *': {
+                                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                                        }
+                                                    }}>
                                                         <Chip
                                                             label={announcement.priority.toUpperCase()}
                                                             size="small"
                                                             color={priorityColors[announcement.priority]}
+                                                            sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                                         />
                                                         
                                                         {announcement.authorId && (
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                                <PersonIcon sx={{ fontSize: 16 }} />
-                                                                <Typography variant="caption" color="text.secondary">
+                                                                <PersonIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />
+                                                                <Typography 
+                                                                    variant="caption" 
+                                                                    color="text.secondary"
+                                                                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                                                >
                                                                     {announcement.authorId.name}
                                                                 </Typography>
                                                             </Box>
                                                         )}
                                                         
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <ScheduleIcon sx={{ fontSize: 16 }} />
-                                                            <Typography variant="caption" color="text.secondary">
+                                                            <ScheduleIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />
+                                                            <Typography 
+                                                                variant="caption" 
+                                                                color="text.secondary"
+                                                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                                                            >
                                                                 {formatDate(announcement.createdAt)}
                                                             </Typography>
                                                         </Box>
                                                         
                                                         {announcement.isRead && (
                                                             <Chip
-                                                                icon={<CheckIcon />}
+                                                                icon={<CheckIcon sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }} />}
                                                                 label="Read"
                                                                 size="small"
                                                                 color="success"
                                                                 variant="outlined"
+                                                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                                             />
                                                         )}
                                                         
@@ -309,6 +369,7 @@ export default function AnnouncementsPage({ user }) {
                                                                 size="small"
                                                                 color="default"
                                                                 variant="outlined"
+                                                                sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
                                                             />
                                                         )}
                                                     </Box>
@@ -318,22 +379,45 @@ export default function AnnouncementsPage({ user }) {
                                                     onClick={() => handleExpandClick(announcement._id)}
                                                     aria-expanded={isCardExpanded}
                                                     aria-label="show more"
+                                                    size={window.innerWidth < 600 ? "small" : "medium"}
+                                                    sx={{ 
+                                                        alignSelf: { xs: 'flex-end', sm: 'flex-start' },
+                                                        mt: { xs: 0, sm: -1 }
+                                                    }}
                                                 >
                                                     {isCardExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                                 </IconButton>
                                             </Box>
 
                                             <Collapse in={isCardExpanded} timeout="auto" unmountOnExit>
-                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                                <Typography 
+                                                    variant="body2" 
+                                                    color="text.secondary" 
+                                                    sx={{ 
+                                                        mb: { xs: 1.5, sm: 2 },
+                                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                        lineHeight: 1.5
+                                                    }}
+                                                >
                                                     {announcement.message}
                                                 </Typography>
                                                 
                                                 {announcement.targetClasses && announcement.targetClasses.length > 0 && (
-                                                    <Box sx={{ mb: 2 }}>
-                                                        <Typography variant="caption" color="text.secondary" display="block">
+                                                    <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            color="text.secondary" 
+                                                            display="block"
+                                                            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                                        >
                                                             Target Classes:
                                                         </Typography>
-                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                                        <Box sx={{ 
+                                                            display: 'flex', 
+                                                            flexWrap: 'wrap', 
+                                                            gap: { xs: 0.5, sm: 0.5 }, 
+                                                            mt: { xs: 0.5, sm: 0.5 } 
+                                                        }}>
                                                             {announcement.targetClasses.map((cls) => (
                                                                 <Chip
                                                                     key={cls._id}
@@ -342,7 +426,8 @@ export default function AnnouncementsPage({ user }) {
                                                                     sx={{
                                                                         bgcolor: cls.color + '20',
                                                                         color: cls.color,
-                                                                        border: `1px solid ${cls.color}40`
+                                                                        border: `1px solid ${cls.color}40`,
+                                                                        fontSize: { xs: '0.7rem', sm: '0.75rem' }
                                                                     }}
                                                                 />
                                                             ))}
@@ -351,7 +436,11 @@ export default function AnnouncementsPage({ user }) {
                                                 )}
                                                 
                                                 {announcement.expiresAt && (
-                                                    <Typography variant="caption" color="text.secondary">
+                                                    <Typography 
+                                                        variant="caption" 
+                                                        color="text.secondary"
+                                                        sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+                                                    >
                                                         Expires: {formatDate(announcement.expiresAt)}
                                                     </Typography>
                                                 )}
@@ -363,11 +452,13 @@ export default function AnnouncementsPage({ user }) {
                                                     color="text.secondary"
                                                     sx={{ 
                                                         display: '-webkit-box',
-                                                        WebkitLineClamp: 2,
+                                                        WebkitLineClamp: { xs: 2, sm: 3 },
                                                         WebkitBoxOrient: 'vertical',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        mt: 1
+                                                        mt: { xs: 1, sm: 1 },
+                                                        fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                        lineHeight: 1.4
                                                     }}
                                                 >
                                                     {announcement.message}
@@ -375,23 +466,44 @@ export default function AnnouncementsPage({ user }) {
                                             )}
                                         </CardContent>
 
-                                        <CardActions sx={{ justifyContent: 'flex-end' }}>
-                                            {!announcement.isRead && (
+                                        <CardActions sx={{ 
+                                            justifyContent: 'space-between',
+                                            flexDirection: { xs: 'column', sm: 'row' },
+                                            gap: { xs: 1, sm: 0 },
+                                            p: { xs: 2, sm: 2 },
+                                            pt: 0
+                                        }}>
+                                            <Box sx={{ 
+                                                display: 'flex', 
+                                                gap: 1, 
+                                                width: { xs: '100%', sm: 'auto' },
+                                                justifyContent: { xs: 'space-between', sm: 'flex-start' }
+                                            }}>
+                                                {!announcement.isRead && (
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        onClick={() => handleMarkAsRead(announcement._id)}
+                                                        startIcon={<CheckIcon />}
+                                                        sx={{ 
+                                                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                                            minWidth: { xs: 'auto', sm: 64 }
+                                                        }}
+                                                    >
+                                                        {window.innerWidth < 600 ? 'Read' : 'Mark as Read'}
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     size="small"
-                                                    variant="contained"
-                                                    onClick={() => handleMarkAsRead(announcement._id)}
-                                                    startIcon={<CheckIcon />}
+                                                    onClick={() => handleExpandClick(announcement._id)}
+                                                    sx={{ 
+                                                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                                        minWidth: { xs: 'auto', sm: 64 }
+                                                    }}
                                                 >
-                                                    Mark as Read
+                                                    {isCardExpanded ? 'Less' : 'More'}
                                                 </Button>
-                                            )}
-                                            <Button
-                                                size="small"
-                                                onClick={() => handleExpandClick(announcement._id)}
-                                            >
-                                                {isCardExpanded ? 'Show Less' : 'Show More'}
-                                            </Button>
+                                            </Box>
                                         </CardActions>
                                     </Card>
                                 </Grid>
