@@ -50,6 +50,7 @@ export default function AdminUsersPage() {
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [classFilter, setClassFilter] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -80,7 +81,7 @@ export default function AdminUsersPage() {
     useEffect(() => {
         fetchUsers();
         fetchClasses();
-    }, [page, debouncedSearch]);
+    }, [page, debouncedSearch, classFilter]);
 
     const fetchClasses = async () => {
         try {
@@ -103,7 +104,7 @@ export default function AdminUsersPage() {
         try {
             setLoading(true);
             const response = await fetch(
-                `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}`,
+                `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}&classFilter=${classFilter}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -149,6 +150,11 @@ export default function AdminUsersPage() {
 
     const handleSearchChange = (event) => {
         setSearch(event.target.value);
+        setPage(1);
+    };
+
+    const handleClassFilterChange = (event) => {
+        setClassFilter(event.target.value);
         setPage(1);
     };
 
@@ -311,8 +317,8 @@ export default function AdminUsersPage() {
                     User Management
                 </Typography>
 
-                {/* Search */}
-                <Box sx={{ mb: 3 }}>
+                {/* Search and Filter */}
+                <Box sx={{ mb: 3, display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
                     <TextField
                         fullWidth
                         label="Search users by name or email"
@@ -320,6 +326,30 @@ export default function AdminUsersPage() {
                         onChange={handleSearchChange}
                         variant="outlined"
                     />
+                    <FormControl sx={{ minWidth: 200, width: { xs: '100%', md: 'auto' } }}>
+                        <InputLabel>Filter by Class</InputLabel>
+                        <Select
+                            value={classFilter}
+                            onChange={handleClassFilterChange}
+                            label="Filter by Class"
+                        >
+                            <MenuItem value="">All Classes</MenuItem>
+                            <MenuItem value="unassigned">Unassigned</MenuItem>
+                            {availableClasses.map((classItem) => (
+                                <MenuItem key={classItem._id} value={classItem._id}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <CircleIcon 
+                                            sx={{ 
+                                                fontSize: 12, 
+                                                color: classItem.color 
+                                            }} 
+                                        />
+                                        {classItem.name}
+                                    </Box>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 </Box>
 
                 {error && (

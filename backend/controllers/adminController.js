@@ -37,7 +37,7 @@ export async function getDashboardStats(req, res) {
 
 export async function getAllUsersAdmin(req, res) {
     try {
-        const { page = 1, limit = 10, search = '' } = req.query;
+        const { page = 1, limit = 10, search = '', classFilter = '' } = req.query;
         const query = { role: 'user' };
         
         if (search) {
@@ -45,6 +45,14 @@ export async function getAllUsersAdmin(req, res) {
                 { name: { $regex: search, $options: 'i' } },
                 { email: { $regex: search, $options: 'i' } }
             ];
+        }
+
+        if (classFilter) {
+            if (classFilter === 'unassigned') {
+                query.userClass = null;
+            } else {
+                query.userClass = classFilter;
+            }
         }
 
         const users = await User.find(query)
