@@ -5,8 +5,12 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-    optimizeDeps: {
-    include: ["date-fns", "date-fns/addDays"],
+  optimizeDeps: {
+    include: [
+      "date-fns",
+      "date-fns/addDays",
+      "date-fns/addSeconds"
+    ]
   },
   plugins: [
     react(),
