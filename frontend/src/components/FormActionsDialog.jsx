@@ -22,7 +22,6 @@ import {
 import {
     Visibility as ViewIcon,
     Send as SendIcon,
-    CheckCircle as CheckIcon,
     Assignment as PlanIcon,
     Edit as EditIcon,
     Message as MessageIcon,
@@ -35,7 +34,6 @@ export default function FormActionsDialog({
     form,
     onViewDetails,
     onSendPlan,
-    onMarkReviewed,
     onViewPlan,
     onEditPlan,
     onMessageUser,
@@ -56,9 +54,6 @@ export default function FormActionsDialog({
                 break;
             case 'send':
                 await onSendPlan(form);
-                break;
-            case 'mark':
-                await onMarkReviewed(form._id);
                 break;
             case 'viewPlan':
                 await onViewPlan(form);
@@ -81,7 +76,6 @@ export default function FormActionsDialog({
     };
 
     const showSendPlan = !form?.reviewed;
-    const showMarkReviewed = !form?.reviewed;
     const showViewPlan = form?.reviewed && form?.planSent;
     const showEditPlan = form?.reviewed && form?.planSent;
     const showViewFeedback = form?.reviewed && form?.planSent;
@@ -182,29 +176,6 @@ export default function FormActionsDialog({
                                     <ListItemText 
                                         primary="Send Plan" 
                                         secondary={!isMobile ? "Create and send a meal plan" : null}
-                                        primaryTypographyProps={{ 
-                                            variant: isMobile ? 'body1' : 'body2' 
-                                        }}
-                                    />
-                                </ListItemButton>
-                            </ListItem>
-                        </>
-                    )}
-
-                    {showMarkReviewed && (
-                        <>
-                            <Divider />
-                            <ListItem disablePadding>
-                                <ListItemButton 
-                                    onClick={() => handleActionClick('mark')}
-                                    sx={{ py: { xs: 2, sm: 1.5 } }}
-                                >
-                                    <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                                        <CheckIcon color="success" />
-                                    </ListItemIcon>
-                                    <ListItemText 
-                                        primary="Mark Reviewed" 
-                                        secondary={!isMobile ? "Mark as reviewed without sending plan" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
                                         }}

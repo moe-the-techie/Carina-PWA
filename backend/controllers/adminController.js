@@ -131,27 +131,6 @@ export async function getAllFormsAdmin(req, res) {
     }
 }
 
-export async function markFormReviewed(req, res) {
-    try {
-        const { formId } = req.params;
-        
-        const form = await Form.findByIdAndUpdate(
-            formId,
-            { reviewed: true },
-            { new: true }
-        ).populate('user', 'name email');
-
-        if (!form) {
-            return res.status(404).json({ error: 'Form not found' });
-        }
-
-        res.status(200).json({ message: 'Form marked as reviewed', form });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message });
-    }
-}
-
 export async function deleteUserByAdmin(req, res) {
     try {
         const { userId } = req.params;

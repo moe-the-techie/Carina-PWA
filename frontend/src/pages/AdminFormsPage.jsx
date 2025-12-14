@@ -108,30 +108,6 @@ export default function AdminFormsPage() {
         }
     };
 
-    const markFormAsReviewed = async (formId) => {
-        try {
-            const response = await fetch(`${apiBaseUrl}/api/admin/forms/${formId}/reviewed`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to mark form as reviewed');
-            }
-
-            // Refresh forms list
-            fetchForms();
-            if (selectedForm && selectedForm._id === formId) {
-                setFormDetailsOpen(false);
-            }
-        } catch (error) {
-            console.error('Error marking form as reviewed:', error);
-            setError(error.message);
-        }
-    };
-
     // Function to open chip detail dialog
     const openChipDetailDialog = (content, title, category) => {
         setSelectedChipContent(content);
@@ -454,7 +430,6 @@ export default function AdminFormsPage() {
                     form={selectedFormForActions}
                     onViewDetails={openFormDetails}
                     onSendPlan={sendPlan}
-                    onMarkReviewed={markFormAsReviewed}
                     onViewPlan={viewPlan}
                     onEditPlan={sendPlan}
                     onMessageUser={handleMessageUser}
@@ -605,16 +580,8 @@ export default function AdminFormsPage() {
                                                         sendPlan(selectedForm);
                                                         setFormDetailsOpen(false);
                                                     }}
-                                                    sx={{ mr: 1 }}
                                                 >
                                                     {planLoading ? 'Loading...' : 'Send Plan'}
-                                                </Button>
-                                                <Button 
-                                                    variant="contained" 
-                                                    color="success"
-                                                    onClick={() => markFormAsReviewed(selectedForm._id)}
-                                                >
-                                                    Mark as Reviewed
                                                 </Button>
                                             </CardActions>
                                         </Card>

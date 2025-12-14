@@ -6,7 +6,6 @@ import {
     getAllUsersAdmin, 
     getUserDetails,
     getAllFormsAdmin, 
-    markFormReviewed,
     deleteUserByAdmin,
     banUserByAdmin,
     getAllUserClasses,
@@ -25,7 +24,6 @@ router.put('/admin/users/:userId/ban', adminOnly, banUserByAdmin);
 router.put('/admin/users/:userId/class', adminOnly, assignUserClass);
 
 router.get('/admin/forms', adminOnly, getAllFormsAdmin);
-router.put('/admin/forms/:formId/reviewed', adminOnly, markFormReviewed);
 
 router.get('/admin/classes', adminOnly, getAllUserClasses);
 router.get('/admin/classes/:classId', adminOnly, getUserClassById);
