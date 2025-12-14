@@ -24,7 +24,6 @@ export default function AdminLayout({ children, onLogout }) {
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    ml: { md: `${drawerWidth}px` },
                     mt: { xs: '64px', md: 0 }, // Add top margin on mobile for AppBar
                     minHeight: '100vh',
                     bgcolor: 'background.default',
