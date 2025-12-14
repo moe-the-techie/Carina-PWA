@@ -74,6 +74,7 @@ export default function AdminChatsPage() {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [loadingMessages, setLoadingMessages] = useState(false);
     const [sending, setSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState('');
@@ -143,6 +144,7 @@ export default function AdminChatsPage() {
     };
 
     const loadMessages = async (chatId) => {
+        setLoadingMessages(true);
         try {
             const response = await getMessages(chatId);
             setMessages(response.messages);
@@ -159,17 +161,21 @@ export default function AdminChatsPage() {
             fetchUnreadCount();
         } catch (error) {
             console.error('Error loading messages:', error);
+        } finally {
+            setLoadingMessages(false);
         }
     };
 
     const handleChatSelect = async (chat) => {
         setSelectedChat(chat);
         setError('');
-        await loadMessages(chat.chatId);
         
+        // On mobile, immediately switch to chat view to show skeleton
         if (isMobile) {
             setShowChatView(true);
         }
+        
+        await loadMessages(chat.chatId);
     };
 
     const handleBackToList = () => {
@@ -219,11 +225,12 @@ export default function AdminChatsPage() {
             
             setSelectedChat(chatObject);
             
-            await loadMessages(chatData.chatId);
-            
+            // On mobile, immediately switch to chat view to show skeleton
             if (isMobile) {
                 setShowChatView(true);
             }
+            
+            await loadMessages(chatData.chatId);
         } catch (error) {
             console.error('Error opening chat by user ID:', error);
             setError(error.message || 'Failed to open chat with user');
@@ -974,7 +981,32 @@ export default function AdminChatsPage() {
                         WebkitOverflowScrolling: 'touch',
                         scrollBehavior: 'smooth'
                     }}>
-                        {messages.map((message, index) => {
+                        {loadingMessages ? (
+                            // Skeleton loader for messages
+                            <>
+                                {[1, 2, 3, 4, 5].map((item) => (
+                                    <Box
+                                        key={item}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: item % 2 === 0 ? 'flex-end' : 'flex-start',
+                                            mb: 0.5
+                                        }}
+                                    >
+                                        <Box sx={{ maxWidth: { xs: '85%', sm: '80%', md: '70%' } }}>
+                                            <Skeleton 
+                                                variant="rounded" 
+                                                width={item % 3 === 0 ? 180 : item % 2 === 0 ? 250 : 200}
+                                                height={60}
+                                                sx={{ borderRadius: { xs: 2.5, md: 2 } }}
+                                            />
+                                        </Box>
+                                    </Box>
+                                ))}
+                            </>
+                        ) : (
+                            <>
+                                {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
                             const isImage = message.messageType === 'image';
                             const isVoice = message.messageType === 'voice';
@@ -1192,7 +1224,9 @@ export default function AdminChatsPage() {
                                 </Box>
                             );
                         })}
-                        <div ref={messagesEndRef} />
+                                <div ref={messagesEndRef} />
+                            </>
+                        )}
                     </Box>
                     
                     <Box sx={{ 
