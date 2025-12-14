@@ -41,7 +41,32 @@ export default function HomePage() {
       }
 
       const response = await data.json();
-      setForms(response.forms || []);
+      const formsWithPlans = response.forms || [];
+      
+      // Fetch plan data for each form
+      const formsWithPlanData = await Promise.all(
+        formsWithPlans.map(async (form) => {
+          try {
+            const planResponse = await fetch(`${apiBaseUrl}/api/forms/my/${form._id}/plan`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+            });
+            
+            if (planResponse.ok) {
+              const planData = await planResponse.json();
+              return { ...form, plan: planData.plan };
+            }
+          } catch (error) {
+            console.log(`No plan found for form ${form._id}`);
+          }
+          return form;
+        })
+      );
+      
+      setForms(formsWithPlanData);
     } catch (error) {
       console.error('Error fetching forms:', error);
       setBackendError(`An error occurred while fetching forms: ${error.message}`);
@@ -77,7 +102,7 @@ export default function HomePage() {
         )}
 
         {forms.map((form) => (
-          <PlanListItem key={form._id} form={form} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
+          <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
         ))}
 
         <Button

@@ -57,7 +57,7 @@ export default function ViewPlanPage () {
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    setError('No plan found for this form yet. Your plan may still be in preparation.');
+                    setError('No plan available yet. Your form is being reviewed by our nutrition team.');
                     return;
                 }
                 throw new Error('Failed to fetch plan');
@@ -160,14 +160,15 @@ export default function ViewPlanPage () {
                     <Button onClick={() => navigate(-1)} sx={{ position: 'absolute', top: 12, left: 10, minWidth: 0, padding: 1 }}>
                         <ArrowBackIcon sx={{ fontSize: 32, color: 'black' }} />
                     </Button>
-                    <Typography color="error" variant="h6" gutterBottom>
+                    <Typography color="textSecondary" variant="h6" gutterBottom>
                         {error}
                     </Typography>
-                    {form && (
-                        <Typography color="textSecondary">
-                            Your form was submitted successfully. The nutrition team is preparing your personalized plan.
-                        </Typography>
-                    )}
+                    <Typography color="textSecondary" sx={{ mt: 2 }}>
+                        Your form was submitted successfully. The nutrition team will create your personalized plan soon.
+                    </Typography>
+                    <Typography color="textSecondary" sx={{ mt: 1, fontSize: '0.9rem' }}>
+                        You'll be able to view your plan here once it's ready. No action is required from you at this time.
+                    </Typography>
                 </Box>
             </PageFade>
         );

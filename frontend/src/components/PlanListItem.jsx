@@ -35,21 +35,26 @@ export default function PlanListItem ({ form, plan, onClick }) {
         >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                 <Box>
-                    {form.reviewed ? (
+                    {plan ? (
                         <>
                             <Typography sx={{ color: theme.palette.contrastText.primary, fontWeight: 'bold' }}>
-                                Plan{plan?.title ? `: ${plan.title}` : ''}
+                                Plan{plan.title ? `: ${plan.title}` : ''}
                             </Typography>
-                            {plan?.status && (
+                            {plan.status && (
                                 <Typography variant="caption" sx={{ color: theme.palette.contrastText.secondary }}>
                                     Status: {plan.status}
                                 </Typography>
                             )}
                         </>
                     ) : (
-                        <Typography variant="h6" sx={{ color: theme.palette.contrastText.primary, fontWeight: 'bold' }}>
-                            Form by: {form.user?.name || 'Unknown'}
-                        </Typography>
+                        <>
+                            <Typography sx={{ color: theme.palette.contrastText.primary, fontWeight: 'bold' }}>
+                                Form Submitted
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: theme.palette.contrastText.secondary }}>
+                                {form.reviewed ? 'Plan being prepared' : 'Pending review'}
+                            </Typography>
+                        </>
                     )}
                 </Box>
                 
