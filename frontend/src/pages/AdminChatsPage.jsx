@@ -729,7 +729,9 @@ export default function AdminChatsPage() {
 
     const renderChatList = () => (
         <Paper sx={{ 
-            width: { xs: '100%', md: 350 }, 
+            width: { xs: '100%', md: 350 },
+            minWidth: { md: 350 },
+            flexShrink: 0,
             display: 'flex', 
             flexDirection: 'column', 
             backgroundColor: theme.palette.background.paper,
@@ -873,7 +875,8 @@ export default function AdminChatsPage() {
 
     const renderChatView = () => (
         <Paper sx={{ 
-            flexGrow: 1, 
+            flexGrow: 1,
+            minWidth: 0,
             display: 'flex', 
             flexDirection: 'column', 
             backgroundColor: theme.palette.background.paper,
@@ -971,7 +974,8 @@ export default function AdminChatsPage() {
                     </Box>
                     
                     <Box sx={{ 
-                        flexGrow: 1, 
+                        flexGrow: 1,
+                        minHeight: 0,
                         overflow: 'auto',
                         overflowX: 'hidden', 
                         p: { xs: 1, sm: 1.5, md: 2 }, 
@@ -1020,7 +1024,8 @@ export default function AdminChatsPage() {
                                     }}
                                 >
                                     <Box sx={{ 
-                                        maxWidth: { xs: '85%', sm: '80%', md: '70%' }, 
+                                        maxWidth: { xs: '85%', sm: '80%', md: '70%' },
+                                        minWidth: 0,
                                         p: { xs: 1.25, sm: 1.375, md: 1.5 }, 
                                         borderRadius: { xs: 2.5, md: 2 }, 
                                         backgroundColor: isAdmin 
