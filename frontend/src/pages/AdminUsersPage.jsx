@@ -84,6 +84,7 @@ export default function AdminUsersPage() {
     }, [page, debouncedSearch, classFilter]);
 
     const fetchClasses = async () => {
+        if (import.meta.env.VITE_ENABLE_USER_CLASSES === 'false') return;
         try {
             const response = await fetch(`${apiBaseUrl}/api/admin/classes`, {
                 headers: {
@@ -326,30 +327,32 @@ export default function AdminUsersPage() {
                         onChange={handleSearchChange}
                         variant="outlined"
                     />
-                    <FormControl sx={{ minWidth: 200, width: { xs: '100%', md: 'auto' } }}>
-                        <InputLabel>Filter by Class</InputLabel>
-                        <Select
-                            value={classFilter}
-                            onChange={handleClassFilterChange}
-                            label="Filter by Class"
-                        >
-                            <MenuItem value="">All Classes</MenuItem>
-                            <MenuItem value="unassigned">Unassigned</MenuItem>
-                            {availableClasses.map((classItem) => (
-                                <MenuItem key={classItem._id} value={classItem._id}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <CircleIcon 
-                                            sx={{ 
-                                                fontSize: 12, 
-                                                color: classItem.color 
-                                            }} 
-                                        />
-                                        {classItem.name}
-                                    </Box>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                        <FormControl sx={{ minWidth: 200, width: { xs: '100%', md: 'auto' } }}>
+                            <InputLabel>Filter by Class</InputLabel>
+                            <Select
+                                value={classFilter}
+                                onChange={handleClassFilterChange}
+                                label="Filter by Class"
+                            >
+                                <MenuItem value="">All Classes</MenuItem>
+                                <MenuItem value="unassigned">Unassigned</MenuItem>
+                                {availableClasses.map((classItem) => (
+                                    <MenuItem key={classItem._id} value={classItem._id}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <CircleIcon 
+                                                sx={{ 
+                                                    fontSize: 12, 
+                                                    color: classItem.color 
+                                                }} 
+                                            />
+                                            {classItem.name}
+                                        </Box>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    )}
                 </Box>
 
                 {error && (
@@ -395,7 +398,7 @@ export default function AdminUsersPage() {
                                                 {user.email}
                                             </Typography>
                                             <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-                                                {user.userClass && (
+                                                {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && user.userClass && (
                                                     <Chip 
                                                         icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
                                                         label={user.userClass.name}
@@ -467,7 +470,7 @@ export default function AdminUsersPage() {
                                     <TableCell>Photo</TableCell>
                                     <TableCell>Name</TableCell>
                                     <TableCell>Email</TableCell>
-                                    <TableCell>Class</TableCell>
+                                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && <TableCell>Class</TableCell>}
                                     <TableCell>Gender</TableCell>
                                     <TableCell>Date of Birth</TableCell>
                                     <TableCell>Is Mother</TableCell>
@@ -503,24 +506,26 @@ export default function AdminUsersPage() {
                                         </TableCell>
                                         <TableCell>{user.name}</TableCell>
                                         <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                            {user.userClass ? (
-                                                <Chip 
-                                                    icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
-                                                    label={user.userClass.name}
-                                                    size="small"
-                                                    sx={{ 
-                                                        borderColor: user.userClass.color,
-                                                        color: user.userClass.color
-                                                    }}
-                                                    variant="outlined"
-                                                />
-                                            ) : (
-                                                <Typography variant="caption" color="text.secondary">
-                                                    None
-                                                </Typography>
-                                            )}
-                                        </TableCell>
+                                        {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                                            <TableCell>
+                                                {user.userClass ? (
+                                                    <Chip 
+                                                        icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
+                                                        label={user.userClass.name}
+                                                        size="small"
+                                                        sx={{ 
+                                                            borderColor: user.userClass.color,
+                                                            color: user.userClass.color
+                                                        }}
+                                                        variant="outlined"
+                                                    />
+                                                ) : (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        None
+                                                    </Typography>
+                                                )}
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <Chip 
                                                 label={user.gender || 'Not specified'} 

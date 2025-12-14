@@ -41,13 +41,13 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
     const menuItems = [
         { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
         { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
-        { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes' },
+        { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes', feature: 'VITE_ENABLE_USER_CLASSES' },
         { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
         { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
-        { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements' },
-        { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates' },
+        { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
+        { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates', feature: 'VITE_ENABLE_PLAN_TEMPLATES' },
         { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
-    ];
+    ].filter(item => !item.feature || import.meta.env[item.feature] !== 'false');
 
     const drawer = (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

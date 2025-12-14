@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import { adminOnly } from '../middleware/auth.js';
+import { checkFeatureEnabled } from '../middleware/featureFlags.js';
 import {
     getAllTemplates,
     getTemplateById,
@@ -12,6 +13,9 @@ import {
     duplicateTemplate,
     getTemplateStats
 } from '../controllers/templateController.js';
+
+// Check if feature is enabled
+router.use(checkFeatureEnabled('ENABLE_PLAN_TEMPLATES'));
 
 // Template CRUD routes
 router.get('/admin/templates', adminOnly, getAllTemplates);

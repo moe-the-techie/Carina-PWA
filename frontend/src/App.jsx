@@ -27,6 +27,10 @@ import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+const isFeatureEnabled = (featureName) => {
+    return import.meta.env[featureName] !== 'false';
+};
+
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         return localStorage.getItem('token') ? true : false;
@@ -102,7 +106,7 @@ function App() {
                 <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogout={handleLogout} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/announcements" element={isLoggedIn ? <AuthenticatedLayout><AnnouncementsPage user={user} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/announcements" element={isLoggedIn && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AuthenticatedLayout><AnnouncementsPage user={user} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
                 <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
                 <Route path="/view-plan/:id" element={isLoggedIn ? <ViewPlanPage /> : <Navigate to="/" replace/>} />
@@ -110,12 +114,12 @@ function App() {
                 {/* Admin*/}
                 <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminUsersPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/classes" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminClassesPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/classes" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_USER_CLASSES') ? <AdminLayout onLogout={handleLogout}><AdminClassesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminFormsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/templates" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/templates" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_PLAN_TEMPLATES') ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/announcements" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

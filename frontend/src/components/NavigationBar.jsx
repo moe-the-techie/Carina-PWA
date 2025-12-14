@@ -26,10 +26,10 @@ export default function NavigationBar() {
 
   const navItems = [
     { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Home' },
-    { to: '/announcements', outlinedIcon: <CampaignOutlinedIcon />, filledIcon: <CampaignIcon />, label: 'News' },
+    { to: '/announcements', outlinedIcon: <CampaignOutlinedIcon />, filledIcon: <CampaignIcon />, label: 'News', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
     { to: '/chat', outlinedIcon: <ChatBubbleOutlineIcon />, filledIcon: <ChatBubbleIcon />, label: 'Chat' },
     { to: '/settings', outlinedIcon: <SettingsOutlinedIcon />, filledIcon: <SettingsIcon />, label: 'Settings' }
-  ];
+  ].filter(item => !item.feature || import.meta.env[item.feature] !== 'false');
 
   return (
     <Box

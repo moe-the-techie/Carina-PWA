@@ -1189,8 +1189,8 @@ export default function AdminPlanBuilderPage() {
                         </Grid>
                     )}
 
-                    {/* Template Selection - Only show when not editing template */}
-                    {!isEditingTemplate && (
+                    {/* Template Selection - Only show when not editing template and templates are enabled */}
+                    {!isEditingTemplate && import.meta.env.VITE_ENABLE_PLAN_TEMPLATES !== 'false' && (
                         <Grid item xs={12} md={4}>
                         <Card>
                             <CardContent>
@@ -2374,14 +2374,16 @@ export default function AdminPlanBuilderPage() {
                                 </>
                             ) : (
                                 <>
-                                    <Button
-                                        variant="outlined"
-                                        size="large"
-                                        onClick={saveAsTemplate}
-                                        disabled={loading || !planData.title || planData.weeklyPlans.length === 0}
-                                    >
-                                        Save as Template
-                                    </Button>
+                                    {import.meta.env.VITE_ENABLE_PLAN_TEMPLATES !== 'false' && (
+                                        <Button
+                                            variant="outlined"
+                                            size="large"
+                                            onClick={saveAsTemplate}
+                                            disabled={loading || !planData.title || planData.weeklyPlans.length === 0}
+                                        >
+                                            Save as Template
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="contained"
                                         size="large"

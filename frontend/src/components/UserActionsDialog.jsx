@@ -136,24 +136,28 @@ export default function UserActionsDialog({
                         </ListItemButton>
                     </ListItem>
                     <Divider />
-                    <ListItem disablePadding>
-                        <ListItemButton 
-                            onClick={() => handleActionClick('assignClass')}
-                            sx={{ py: { xs: 2, sm: 1.5 } }}
-                        >
-                            <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
-                                <CategoryIcon color="info" />
-                            </ListItemIcon>
-                            <ListItemText 
-                                primary="Assign Class" 
-                                secondary={!isMobile ? "Set user classification" : null}
-                                primaryTypographyProps={{ 
-                                    variant: isMobile ? 'body1' : 'body2' 
-                                }}
-                            />
-                        </ListItemButton>
-                    </ListItem>
-                    <Divider />
+                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                        <>
+                            <ListItem disablePadding>
+                                <ListItemButton 
+                                    onClick={() => handleActionClick('assignClass')}
+                                    sx={{ py: { xs: 2, sm: 1.5 } }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                        <CategoryIcon color="info" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="Assign Class" 
+                                        secondary={!isMobile ? "Set user classification" : null}
+                                        primaryTypographyProps={{ 
+                                            variant: isMobile ? 'body1' : 'body2' 
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                            <Divider />
+                        </>
+                    )}
                     <ListItem disablePadding>
                         <ListItemButton 
                             onClick={() => handleActionClick('ban')}
