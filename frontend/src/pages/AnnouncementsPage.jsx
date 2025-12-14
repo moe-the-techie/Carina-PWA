@@ -14,7 +14,8 @@ import {
     Collapse,
     Avatar,
     Pagination,
-    Badge
+    Badge,
+    Skeleton
 } from '@mui/material';
 import {
     Campaign as AnnouncementIcon,
@@ -26,7 +27,6 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
-import LoadingBackdrop from '../components/LoadingBackdrop';
 import {
     getUserAnnouncements,
     markAnnouncementAsRead,
@@ -165,7 +165,42 @@ export default function AnnouncementsPage({ user }) {
     if (loading) {
         return (
             <PageFade>
-                <LoadingBackdrop open={loading} />
+                <Container maxWidth="lg" sx={{ py: { xs: 1, sm: 2, md: 3 }, px: { xs: 1, sm: 2 } }}>
+                    {/* Header Skeleton */}
+                    <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mb: { xs: 2, sm: 3 },
+                        gap: 2
+                    }}>
+                        <Skeleton variant="circular" width={40} height={40} />
+                        <Skeleton variant="text" width="50%" height={48} />
+                    </Box>
+
+                    {/* Announcement Cards Skeleton */}
+                    <Grid container spacing={{ xs: 2, sm: 3 }}>
+                        {[1, 2, 3].map((item) => (
+                            <Grid item xs={12} key={item}>
+                                <Card>
+                                    <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, gap: 2 }}>
+                                            <Skeleton variant="circular" width={40} height={40} />
+                                            <Box sx={{ flex: 1 }}>
+                                                <Skeleton variant="text" width="70%" height={32} />
+                                                <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                                            </Box>
+                                        </Box>
+                                        <Skeleton variant="rectangular" width="100%" height={80} sx={{ mb: 1, borderRadius: 1 }} />
+                                        <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                                            <Skeleton variant="rounded" width={80} height={24} />
+                                            <Skeleton variant="rounded" width={100} height={24} />
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Container>
             </PageFade>
         );
     }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Box, Typography, Paper, Divider, Button, useTheme, Grid, Chip, Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Rating, Alert, Snackbar } from '@mui/material';
+import { Box, Typography, Paper, Divider, Button, useTheme, Grid, Chip, Accordion, AccordionSummary, AccordionDetails, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Rating, Alert, Snackbar, Skeleton } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FeedbackIcon from '@mui/icons-material/Feedback';
@@ -147,7 +147,49 @@ export default function ViewPlanPage () {
     if (loading) {
         return (
             <PageFade>
-                <LoadingBackdrop open={loading} />
+                <Box
+                    sx={{
+                        width: '100%',
+                        maxWidth: { xs: '100%', sm: 900, md: 1200 },
+                        mx: 'auto',
+                        p: { xs: 1, sm: 2, md: 3 },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: { xs: 1.5, sm: 2 },
+                    }}
+                >
+                    {/* Header Skeleton */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', mb: { xs: 1, sm: 2 } }}>
+                        <Skeleton variant="text" width="60%" height={50} />
+                    </Box>
+                    
+                    {/* Plan Overview Skeleton */}
+                    <Paper elevation={2} sx={{ p: 2, backgroundColor: theme.palette.background.container }}>
+                        <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
+                        <Skeleton variant="text" width="80%" height={24} sx={{ mb: 1 }} />
+                        <Skeleton variant="text" width="90%" height={24} sx={{ mb: 1 }} />
+                        <Skeleton variant="text" width="50%" height={24} sx={{ mb: 1 }} />
+                        <Skeleton variant="text" width="60%" height={24} />
+                    </Paper>
+
+                    {/* Feedback Section Skeleton */}
+                    <Paper elevation={2} sx={{ p: 2, backgroundColor: theme.palette.background.container }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Skeleton variant="text" width="40%" height={32} />
+                            <Skeleton variant="rectangular" width={150} height={36} sx={{ borderRadius: 1 }} />
+                        </Box>
+                        <Skeleton variant="text" width="70%" height={20} />
+                    </Paper>
+
+                    {/* Daily Plans Skeleton */}
+                    {[1, 2, 3].map((item) => (
+                        <Paper key={item} elevation={2} sx={{ p: 2, backgroundColor: theme.palette.background.container }}>
+                            <Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+                            <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: 1, mb: 1 }} />
+                            <Skeleton variant="text" width="90%" height={20} />
+                        </Paper>
+                    ))}
+                </Box>
             </PageFade>
         );
     }

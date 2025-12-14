@@ -8,7 +8,8 @@ import {
     Avatar,
     Chip,
     Snackbar,
-    Alert
+    Alert,
+    Skeleton
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -22,7 +23,6 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
-import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import {
     getOrCreateChat,
@@ -457,7 +457,62 @@ export default function ChatPage() {
     if (loading) {
         return (
             <PageFade>
-                <LoadingBackdrop open={loading} />
+                <Box sx={{ 
+                    height: { xs: 'calc(100vh - 60px)', sm: 'calc(100vh - 60px)', md: 'calc(100vh - 10vh - 48px)' }, 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    p: { xs: 0, sm: 1, md: 2 },
+                    overflow: 'hidden'
+                }}>
+                    <Paper sx={{ 
+                        width: '100%', 
+                        maxWidth: { xs: '100%', md: 800 },
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        backgroundColor: theme.palette.background.paper,
+                        borderRadius: { xs: 0, sm: 2, md: 1 },
+                        overflow: 'hidden'
+                    }}>
+                        {/* Header Skeleton */}
+                        <Box sx={{ 
+                            p: { xs: 1.25, sm: 1.5, md: 2 }, 
+                            borderBottom: 1, 
+                            borderColor: 'divider', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: { xs: 1, md: 2 },
+                            minHeight: { xs: 56, md: 64 }
+                        }}>
+                            <Skeleton variant="circular" width={40} height={40} />
+                            <Box sx={{ flex: 1 }}>
+                                <Skeleton variant="text" width="50%" height={28} />
+                                <Skeleton variant="text" width="70%" height={16} sx={{ mt: 0.5 }} />
+                            </Box>
+                        </Box>
+
+                        {/* Messages Skeleton */}
+                        <Box sx={{ flexGrow: 1, overflow: 'auto', p: { xs: 1, sm: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* User message */}
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Skeleton variant="rounded" width="70%" height={60} sx={{ borderRadius: 2 }} />
+                            </Box>
+                            {/* Admin message */}
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1 }}>
+                                <Skeleton variant="circular" width={32} height={32} />
+                                <Skeleton variant="rounded" width="70%" height={80} sx={{ borderRadius: 2 }} />
+                            </Box>
+                            {/* User message */}
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Skeleton variant="rounded" width="60%" height={50} sx={{ borderRadius: 2 }} />
+                            </Box>
+                        </Box>
+
+                        {/* Input Skeleton */}
+                        <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, borderTop: 1, borderColor: 'divider' }}>
+                            <Skeleton variant="rounded" width="100%" height={56} sx={{ borderRadius: 2 }} />
+                        </Box>
+                    </Paper>
+                </Box>
             </PageFade>
         );
     }

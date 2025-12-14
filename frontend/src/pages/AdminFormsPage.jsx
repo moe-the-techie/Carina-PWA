@@ -33,7 +33,8 @@ import {
     Backdrop,
     Accordion,
     AccordionSummary,
-    AccordionDetails
+    AccordionDetails,
+    Skeleton
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
@@ -242,7 +243,38 @@ export default function AdminFormsPage() {
                     minHeight: '60vh',
                     gap: 2
                 }}>
-                    <LoadingBackdrop open={loading} />
+                    <Box sx={{ width: '100%' }}>
+                        <Skeleton variant="text" width="40%" height={48} sx={{ mb: 3 }} />
+                        
+                        {/* Filter Skeleton */}
+                        <Skeleton variant="rounded" width={200} height={56} sx={{ mb: 3 }} />
+                        
+                        {/* Table Skeleton */}
+                        <TableContainer component={Paper}>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        {[1, 2, 3, 4, 5, 6].map((col) => (
+                                            <TableCell key={col}>
+                                                <Skeleton variant="text" width="80%" />
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
+                                        <TableRow key={row}>
+                                            {[1, 2, 3, 4, 5, 6].map((col) => (
+                                                <TableCell key={col}>
+                                                    <Skeleton variant="text" width="90%" />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
                 </Box>
             </PageFade>
         );

@@ -14,7 +14,8 @@ import {
     TableRow,
     Chip,
     IconButton,
-    Tooltip
+    Tooltip,
+    Skeleton
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
@@ -73,7 +74,54 @@ export default function AdminDashboardPage() {
     if (loading) {
         return (
             <PageFade>
-                <LoadingBackdrop open={loading} />
+                <Box sx={{ p: 3 }}>
+                    <Skeleton variant="text" width="40%" height={48} sx={{ mb: 3 }} />
+                    
+                    {/* Stats Cards Skeleton */}
+                    <Grid container spacing={3} sx={{ mb: 4 }}>
+                        {[1, 2, 3, 4].map((item) => (
+                            <Grid item xs={12} sm={6} md={3} key={item}>
+                                <Card>
+                                    <CardContent>
+                                        <Skeleton variant="text" width="60%" height={20} />
+                                        <Skeleton variant="text" width="40%" height={40} sx={{ mt: 1 }} />
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+
+                    {/* Recent Activity Skeleton */}
+                    <Card>
+                        <CardContent>
+                            <Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+                            <TableContainer>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            {[1, 2, 3, 4].map((col) => (
+                                                <TableCell key={col}>
+                                                    <Skeleton variant="text" width="80%" />
+                                                </TableCell>
+                                            ))}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {[1, 2, 3, 4, 5].map((row) => (
+                                            <TableRow key={row}>
+                                                {[1, 2, 3, 4].map((col) => (
+                                                    <TableCell key={col}>
+                                                        <Skeleton variant="text" width="90%" />
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </CardContent>
+                    </Card>
+                </Box>
             </PageFade>
         );
     }

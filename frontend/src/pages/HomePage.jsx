@@ -4,9 +4,11 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import Skeleton from '@mui/material/Skeleton';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
-import LoadingBackdrop from '../components/LoadingBackdrop';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -95,35 +97,57 @@ export default function HomePage() {
           My Forms
         </Typography>
 
-        {forms.length === 0 && (
-          <Typography align="center" color="textSecondary">
-            No forms submitted yet.
-          </Typography>
-        )}
+        {loading ? (
+          // Skeleton loading state
+          <>
+            {[1, 2, 3].map((item) => (
+              <Card key={item} sx={{ width: '100%', mb: 2 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Skeleton variant="circular" width={56} height={56} />
+                    <Box sx={{ flex: 1 }}>
+                      <Skeleton variant="text" width="60%" height={28} />
+                      <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                      <Skeleton variant="text" width="80%" height={20} />
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+            <Skeleton variant="rectangular" width="100%" height={42} sx={{ mt: 4, borderRadius: 1 }} />
+          </>
+        ) : (
+          <>
+            {forms.length === 0 && (
+              <Typography align="center" color="textSecondary">
+                No forms submitted yet.
+              </Typography>
+            )}
 
-        {forms.map((form) => (
-          <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
-        ))}
+            {forms.map((form) => (
+              <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
+            ))}
 
-        <Button
-          onClick={() => navigate('/new-form')}
-          variant="contained"
-          color="primary"
-          sx={{
-            width: { xs: '100%', md: '30%' },
-            mt: 4,
-          }}
-        >
-          Submit New Form
-        </Button>
+            <Button
+              onClick={() => navigate('/new-form')}
+              variant="contained"
+              color="primary"
+              sx={{
+                width: { xs: '100%', md: '30%' },
+                mt: 4,
+              }}
+            >
+              Submit New Form
+            </Button>
 
-        {backendError && (
-          <Typography align="center" color="error" sx={{ mt: 2 }}>
-            {backendError}
-          </Typography>
+            {backendError && (
+              <Typography align="center" color="error" sx={{ mt: 2 }}>
+                {backendError}
+              </Typography>
+            )}
+          </>
         )}
       </Box>
-      <LoadingBackdrop open={loading} />
     </PageFade>
   );
 }

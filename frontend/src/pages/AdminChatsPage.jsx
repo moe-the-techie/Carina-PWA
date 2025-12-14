@@ -25,7 +25,8 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
-    DialogActions
+    DialogActions,
+    Skeleton
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
@@ -1391,7 +1392,45 @@ export default function AdminChatsPage() {
     if (loading) {
         return (
             <PageFade>
-                <LoadingBackdrop open={loading} />
+                <Box sx={{ display: 'flex', height: 'calc(100vh - 10vh)', overflow: 'hidden' }}>
+                    {/* Chat List Skeleton */}
+                    <Paper sx={{ width: { xs: '100%', md: 320 }, borderRadius: 0, overflow: 'hidden' }}>
+                        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+                            <Skeleton variant="text" width="60%" height={32} />
+                            <Skeleton variant="rounded" width="100%" height={40} sx={{ mt: 2 }} />
+                        </Box>
+                        <List sx={{ p: 0 }}>
+                            {[1, 2, 3, 4, 5].map((item) => (
+                                <React.Fragment key={item}>
+                                    <ListItem sx={{ gap: 2 }}>
+                                        <Skeleton variant="circular" width={40} height={40} />
+                                        <Box sx={{ flex: 1 }}>
+                                            <Skeleton variant="text" width="70%" height={20} />
+                                            <Skeleton variant="text" width="50%" height={16} sx={{ mt: 0.5 }} />
+                                        </Box>
+                                    </ListItem>
+                                    <Divider />
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    </Paper>
+
+                    {/* Chat Area Skeleton - Hidden on mobile */}
+                    <Box sx={{ flex: 1, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', backgroundColor: theme.palette.background.default }}>
+                        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 2 }}>
+                            <Skeleton variant="circular" width={40} height={40} />
+                            <Box sx={{ flex: 1 }}>
+                                <Skeleton variant="text" width="40%" height={24} />
+                                <Skeleton variant="text" width="30%" height={16} sx={{ mt: 0.5 }} />
+                            </Box>
+                        </Box>
+                        <Box sx={{ flex: 1, p: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'center', color: 'text.secondary' }}>
+                                <Typography>Select a chat to view messages</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
             </PageFade>
         );
     }
