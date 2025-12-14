@@ -19,6 +19,7 @@ import {
 import ChatIcon from '@mui/icons-material/Chat';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -72,9 +73,7 @@ export default function AdminDashboardPage() {
     if (loading) {
         return (
             <PageFade>
-                <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography>Loading dashboard...</Typography>
-                </Box>
+                <LoadingBackdrop open={loading} />
             </PageFade>
         );
     }

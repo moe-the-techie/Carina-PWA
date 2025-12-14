@@ -6,7 +6,6 @@ import {
     TextField,
     IconButton,
     Avatar,
-    CircularProgress,
     Chip,
     Snackbar,
     Alert
@@ -23,6 +22,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import {
     getOrCreateChat,
@@ -457,9 +457,7 @@ export default function ChatPage() {
     if (loading) {
         return (
             <PageFade>
-                <Box display="flex" justifyContent="center" alignItems="center" minHeight="70vh">
-                    <CircularProgress />
-                </Box>
+                <LoadingBackdrop open={loading} />
             </PageFade>
         );
     }

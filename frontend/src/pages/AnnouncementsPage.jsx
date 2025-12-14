@@ -14,8 +14,7 @@ import {
     Collapse,
     Avatar,
     Pagination,
-    Badge,
-    Skeleton
+    Badge
 } from '@mui/material';
 import {
     Campaign as AnnouncementIcon,
@@ -27,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 import {
     getUserAnnouncements,
     markAnnouncementAsRead,
@@ -162,33 +162,10 @@ export default function AnnouncementsPage({ user }) {
         return announcement.expiresAt && new Date(announcement.expiresAt) < new Date();
     };
 
-    const LoadingSkeleton = () => (
-        <Grid container spacing={3}>
-            {[1, 2, 3].map((item) => (
-                <Grid item xs={12} key={item}>
-                    <Card>
-                        <CardContent>
-                            <Skeleton variant="text" width="40%" height={40} />
-                            <Skeleton variant="text" width="20%" height={20} sx={{ mb: 2 }} />
-                            <Skeleton variant="text" width="100%" height={20} />
-                            <Skeleton variant="text" width="80%" height={20} />
-                        </CardContent>
-                    </Card>
-                </Grid>
-            ))}
-        </Grid>
-    );
-
     if (loading) {
         return (
             <PageFade>
-                <Container maxWidth="md" sx={{ py: 3 }}>
-                    <Typography variant="h4" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-                        <AnnouncementIcon sx={{ mr: 2 }} />
-                        Announcements
-                    </Typography>
-                    <LoadingSkeleton />
-                </Container>
+                <LoadingBackdrop open={loading} />
             </PageFade>
         );
     }

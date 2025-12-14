@@ -5,6 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -146,9 +147,7 @@ export default function ViewPlanPage () {
     if (loading) {
         return (
             <PageFade>
-                <Box p={3} textAlign="center">
-                    <Typography>Loading your plan...</Typography>
-                </Box>
+                <LoadingBackdrop open={loading} />
             </PageFade>
         );
     }

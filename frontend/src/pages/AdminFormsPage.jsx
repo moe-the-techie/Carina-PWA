@@ -40,6 +40,7 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import FormActionsDialog from '../components/FormActionsDialog';
 
@@ -241,8 +242,7 @@ export default function AdminFormsPage() {
                     minHeight: '60vh',
                     gap: 2
                 }}>
-                    <CircularProgress size={60} />
-                    <Typography variant="h6" color="text.secondary">Loading forms...</Typography>
+                    <LoadingBackdrop open={loading} />
                 </Box>
             </PageFade>
         );
