@@ -133,7 +133,9 @@ export default function AdminPlanBuilderPage() {
 
     useEffect(() => {
         fetchUsers();
-        fetchTemplates();
+        if (import.meta.env.VITE_ENABLE_PLAN_TEMPLATES !== 'false') {
+            fetchTemplates();
+        }
     }, []);
 
     useEffect(() => {
