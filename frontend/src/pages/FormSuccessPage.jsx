@@ -17,7 +17,7 @@ export default function FormSuccessPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100vh',
-                backgroundColor: '#f0f0f0',
+                backgroundColor: theme.palette.background.default,
                 textAlign: 'center',
                 padding: 3,
             }}
@@ -39,10 +39,10 @@ export default function FormSuccessPage() {
                 onClick={() => setImageDialogOpen(true)}
             />
 
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
                 Form Submitted Successfully!
             </Typography>
-            <Typography variant="body1" sx={{ mb: 2, color: theme.palette.contrastText.secondary, fontStyle: 'italic' }}>
+            <Typography variant="body1" sx={{ mb: 2, color: theme.palette.text.secondary, fontStyle: 'italic' }}>
                 Thank you for your submission. We will review your form and get back to you shortly.
             </Typography>
             <Button variant="contained" onClick={() => navigate('/home')} sx={{ width: { xs: '100%', sm: '30%' }, height: '45px' }}>
