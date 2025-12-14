@@ -22,7 +22,8 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Divider
+    Divider,
+    useMediaQuery
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -34,11 +35,13 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminPlanBuilderPage() {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const location = useLocation();
     const [users, setUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState('');
     const [userForms, setUserForms] = useState([]);
     const [selectedForm, setSelectedForm] = useState('');
+    const [currentFormData, setCurrentFormData] = useState(null);
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [loading, setLoading] = useState(false);
@@ -147,6 +150,9 @@ export default function AdminPlanBuilderPage() {
             if (userId && formId) {
                 setSelectedUser(userId);
                 setSelectedForm(formId);
+                if (formData) {
+                    setCurrentFormData(formData);
+                }
                 
                 // Check if there's an existing plan for this form
                 loadExistingPlan(formId, formData);
@@ -334,6 +340,17 @@ export default function AdminPlanBuilderPage() {
             fetchUserForms();
         }
     }, [selectedUser]);
+
+    useEffect(() => {
+        if (selectedForm && userForms.length > 0) {
+            const form = userForms.find(f => f._id === selectedForm);
+            if (form) {
+                setCurrentFormData(form);
+            }
+        } else if (!selectedForm) {
+            setCurrentFormData(null);
+        }
+    }, [selectedForm, userForms]);
 
     const loadExistingPlan = async (formId, formData) => {
         try {
@@ -1145,7 +1162,7 @@ export default function AdminPlanBuilderPage() {
                     </Typography>
                 )}
 
-                <Grid container spacing={3}>
+                <Grid container spacing={{ xs: 2, md: 3 }}>
                     {/* User and Form Selection - Only show when not editing template */}
                     {!isEditingTemplate && (
                         <Grid item xs={12} md={4}>
@@ -1161,6 +1178,7 @@ export default function AdminPlanBuilderPage() {
                                             value={selectedUser}
                                             onChange={(e) => setSelectedUser(e.target.value)}
                                             label="Select User"
+                                            MenuProps={{ disableScrollLock: true }}
                                         >
                                             {users.map((user) => (
                                                 <MenuItem key={user._id} value={user._id}>
@@ -1177,6 +1195,7 @@ export default function AdminPlanBuilderPage() {
                                             onChange={(e) => setSelectedForm(e.target.value)}
                                             label="Select Form"
                                             disabled={!selectedUser}
+                                            MenuProps={{ disableScrollLock: true }}
                                         >
                                             {userForms.map((form) => (
                                                 <MenuItem key={form._id} value={form._id}>
@@ -1186,6 +1205,58 @@ export default function AdminPlanBuilderPage() {
                                             ))}
                                         </Select>
                                     </FormControl>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    )}
+
+                    {/* Form Details - Only show when a form is selected */}
+                    {!isEditingTemplate && currentFormData && (
+                        <Grid item xs={12} md={4}>
+                            <Card sx={{ height: '100%' }}>
+                                <CardContent>
+                                    <Typography variant="h6" gutterBottom>
+                                        Form Details
+                                    </Typography>
+                                    <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                        <Typography variant="subtitle2" color="primary">Weight Goals</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            Current: {currentFormData.currentWeight}kg → Desired: {currentFormData.desiredWeight}kg
+                                        </Typography>
+                                        
+                                        <Typography variant="subtitle2" color="primary">Allergies</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            {currentFormData.allergies && currentFormData.allergies.length > 0 
+                                                ? currentFormData.allergies.join(', ') 
+                                                : 'None'}
+                                        </Typography>
+
+                                        <Typography variant="subtitle2" color="primary">Health Conditions</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            {currentFormData.healthConditions && currentFormData.healthConditions.length > 0 
+                                                ? currentFormData.healthConditions.join(', ') 
+                                                : 'None'}
+                                        </Typography>
+
+                                        <Typography variant="subtitle2" color="primary">Medications</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            {currentFormData.medications && currentFormData.medications.length > 0 
+                                                ? currentFormData.medications.join(', ') 
+                                                : 'None'}
+                                        </Typography>
+
+                                        <Typography variant="subtitle2" color="primary">Goals</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            {currentFormData.goals && currentFormData.goals.length > 0 
+                                                ? currentFormData.goals.join(', ') 
+                                                : 'None'}
+                                        </Typography>
+                                        
+                                        <Typography variant="subtitle2" color="primary">Smoker</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            {currentFormData.currentSmoker ? 'Yes' : 'No'}
+                                        </Typography>
+                                    </Box>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -1211,6 +1282,7 @@ export default function AdminPlanBuilderPage() {
                                             }
                                         }}
                                         label="Select Template"
+                                        MenuProps={{ disableScrollLock: true }}
                                     >
                                         <MenuItem value="">None</MenuItem>
                                         {templates.map((template) => (
@@ -1263,6 +1335,7 @@ export default function AdminPlanBuilderPage() {
                                                 value={templateMetadata.category}
                                                 onChange={(e) => setTemplateMetadata(prev => ({ ...prev, category: e.target.value }))}
                                                 label="Category"
+                                                MenuProps={{ disableScrollLock: true }}
                                             >
                                                 <MenuItem value="Weight Loss">Weight Loss</MenuItem>
                                                 <MenuItem value="Weight Gain">Weight Gain</MenuItem>
@@ -2409,7 +2482,7 @@ export default function AdminPlanBuilderPage() {
                     onClose={() => setMealDialogOpen(false)} 
                     maxWidth="md" 
                     fullWidth
-                    fullScreen
+                    fullScreen={isMobile}
                     sx={{
                         '& .MuiDialog-paper': {
                             margin: { xs: 0, sm: 2 },
@@ -2595,10 +2668,12 @@ export default function AdminPlanBuilderPage() {
                     onClose={() => setChipDetailDialogOpen(false)} 
                     maxWidth="sm" 
                     fullWidth
+                    fullScreen={isMobile}
                     sx={{
                         '& .MuiDialog-paper': {
-                            borderRadius: 2,
-                            maxHeight: '80vh'
+                            borderRadius: { xs: 0, sm: 2 },
+                            maxHeight: { xs: '100vh', sm: '80vh' },
+                            margin: { xs: 0, sm: 2 }
                         }
                     }}
                 >
