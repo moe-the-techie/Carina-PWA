@@ -108,12 +108,17 @@ export default function SignUpPage({ onLogin }) {
           return;
         }
 
-        if (data.token) {
+        if (data.requiresEmailVerification) {
+          // Account created successfully but needs email verification
+          alert('Account created successfully! Please check your email to verify your account, then sign in.');
+          navigate('/login');
+        } else if (data.token) {
+          // Login directly if no email verification needed
           localStorage.setItem('token', data.token);
           onLogin();
           navigate('/');
         } else {
-          setBackendError('Registration succeeded but token is missing.');
+          setBackendError('Registration succeeded but unexpected response received.');
         }
       } catch (error) {
         console.error('Network error:', error);
