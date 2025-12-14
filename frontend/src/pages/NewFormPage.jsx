@@ -176,10 +176,10 @@ export default function NewFormPage () {
                 }}
             >
                 <Button onClick={() => navigate(-1)} sx={{ position: 'absolute', top: 8, left: 10, minWidth: 0, padding: 1 }}>
-                    <ArrowBackIcon sx={{ fontSize: 32, color: 'black' }} />
+                    <ArrowBackIcon sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: theme.palette.mode === 'light' ? 'black' : theme.palette.text.primary }} />
                 </Button>
                 <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Typography variant="h5" sx={{ mt: 1, mb: 1, color: 'black' }}>
+                    <Typography variant="h5" sx={{ mt: 1, mb: 1, color: theme.palette.mode === 'light' ? 'black' : theme.palette.text.primary }}>
                         New Form
                     </Typography>
                 </Box>

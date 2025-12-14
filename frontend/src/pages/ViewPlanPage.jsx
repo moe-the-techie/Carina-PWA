@@ -158,7 +158,7 @@ export default function ViewPlanPage () {
             <PageFade>
                 <Box p={3} textAlign="center">
                     <Button onClick={() => navigate(-1)} sx={{ position: 'absolute', top: 12, left: 10, minWidth: 0, padding: 1 }}>
-                        <ArrowBackIcon sx={{ fontSize: 32, color: 'black' }} />
+                        <ArrowBackIcon sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: theme.palette.text.primary }} />
                     </Button>
                     <Typography color="textSecondary" variant="h6" gutterBottom>
                         {error}
@@ -207,7 +207,7 @@ export default function ViewPlanPage () {
                         minHeight: { xs: '44px', sm: 'auto' }
                     }}
                 >
-                    <ArrowBackIcon sx={{ fontSize: { xs: 28, sm: 32 }, color: 'black' }} />
+                    <ArrowBackIcon sx={{ fontSize: { xs: 28, sm: 32, md: 36 }, color: theme.palette.text.primary }} />
                 </Button>
                 <Typography 
                     variant="h4"

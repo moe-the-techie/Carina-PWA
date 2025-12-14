@@ -9,8 +9,18 @@ export default function ThemeToggle() {
 
     return (
         <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-            <IconButton onClick={toggleTheme} color="inherit">
-                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            <IconButton 
+                onClick={toggleTheme} 
+                color="inherit"
+                sx={{ 
+                    width: { xs: '40px', md: '48px' },
+                    height: { xs: '40px', md: '48px' }
+                }}
+            >
+                {mode === 'dark' ? 
+                    <Brightness7Icon sx={{ fontSize: { xs: '20px', md: '24px' } }} /> : 
+                    <Brightness4Icon sx={{ fontSize: { xs: '20px', md: '24px' } }} />
+                }
             </IconButton>
         </Tooltip>
     );

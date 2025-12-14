@@ -207,8 +207,12 @@ export default function SettingsPage({ onLogout }) {
                     onClick={() => setEditDialogOpen(true)}
                     disabled={!user}
                     color="primary"
+                    sx={{ 
+                      width: { xs: '40px', md: '48px' },
+                      height: { xs: '40px', md: '48px' }
+                    }}
                   >
-                    <EditIcon />
+                    <EditIcon sx={{ fontSize: { xs: '20px', md: '24px' } }} />
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
@@ -228,9 +232,13 @@ export default function SettingsPage({ onLogout }) {
                     edge="end" 
                     onClick={() => setClearCacheDialogOpen(true)}
                     disabled={cacheStats.count === 0}
+                    sx={{ 
+                      width: { xs: '40px', md: '48px' },
+                      height: { xs: '40px', md: '48px' }
+                    }}
                     color="primary"
                   >
-                    <DeleteIcon />
+                    <DeleteIcon sx={{ fontSize: { xs: '20px', md: '24px' } }} />
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
