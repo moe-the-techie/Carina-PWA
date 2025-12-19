@@ -30,7 +30,8 @@ import {
     Select,
     MenuItem,
     FormControl,
-    InputLabel
+    InputLabel,
+    Skeleton
 } from '@mui/material';
 import { Circle as CircleIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -301,16 +302,6 @@ export default function AdminUsersPage() {
         }
     };
 
-    if (loading && users.length === 0) {
-        return (
-            <PageFade>
-                <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography>Loading users...</Typography>
-                </Box>
-            </PageFade>
-        );
-    }
-
     return (
         <PageFade>
             <Box sx={{ p: 3 }}>
@@ -365,8 +356,28 @@ export default function AdminUsersPage() {
                 {isMobile ? (
                     // Mobile Card View
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {users.map((user) => (
-                            <Card key={user._id}>
+                        {loading && users.length === 0 ? (
+                            Array.from(new Array(5)).map((_, index) => (
+                                <Card key={index}>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                            <Skeleton variant="circular" width={56} height={56} />
+                                            <Box sx={{ flex: 1 }}>
+                                                <Skeleton variant="text" width="60%" height={32} />
+                                                <Skeleton variant="text" width="40%" height={20} />
+                                                <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
+                                                    <Skeleton variant="rounded" width={60} height={24} />
+                                                    <Skeleton variant="rounded" width={60} height={24} />
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                        <Skeleton variant="rectangular" width="100%" height={36} sx={{ mt: 2 }} />
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                            users.map((user) => (
+                                <Card key={user._id}>
                                 <CardContent>
                                     <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                                         <Avatar
@@ -459,7 +470,7 @@ export default function AdminUsersPage() {
                                     </Box>
                                 </CardContent>
                             </Card>
-                        ))}
+                        )))}
                     </Box>
                 ) : (
                     // Desktop Table View
@@ -479,8 +490,23 @@ export default function AdminUsersPage() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {users.map((user) => (
-                                    <TableRow key={user._id}>
+                                {loading && users.length === 0 ? (
+                                    Array.from(new Array(5)).map((_, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell><Skeleton variant="circular" width={40} height={40} /></TableCell>
+                                            <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                                            <TableCell><Skeleton variant="text" width={180} /></TableCell>
+                                            {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && <TableCell><Skeleton variant="rounded" width={80} height={24} /></TableCell>}
+                                            <TableCell><Skeleton variant="rounded" width={60} height={24} /></TableCell>
+                                            <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                                            <TableCell><Skeleton variant="rounded" width={40} height={24} /></TableCell>
+                                            <TableCell><Skeleton variant="text" width={100} /></TableCell>
+                                            <TableCell><Skeleton variant="rectangular" width={64} height={30} /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    users.map((user) => (
+                                        <TableRow key={user._id}>
                                         <TableCell>
                                             <Avatar
                                                 src={user.profileImageUrl}
@@ -562,7 +588,7 @@ export default function AdminUsersPage() {
                                             </Button>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )))}
                             </TableBody>
                         </Table>
                     </TableContainer>
