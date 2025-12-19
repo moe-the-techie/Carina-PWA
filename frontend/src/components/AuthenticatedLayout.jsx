@@ -10,7 +10,7 @@ export default function AuthenticatedLayout({ children }) {
     <Box
       sx={{
         minHeight: '100vh',
-        pb: isDesktop ? 0 : '60px', // Bottom padding for mobile nav bar
+        pb: isDesktop ? 0 : 'calc(60px + env(safe-area-inset-bottom))', // Bottom padding for mobile nav bar
         pt: isDesktop ? '10vh' : 0,
         display: 'flex',
         flexDirection: 'column'

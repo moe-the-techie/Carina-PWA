@@ -54,6 +54,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             {isMobile && (
                 <Box sx={{ 
                     p: 2, 
+                    pt: 'calc(16px + env(safe-area-inset-top))',
                     bgcolor: theme.palette.primary.main, 
                     color: 'white',
                     display: 'flex',
@@ -159,7 +160,8 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                     position="fixed" 
                     sx={{ 
                         bgcolor: theme.palette.primary.main,
-                        zIndex: theme.zIndex.drawer + 1 
+                        zIndex: theme.zIndex.drawer + 1,
+                        pt: 'env(safe-area-inset-top)'
                     }}
                 >
                     <Toolbar>

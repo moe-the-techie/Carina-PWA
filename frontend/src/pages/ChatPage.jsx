@@ -520,7 +520,7 @@ export default function ChatPage() {
     return (
         <PageFade>
             <Box sx={{ 
-                height: { xs: 'calc(100vh - 60px)', sm: 'calc(100vh - 60px)', md: 'calc(100vh - 10vh - 48px)' }, 
+                height: { xs: 'calc(100vh - (60px + env(safe-area-inset-bottom)))', sm: 'calc(100vh - (60px + env(safe-area-inset-bottom)))', md: 'calc(100vh - 10vh - 48px)' }, 
                 display: 'flex', 
                 justifyContent: 'center', 
                 p: { xs: 0, sm: 1, md: 2 },

@@ -24,10 +24,12 @@ export default function AdminLayout({ children, onLogout }) {
                 component="main"
                 sx={{
                     flexGrow: 1,
-                    mt: { xs: '64px', md: 0 }, // Add top margin on mobile for AppBar
+                    mt: { xs: 'calc(64px + env(safe-area-inset-top))', md: 0 }, // Add top margin on mobile for AppBar
                     minHeight: '100vh',
                     bgcolor: 'background.default',
                     p: { xs: 2, md: 3 }, // Add padding for better mobile spacing
+                    pl: { xs: 'calc(16px + env(safe-area-inset-left))', md: 3 },
+                    pr: { xs: 'calc(16px + env(safe-area-inset-right))', md: 3 },
                     width: { xs: '100vw', md: `calc(100vw - ${drawerWidth}px)` } // Ensure proper width
                 }}
             >

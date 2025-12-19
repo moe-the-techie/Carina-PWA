@@ -26,7 +26,7 @@ export default function PlanListItem ({ form, plan, onClick }) {
                 p: 2, 
                 m: 1, 
                 borderRadius: 4, 
-                width: '100%',
+                alignSelf: 'stretch',
                 cursor: 'pointer',
                 '&:hover': {
                     backgroundColor: theme.palette.background.darker,

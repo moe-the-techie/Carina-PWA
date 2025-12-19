@@ -40,8 +40,9 @@ export default function NavigationBar() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        py: { xs: 0.5, md: 1 },
-        height: { xs: '60px', md: '10vh' },
+        pt: { xs: 0.5, md: 1 },
+        pb: { xs: 'calc(0.5rem + env(safe-area-inset-bottom))', md: 1 },
+        height: { xs: 'auto', md: '10vh' },
         minHeight: '60px',
         px: { xs: 1, md: 2 }
       }}
