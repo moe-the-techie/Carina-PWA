@@ -13,8 +13,11 @@ import {
     getAnnouncementStats
 } from '../controllers/announcementController.js';
 
-// Check if feature is enabled
-router.use(checkFeatureEnabled('ENABLE_ANNOUNCEMENTS'));
+const checkAnnouncementsEnabled = checkFeatureEnabled('ENABLE_ANNOUNCEMENTS');
+
+// Apply feature flag to specific routes
+router.use('/announcements', checkAnnouncementsEnabled);
+router.use('/admin/announcements', checkAnnouncementsEnabled);
 
 // User routes
 router.get('/announcements', protect, getUserAnnouncements);

@@ -14,8 +14,10 @@ import {
     getTemplateStats
 } from '../controllers/templateController.js';
 
-// Check if feature is enabled
-router.use(checkFeatureEnabled('ENABLE_PLAN_TEMPLATES'));
+const checkTemplatesEnabled = checkFeatureEnabled('ENABLE_PLAN_TEMPLATES');
+
+// Apply feature flag to template routes
+router.use('/admin/templates', checkTemplatesEnabled);
 
 // Template CRUD routes
 router.get('/admin/templates', adminOnly, getAllTemplates);
@@ -28,6 +30,6 @@ router.delete('/admin/templates/:templateId', adminOnly, deleteTemplate);
 // Template actions
 router.put('/admin/templates/:templateId/toggle-status', adminOnly, toggleTemplateStatus);
 router.post('/admin/templates/:templateId/duplicate', adminOnly, duplicateTemplate);
-router.post('/admin/plans/:planId/create-template', adminOnly, createTemplateFromPlan);
+router.post('/admin/plans/:planId/create-template', adminOnly, checkTemplatesEnabled, createTemplateFromPlan);
 
 export default router;
