@@ -17,7 +17,8 @@ import {
     useMediaQuery,
     useTheme,
     CircularProgress,
-    Backdrop
+    Backdrop,
+    Slide
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
@@ -27,6 +28,10 @@ import {
     Message as MessageIcon,
     Feedback as FeedbackIcon
 } from '@mui/icons-material';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function FormActionsDialog({ 
     open, 
@@ -87,6 +92,7 @@ export default function FormActionsDialog({
             maxWidth="xs"
             fullWidth
             fullScreen={isMobile}
+            TransitionComponent={Transition}
         >
             <DialogTitle>
                 <Box>

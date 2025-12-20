@@ -25,7 +25,8 @@ import {
     Divider,
     Alert,
     CircularProgress,
-    Backdrop
+    Backdrop,
+    Slide
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -39,6 +40,10 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -521,7 +526,7 @@ export default function AdminTemplatesPage() {
                 </Menu>
 
                 {/* Create Template Dialog */}
-                <Dialog open={createDialogOpen} onClose={handleCloseCreateDialog} maxWidth="sm" fullWidth>
+                <Dialog open={createDialogOpen} onClose={handleCloseCreateDialog} maxWidth="sm" fullWidth TransitionComponent={Transition}>
                     <DialogTitle>Create New Template</DialogTitle>
                     <DialogContent>
                         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -597,7 +602,7 @@ export default function AdminTemplatesPage() {
                 </Dialog>
 
                 {/* View Template Dialog */}
-                <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
+                <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth TransitionComponent={Transition}>
                     <DialogTitle>Template Details</DialogTitle>
                     <DialogContent>
                         {selectedTemplate && (

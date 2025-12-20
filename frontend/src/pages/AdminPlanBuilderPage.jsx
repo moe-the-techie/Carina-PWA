@@ -23,13 +23,18 @@ import {
     AccordionSummary,
     AccordionDetails,
     Divider,
-    useMediaQuery
+    useMediaQuery,
+    Slide
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PageFade from '../components/PageFade';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -1870,6 +1875,7 @@ export default function AdminPlanBuilderPage() {
                     maxWidth="sm" 
                     fullWidth
                     fullScreen={isMobile}
+                    TransitionComponent={Transition}
                     sx={{
                         '& .MuiDialog-paper': {
                             borderRadius: { xs: 0, sm: 2 },

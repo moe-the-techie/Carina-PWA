@@ -27,7 +27,8 @@ import {
     LinearProgress,
     alpha,
     Tooltip,
-    useMediaQuery
+    useMediaQuery,
+    Slide
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -42,6 +43,10 @@ import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -933,6 +938,7 @@ export default function ViewPlanPage () {
                 onClose={() => setChipDetailDialogOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                TransitionComponent={Transition}
                 sx={{
                     '& .MuiDialog-paper': {
                         borderRadius: 3,
@@ -993,6 +999,7 @@ export default function ViewPlanPage () {
                 onClose={() => !feedbackSubmitting && setFeedbackDialogOpen(false)} 
                 maxWidth="sm" 
                 fullWidth
+                TransitionComponent={Transition}
                 sx={{
                     '& .MuiDialog-paper': {
                         borderRadius: 3,

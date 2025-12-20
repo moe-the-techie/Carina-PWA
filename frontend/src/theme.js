@@ -145,6 +145,54 @@ export const lightTheme = createTheme ({
                 },
             },
         },
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: 24,
+                    backdropFilter: 'blur(12px)',
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.1)',
+                    backgroundImage: 'none',
+                }
+            }
+        },
+        MuiDialogTitle: {
+            styleOverrides: {
+                root: {
+                    padding: '24px 32px',
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    background: 'linear-gradient(to right, rgba(145, 235, 78, 0.1), transparent)',
+                }
+            }
+        },
+        MuiDialogContent: {
+            styleOverrides: {
+                root: {
+                    padding: '24px 32px',
+                    '&::-webkit-scrollbar': {
+                        width: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                    },
+                }
+            }
+        },
+        MuiDialogActions: {
+            styleOverrides: {
+                root: {
+                    padding: '16px 32px 24px',
+                }
+            }
+        },
         Box: {
             styleOverrides: {
                 defaultProps: {
@@ -302,6 +350,55 @@ export const darkTheme = createTheme({
                     },
                 },
             },
+        },
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: 24,
+                    backdropFilter: 'blur(12px)',
+                    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+                    boxShadow: '0 24px 48px rgba(0,0,0,0.5)',
+                    backgroundImage: 'none',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                }
+            }
+        },
+        MuiDialogTitle: {
+            styleOverrides: {
+                root: {
+                    padding: '24px 32px',
+                    fontSize: '1.5rem',
+                    fontWeight: 700,
+                    background: 'linear-gradient(to right, rgba(145, 235, 78, 0.1), transparent)',
+                }
+            }
+        },
+        MuiDialogContent: {
+            styleOverrides: {
+                root: {
+                    padding: '24px 32px',
+                    '&::-webkit-scrollbar': {
+                        width: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: 'rgba(255,255,255,0.1)',
+                        borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                    },
+                }
+            }
+        },
+        MuiDialogActions: {
+            styleOverrides: {
+                root: {
+                    padding: '16px 32px 24px',
+                }
+            }
         },
         Box: {
             styleOverrides: {

@@ -3,9 +3,14 @@ import {
     Dialog,
     DialogContent,
     IconButton,
-    Box
+    Box,
+    Slide
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 
 export default function ImageViewerDialog({ open, imageUrl, onClose }) {
     return (
@@ -14,6 +19,7 @@ export default function ImageViewerDialog({ open, imageUrl, onClose }) {
             onClose={onClose}
             maxWidth="lg"
             fullWidth
+            TransitionComponent={Transition}
             PaperProps={{
                 sx: {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',

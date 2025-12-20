@@ -42,8 +42,13 @@ import {
     InputAdornment,
     TextField,
     Fade,
-    Zoom
+    Zoom,
+    Slide
 } from '@mui/material';
+
+const Transition = React.forwardRef(function Transition(props, ref) {
+    return <Slide direction="up" ref={ref} {...props} />;
+});
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -783,6 +788,7 @@ export default function AdminFormsPage() {
                     onClose={() => setFormDetailsOpen(false)}
                     maxWidth="md"
                     fullWidth
+                    TransitionComponent={Transition}
                     sx={{
                         '& .MuiDialog-paper': {
                             borderRadius: 3,
@@ -970,6 +976,7 @@ export default function AdminFormsPage() {
                     maxWidth="lg"
                     fullWidth
                     fullScreen={isMobile}
+                    TransitionComponent={Transition}
                     sx={{
                         '& .MuiDialog-paper': {
                             margin: { xs: 0, sm: 2 },
@@ -1617,6 +1624,7 @@ export default function AdminFormsPage() {
                     maxWidth="sm" 
                     fullWidth
                     fullScreen={isSmallMobile}
+                    TransitionComponent={Transition}
                     sx={{
                         '& .MuiDialog-paper': {
                             borderRadius: { xs: 0, sm: 2 },
