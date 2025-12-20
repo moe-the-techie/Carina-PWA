@@ -485,7 +485,10 @@ export default function AdminUsersPage() {
                                                         height: 56,
                                                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                                                         border: `2px solid ${theme.palette.background.paper}`,
-                                                        cursor: user.profileImageUrl ? 'pointer' : 'default'
+                                                        cursor: user.profileImageUrl ? 'pointer' : 'default',
+                                                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                        fontSize: '1.5rem',
+                                                        fontWeight: 600
                                                     }}
                                                     onClick={() => {
                                                         if (user.profileImageUrl) {
@@ -627,7 +630,10 @@ export default function AdminUsersPage() {
                                                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                                             cursor: user.profileImageUrl ? 'pointer' : 'default',
                                                             transition: 'transform 0.2s',
-                                                            '&:hover': { transform: 'scale(1.1)' }
+                                                            '&:hover': { transform: 'scale(1.1)' },
+                                                            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                            fontSize: '1rem',
+                                                            fontWeight: 600
                                                         }}
                                                         onClick={() => {
                                                             if (user.profileImageUrl) {
@@ -777,7 +783,10 @@ export default function AdminUsersPage() {
                                                         width: 80, 
                                                         height: 80,
                                                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                        cursor: selectedUser.user.profileImageUrl ? 'pointer' : 'default'
+                                                        cursor: selectedUser.user.profileImageUrl ? 'pointer' : 'default',
+                                                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                        fontSize: '2rem',
+                                                        fontWeight: 600
                                                     }}
                                                     onClick={() => {
                                                         if (selectedUser.user.profileImageUrl) {
