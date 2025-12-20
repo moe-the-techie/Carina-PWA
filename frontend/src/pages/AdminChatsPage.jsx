@@ -28,6 +28,7 @@ import {
     DialogActions,
     Skeleton
 } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import SendIcon from '@mui/icons-material/Send';
 import SearchIcon from '@mui/icons-material/Search';
 import PersonIcon from '@mui/icons-material/Person';
@@ -734,25 +735,38 @@ export default function AdminChatsPage() {
     };
 
     const renderChatList = () => (
-        <Paper sx={{ 
-            width: { xs: '100%', md: 350 },
-            minWidth: { md: 350 },
-            flexShrink: 0,
-            display: 'flex', 
-            flexDirection: 'column', 
-            backgroundColor: theme.palette.background.paper,
-            height: '100%',
-            borderRadius: { xs: 0, md: 1 },
-            overflow: 'hidden'
-        }}>
+        <Paper 
+            component={motion.div}
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            sx={{ 
+                width: { xs: '100%', md: 350 },
+                minWidth: { md: 350 },
+                flexShrink: 0,
+                display: 'flex', 
+                flexDirection: 'column', 
+                background: theme.palette.mode === 'dark' 
+                    ? 'rgba(30, 30, 30, 0.6)' 
+                    : 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                height: '100%',
+                borderRadius: { xs: 0, md: 3 },
+                overflow: 'hidden'
+            }}
+        >
             <Box sx={{ 
-                p: { xs: 1.25, sm: 1.5, md: 2 },
-                flexShrink: 0
+                p: 2,
+                flexShrink: 0,
+                background: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                backdropFilter: 'blur(10px)'
             }}>
                 <Typography variant="h6" gutterBottom sx={{ 
-                    fontSize: { xs: '1.05rem', sm: '1.15rem', md: '1.25rem' },
-                    fontWeight: 600,
-                    mb: 1.5
+                    fontSize: '1.25rem',
+                    fontWeight: 700,
+                    mb: 2,
+                    letterSpacing: 0.5
                 }}>
                     User Chats
                 </Typography>
@@ -763,17 +777,26 @@ export default function AdminChatsPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     InputProps={{
-                        startAdornment: (<InputAdornment position="start"><SearchIcon sx={{ fontSize: { xs: 20, md: 24 } }} /></InputAdornment>)
+                        startAdornment: (<InputAdornment position="start"><SearchIcon sx={{ color: 'text.secondary' }} /></InputAdornment>),
+                        disableUnderline: true
                     }}
+                    variant="filled"
                     sx={{
-                        '& .MuiInputBase-root': {
-                            fontSize: { xs: '0.9rem', md: '1rem' }
+                        '& .MuiFilledInput-root': {
+                            borderRadius: 2,
+                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                            '&:hover': {
+                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            },
+                            '&.Mui-focused': {
+                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                            }
                         }
                     }}
                 />
             </Box>
-            <Divider />
-            <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+            <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+            <List sx={{ flexGrow: 1, overflow: 'auto', p: 1 }}>
                 {filteredChats.length === 0 ? (
                     <Box sx={{ p: 3, textAlign: 'center' }}>
                         <Typography color="text.secondary">No chats found</Typography>
@@ -781,27 +804,46 @@ export default function AdminChatsPage() {
                 ) : (
                     <>
                         {filteredChats.map((chat) => (
-                            <ListItem key={chat.chatId} disablePadding>
+                            <ListItem key={chat.chatId} disablePadding sx={{ mb: 0.5 }}>
                                 <ListItemButton
                                     selected={selectedChat?.chatId === chat.chatId}
                                     onClick={() => handleChatSelect(chat)}
                                     sx={{ 
-                                        p: { xs: 1.25, sm: 1.375, md: 1.5 },
-                                        minHeight: { xs: 64, md: 72 }
+                                        p: 1.5,
+                                        borderRadius: 2,
+                                        transition: 'all 0.2s',
+                                        '&.Mui-selected': {
+                                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.1)',
+                                            borderLeft: `4px solid ${theme.palette.primary.main}`,
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(102, 126, 234, 0.3)' : 'rgba(102, 126, 234, 0.2)',
+                                            }
+                                        },
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                            transform: 'translateX(4px)'
+                                        }
                                     }}
                                 >
-                                    <Badge badgeContent={chat.unreadByAdmins} color="primary" sx={{ mr: { xs: 1.5, md: 2 } }}>
+                                    <Badge 
+                                        badgeContent={chat.unreadByAdmins} 
+                                        color="primary" 
+                                        sx={{ 
+                                            mr: 2,
+                                            '& .MuiBadge-badge': {
+                                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                                            }
+                                        }}
+                                    >
                                         <Avatar 
                                             src={chat.user?.profileImageUrl}
                                             alt={chat.user?.name}
                                             sx={{ 
-                                                width: { xs: 40, sm: 42, md: 44 }, 
-                                                height: { xs: 40, sm: 42, md: 44 },
+                                                width: 48, 
+                                                height: 48,
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                                 cursor: chat.user?.profileImageUrl ? 'pointer' : 'default',
-                                                '&:hover': chat.user?.profileImageUrl ? {
-                                                    opacity: 0.8,
-                                                    transition: 'opacity 0.2s'
-                                                } : {}
+                                                border: `2px solid ${theme.palette.background.paper}`
                                             }}
                                             onClick={(e) => {
                                                 if (chat.user?.profileImageUrl) {
@@ -811,7 +853,7 @@ export default function AdminChatsPage() {
                                             }}
                                         >
                                             {!chat.user?.profileImageUrl && (
-                                                chat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                                chat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon />
                                             )}
                                         </Avatar>
                                     </Badge>
@@ -820,9 +862,8 @@ export default function AdminChatsPage() {
                                             <Typography 
                                                 variant="subtitle1" 
                                                 sx={{ 
-                                                    fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
-                                                    fontWeight: chat.unreadByAdmins > 0 ? 600 : 'normal',
-                                                    lineHeight: 1.4
+                                                    fontWeight: chat.unreadByAdmins > 0 ? 700 : 600,
+                                                    color: theme.palette.text.primary
                                                 }}
                                             >
                                                 {chat.user?.name || 'Unknown User'}
@@ -833,15 +874,14 @@ export default function AdminChatsPage() {
                                                 <Typography 
                                                     component="span" 
                                                     variant="body2" 
-                                                    color="text.primary" 
+                                                    color="text.secondary" 
                                                     sx={{ 
                                                         display: 'block', 
                                                         overflow: 'hidden', 
                                                         textOverflow: 'ellipsis', 
                                                         whiteSpace: 'nowrap',
-                                                        fontSize: { xs: '0.8rem', sm: '0.8125rem', md: '0.875rem' },
-                                                        lineHeight: 1.4,
-                                                        mt: 0.25
+                                                        mt: 0.5,
+                                                        fontWeight: chat.unreadByAdmins > 0 ? 500 : 400
                                                     }}
                                                 >
                                                     {chat.lastMessage?.content || 'No messages yet'}
@@ -849,8 +889,8 @@ export default function AdminChatsPage() {
                                                 <Typography 
                                                     component="span" 
                                                     variant="caption" 
-                                                    color="text.secondary"
-                                                    sx={{ fontSize: { xs: '0.7rem', md: '0.75rem' } }}
+                                                    color="text.disabled"
+                                                    sx={{ display: 'block', mt: 0.5, fontSize: '0.7rem' }}
                                                 >
                                                     {formatTime(chat.lastMessageAt)}
                                                 </Typography>
@@ -868,6 +908,7 @@ export default function AdminChatsPage() {
                                     disabled={loadingMoreChats}
                                     fullWidth
                                     size="small"
+                                    sx={{ borderRadius: 2 }}
                                 >
                                     {loadingMoreChats ? <CircularProgress size={20} /> : 'Load More Chats'}
                                 </Button>
@@ -880,54 +921,64 @@ export default function AdminChatsPage() {
     );
 
     const renderChatView = () => (
-        <Paper sx={{ 
-            flexGrow: 1,
-            minWidth: 0,
-            display: 'flex', 
-            flexDirection: 'column', 
-            backgroundColor: theme.palette.background.paper,
-            width: { xs: '100%', md: 'auto' },
-            height: '100%',
-            borderRadius: { xs: 0, md: 1 },
-            overflow: 'hidden'
-        }}>
+        <Paper 
+            component={motion.div}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            sx={{ 
+                flexGrow: 1,
+                minWidth: 0,
+                display: 'flex', 
+                flexDirection: 'column', 
+                background: theme.palette.mode === 'dark' 
+                    ? 'rgba(30, 30, 30, 0.6)' 
+                    : 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+                width: { xs: '100%', md: 'auto' },
+                height: '100%',
+                borderRadius: { xs: 0, md: 3 },
+                overflow: 'hidden'
+            }}
+        >
             {selectedChat ? (
                 <>
                     {/* Chat Header */}
                     <Box sx={{ 
-                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
-                        borderBottom: 1, 
-                        borderColor: 'divider', 
+                        p: 2, 
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: { xs: 1, md: 2 },
-                        minHeight: { xs: 56, md: 64 },
-                        flexShrink: 0
+                        gap: 2,
+                        minHeight: 70,
+                        flexShrink: 0,
+                        background: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                        backdropFilter: 'blur(10px)'
                     }}>
                         {isMobile && (
                             <IconButton 
                                 onClick={handleBackToList}
                                 sx={{ 
                                     mr: 0.5,
-                                    width: 44,
-                                    height: 44
+                                    width: 40,
+                                    height: 40,
+                                    bgcolor: 'rgba(0,0,0,0.05)'
                                 }}
                                 aria-label="Back to chat list"
                             >
-                                <ArrowBackIcon sx={{ fontSize: 24 }} />
+                                <ArrowBackIcon />
                             </IconButton>
                         )}
                         <Avatar 
                             src={selectedChat.user?.profileImageUrl}
                             alt={selectedChat.user?.name}
                             sx={{ 
-                                width: { xs: 36, sm: 38, md: 40 }, 
-                                height: { xs: 36, sm: 38, md: 40 },
+                                width: 45, 
+                                height: 45,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                 cursor: selectedChat.user?.profileImageUrl ? 'pointer' : 'default',
-                                '&:hover': selectedChat.user?.profileImageUrl ? {
-                                    opacity: 0.8,
-                                    transition: 'opacity 0.2s'
-                                } : {}
+                                border: `2px solid ${theme.palette.background.paper}`
                             }}
                             onClick={() => {
                                 if (selectedChat.user?.profileImageUrl) {
@@ -936,13 +987,13 @@ export default function AdminChatsPage() {
                             }}
                         >
                             {!selectedChat.user?.profileImageUrl && (
-                                selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon sx={{ fontSize: { xs: 18, md: 24 } }} />
+                                selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon />
                             )}
                         </Avatar>
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                             <Typography variant="h6" sx={{ 
-                                fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.25rem' },
-                                fontWeight: 600,
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -953,11 +1004,11 @@ export default function AdminChatsPage() {
                                 variant="caption" 
                                 color="text.secondary"
                                 sx={{ 
-                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
-                                    display: 'block'
+                                    display: 'block',
+                                    fontWeight: 500
                                 }}
                             >
                                 {selectedChat.user?.email}
@@ -969,13 +1020,17 @@ export default function AdminChatsPage() {
                             size="small"
                             sx={{ 
                                 ml: 0.5,
-                                width: { xs: 44, md: 40 },
-                                height: { xs: 44, md: 40 },
-                                flexShrink: 0
+                                width: 40,
+                                height: 40,
+                                flexShrink: 0,
+                                bgcolor: 'rgba(211, 47, 47, 0.1)',
+                                '&:hover': {
+                                    bgcolor: 'rgba(211, 47, 47, 0.2)'
+                                }
                             }}
                             aria-label="Delete chat"
                         >
-                            <DeleteIcon sx={{ fontSize: { xs: 18, md: 22 } }} />
+                            <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Box>
                     
@@ -984,10 +1039,10 @@ export default function AdminChatsPage() {
                         minHeight: 0,
                         overflow: 'auto',
                         overflowX: 'hidden', 
-                        p: { xs: 1, sm: 1.5, md: 2 }, 
+                        p: 3, 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        gap: { xs: 0.75, md: 1 },
+                        gap: 2,
                         WebkitOverflowScrolling: 'touch',
                         scrollBehavior: 'smooth'
                     }}>
@@ -1008,49 +1063,57 @@ export default function AdminChatsPage() {
                                                 variant="rounded" 
                                                 width={item % 3 === 0 ? 180 : item % 2 === 0 ? 250 : 200}
                                                 height={60}
-                                                sx={{ borderRadius: { xs: 2.5, md: 2 } }}
+                                                sx={{ borderRadius: 2 }}
                                             />
                                         </Box>
                                     </Box>
                                 ))}
                             </>
                         ) : (
-                            <>
+                            <AnimatePresence>
                                 {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
                             const isImage = message.messageType === 'image';
                             const isVoice = message.messageType === 'voice';
                             return (
-                                <Box 
-                                    key={message._id || index} 
-                                    sx={{ 
-                                        display: 'flex', 
+                                <motion.div
+                                    key={message._id || index}
+                                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ duration: 0.3 }}
+                                    style={{
+                                        display: 'flex',
                                         justifyContent: isAdmin ? 'flex-end' : 'flex-start',
-                                        mb: 0.5
+                                        marginBottom: 8
                                     }}
                                 >
                                     <Box sx={{ 
                                         maxWidth: { xs: '85%', sm: '80%', md: '70%' },
                                         minWidth: 0,
-                                        p: { xs: 1.25, sm: 1.375, md: 1.5 }, 
-                                        borderRadius: { xs: 2.5, md: 2 }, 
-                                        backgroundColor: isAdmin 
-                                            ? theme.palette.primary.main 
-                                            : theme.palette.mode === 'dark' 
-                                                ? theme.palette.grey[800] 
-                                                : theme.palette.grey[200], 
-                                        color: isAdmin ? theme.palette.primary.contrastText : theme.palette.text.primary 
+                                        p: 2, 
+                                        borderRadius: isAdmin ? '20px 20px 5px 20px' : '20px 20px 20px 5px', 
+                                        background: isAdmin 
+                                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                                            : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'white',
+                                        color: isAdmin ? 'white' : theme.palette.text.primary,
+                                        boxShadow: isAdmin 
+                                            ? '0 4px 15px rgba(118, 75, 162, 0.3)' 
+                                            : '0 4px 15px rgba(0,0,0,0.05)',
+                                        position: 'relative',
+                                        backdropFilter: !isAdmin ? 'blur(10px)' : 'none',
+                                        border: !isAdmin ? '1px solid rgba(255,255,255,0.1)' : 'none'
                                     }}>
                                         {isAdmin && (
                                             <Chip 
                                                 label="Admin" 
                                                 size="small" 
                                                 sx={{ 
-                                                    mb: 0.5, 
-                                                    height: { xs: 20, sm: 22, md: 24 }, 
+                                                    mb: 1, 
+                                                    height: 20, 
                                                     backgroundColor: 'rgba(255,255,255,0.2)',
-                                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
-                                                    fontWeight: 500
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    color: 'white'
                                                 }} 
                                             />
                                         )}
@@ -1134,7 +1197,7 @@ export default function AdminChatsPage() {
                                                         </Box>
                                                     </Box>
                                                 </Box>
-                                                <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
+                                                <Typography variant="caption" sx={{ fontSize: '0.75rem', color: isAdmin ? 'rgba(255,255,255,0.9)' : 'text.secondary' }}>
                                                     {message.voiceDuration ? formatRecordingTime(message.voiceDuration) : '0:00'}
                                                 </Typography>
                                             </Box>
@@ -1149,16 +1212,14 @@ export default function AdminChatsPage() {
                                                 sx={{ 
                                                     width: '100%', 
                                                     maxWidth: { xs: 280, sm: 300 },
-                                                    borderRadius: { xs: 1.5, md: 1 },
+                                                    borderRadius: 2,
                                                     cursor: 'pointer',
                                                     mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
                                                     display: 'block',
                                                     touchAction: 'manipulation',
+                                                    transition: 'transform 0.2s',
                                                     '&:hover': {
-                                                        opacity: 0.9
-                                                    },
-                                                    '&:active': {
-                                                        opacity: 0.85
+                                                        transform: 'scale(1.02)'
                                                     }
                                                 }} 
                                             />
@@ -1171,7 +1232,7 @@ export default function AdminChatsPage() {
                                                         fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
                                                         whiteSpace: 'pre-wrap',
                                                         wordBreak: 'break-word',
-                                                        lineHeight: { xs: 1.5, md: 1.6 }
+                                                        lineHeight: 1.6
                                                     }}
                                                 >
                                                     {message.content.length > 300 && !expandedMessages[message._id] 
@@ -1191,15 +1252,9 @@ export default function AdminChatsPage() {
                                                             cursor: 'pointer',
                                                             color: isAdmin ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
                                                             fontWeight: 'bold',
-                                                            fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
-                                                            minHeight: { xs: 32, md: 24 },
-                                                            alignItems: 'center',
-                                                            touchAction: 'manipulation',
+                                                            fontSize: '0.85rem',
                                                             '&:hover': {
                                                                 textDecoration: 'underline'
-                                                            },
-                                                            '&:active': {
-                                                                opacity: 0.7
                                                             }
                                                         }}
                                                     >
@@ -1208,13 +1263,13 @@ export default function AdminChatsPage() {
                                                 )}
                                             </>
                                         )}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75, justifyContent: 'flex-end' }}>
                                             <Typography 
                                                 variant="caption" 
                                                 sx={{ 
                                                     opacity: 0.7,
-                                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
-                                                    lineHeight: 1
+                                                    fontSize: '0.7rem',
+                                                    color: isAdmin ? 'rgba(255,255,255,0.8)' : 'text.secondary'
                                                 }}
                                             >
                                                 {formatTime(message.createdAt)}
@@ -1223,13 +1278,14 @@ export default function AdminChatsPage() {
                                                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
                                                     {message.readByUser ? (
                                                         <DoneAllIcon sx={{ 
-                                                            fontSize: { xs: 13, sm: 14, md: 16 },
-                                                            color: '#4fc3f7',
+                                                            fontSize: 16,
+                                                            color: 'white',
                                                             opacity: 0.9
                                                         }} />
                                                     ) : (
                                                         <DoneAllIcon sx={{ 
-                                                            fontSize: { xs: 13, sm: 14, md: 16 },
+                                                            fontSize: 16,
+                                                            color: 'white',
                                                             opacity: 0.5
                                                         }} />
                                                     )}
@@ -1237,115 +1293,136 @@ export default function AdminChatsPage() {
                                             )}
                                         </Box>
                                     </Box>
-                                </Box>
+                                </motion.div>
                             );
                         })}
                                 <div ref={messagesEndRef} />
-                            </>
+                            </AnimatePresence>
                         )}
                     </Box>
                     
                     <Box sx={{ 
-                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
-                        borderTop: 1, 
-                        borderColor: 'divider',
-                        backgroundColor: theme.palette.background.paper,
+                        p: 2, 
+                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                        backdropFilter: 'blur(10px)',
                         flexShrink: 0
                     }}>
                         {imagePreview && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                position: 'relative', 
-                                display: 'inline-block' 
-                            }}>
-                                <Box 
-                                    component="img" 
-                                    src={imagePreview} 
-                                    alt="Preview" 
-                                    sx={{ 
-                                        maxWidth: { xs: 150, sm: 180, md: 200 },
-                                        maxHeight: { xs: 120, sm: 140, md: 150 },
-                                        borderRadius: { xs: 1.5, md: 1 },
-                                        display: 'block'
-                                    }} 
-                                />
-                                <IconButton 
-                                    size="small" 
-                                    onClick={handleRemoveImage}
-                                    sx={{ 
-                                        position: 'absolute', 
-                                        top: 4, 
-                                        right: 4, 
-                                        backgroundColor: 'rgba(0,0,0,0.6)',
-                                        color: 'white',
-                                        width: { xs: 32, md: 28 },
-                                        height: { xs: 32, md: 28 },
-                                        '&:hover': {
-                                            backgroundColor: 'rgba(0,0,0,0.8)'
-                                        },
-                                        '&:active': {
-                                            backgroundColor: 'rgba(0,0,0,0.9)'
-                                        }
-                                    }}
-                                >
-                                    <CloseIcon sx={{ fontSize: { xs: 18, md: 16 } }} />
-                                </IconButton>
-                            </Box>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    position: 'relative', 
+                                    display: 'inline-block',
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}>
+                                    <Box 
+                                        component="img" 
+                                        src={imagePreview} 
+                                        alt="Preview" 
+                                        sx={{ 
+                                            maxWidth: 200,
+                                            maxHeight: 150,
+                                            display: 'block'
+                                        }} 
+                                    />
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={handleRemoveImage}
+                                        sx={{ 
+                                            position: 'absolute', 
+                                            top: 4, 
+                                            right: 4, 
+                                            backgroundColor: 'rgba(0,0,0,0.6)',
+                                            color: 'white',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(0,0,0,0.8)'
+                                            }
+                                        }}
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         {voiceBlob && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                p: 1.5,
-                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                            }}>
-                                <MicIcon color="primary" />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                    Voice message ({formatRecordingTime(recordingTime)})
-                                </Typography>
-                                <IconButton 
-                                    size="small" 
-                                    onClick={cancelVoiceRecording}
-                                    sx={{ color: 'error.main' }}
-                                >
-                                    <CloseIcon />
-                                </IconButton>
-                            </Box>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    p: 2,
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    boxShadow: '0 4px 12px rgba(118, 75, 162, 0.2)'
+                                }}>
+                                    <MicIcon />
+                                    <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+                                        Voice message ({formatRecordingTime(recordingTime)})
+                                    </Typography>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={cancelVoiceRecording}
+                                        sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                    >
+                                        <CloseIcon />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         {isRecording && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                p: 1.5,
-                                backgroundColor: 'error.main',
-                                color: 'white',
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                            }}>
-                                <MicIcon sx={{ animation: 'pulse 1.5s infinite' }} />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                    Recording... {formatRecordingTime(recordingTime)}
-                                </Typography>
-                                <IconButton 
-                                    size="small" 
-                                    onClick={stopRecording}
-                                    sx={{ color: 'white' }}
-                                >
-                                    <StopIcon />
-                                </IconButton>
-                            </Box>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    p: 2,
+                                    backgroundColor: '#ef5350',
+                                    color: 'white',
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    boxShadow: '0 4px 12px rgba(239, 83, 80, 0.3)'
+                                }}>
+                                    <MicIcon sx={{ animation: 'pulse 1.5s infinite' }} />
+                                    <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+                                        Recording... {formatRecordingTime(recordingTime)}
+                                    </Typography>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={stopRecording}
+                                        sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                    >
+                                        <StopIcon />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         <Box 
                             component="form" 
                             onSubmit={handleSendMessage} 
                             sx={{ 
                                 display: 'flex', 
-                                gap: { xs: 0.75, md: 1 },
-                                alignItems: 'flex-end'
+                                gap: 1,
+                                alignItems: 'center',
+                                background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'white',
+                                p: '8px 12px',
+                                borderRadius: 4,
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)'
                             }}
                         >
                             <input
@@ -1358,64 +1435,66 @@ export default function AdminChatsPage() {
                             {!voiceBlob && !isRecording && (
                                 <>
                                     <IconButton 
-                                        color="primary" 
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={sending || uploading}
-                                        aria-label="Attach image"
                                         sx={{ 
-                                            width: { xs: 44, sm: 46, md: 48 },
-                                            height: { xs: 44, sm: 46, md: 48 },
-                                            flexShrink: 0
+                                            color: theme.palette.text.secondary,
+                                            '&:hover': { color: theme.palette.primary.main, background: 'rgba(102, 126, 234, 0.1)' }
                                         }}
                                     >
-                                        <ImageIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                        <ImageIcon />
                                     </IconButton>
                                     <IconButton 
-                                        color="error" 
                                         onClick={startRecording}
                                         disabled={sending || uploading || selectedFile}
-                                        aria-label="Record voice"
                                         sx={{ 
-                                            width: { xs: 44, sm: 46, md: 48 },
-                                            height: { xs: 44, sm: 46, md: 48 },
-                                            flexShrink: 0
+                                            color: theme.palette.text.secondary,
+                                            '&:hover': { color: '#ef5350', background: 'rgba(239, 83, 80, 0.1)' }
                                         }}
                                     >
-                                        <MicIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                        <MicIcon />
                                     </IconButton>
                                 </>
                             )}
                             <TextField 
                                 fullWidth 
-                                placeholder={selectedFile ? "Add a caption (optional)..." : voiceBlob ? "Add a caption (optional)..." : "Type your message..."} 
+                                placeholder={selectedFile ? "Add a caption..." : voiceBlob ? "Add a caption..." : "Type a message..."} 
                                 value={newMessage} 
                                 onChange={(e) => setNewMessage(e.target.value)} 
                                 disabled={sending || uploading || isRecording} 
                             multiline 
                             maxRows={4}
-                            size="small"
+                            variant="standard"
+                            InputProps={{
+                                disableUnderline: true
+                            }}
                             sx={{ 
+                                px: 1,
                                 '& .MuiInputBase-root': {
-                                    fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
-                                    padding: { xs: '10px 12px', md: '8px 14px' }
-                                },
-                                '& .MuiInputBase-input': {
-                                    lineHeight: 1.5
+                                    fontSize: '0.95rem',
+                                    padding: '4px 0'
                                 }
                             }}
                         />
                             <IconButton 
-                                color="primary" 
                                 type="submit" 
                                 disabled={(!newMessage.trim() && !selectedFile && !voiceBlob) || sending || uploading || isRecording}
-                                aria-label="Send message"
                                 sx={{ 
-                                    width: { xs: 44, sm: 46, md: 48 },
-                                    height: { xs: 44, sm: 46, md: 48 },
-                                    flexShrink: 0
+                                    bgcolor: (!newMessage.trim() && !selectedFile && !voiceBlob) ? 'action.disabledBackground' : 'primary.main',
+                                    color: 'white',
+                                    width: 40,
+                                    height: 40,
+                                    '&:hover': {
+                                        bgcolor: 'primary.dark'
+                                    },
+                                    '&.Mui-disabled': {
+                                        bgcolor: 'action.disabledBackground',
+                                        color: 'action.disabled'
+                                    },
+                                    transition: 'all 0.2s'
                                 }}
                             >
-                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />}
+                                {(sending || uploading) ? <CircularProgress size={20} color="inherit" /> : <SendIcon fontSize="small" />}
                             </IconButton>
                         </Box>
                     </Box>
@@ -1426,11 +1505,16 @@ export default function AdminChatsPage() {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
-                    p: { xs: 2, sm: 3, md: 4 }
+                    p: { xs: 2, sm: 3, md: 4 },
+                    flexDirection: 'column',
+                    gap: 2,
+                    opacity: 0.7
                 }}>
+                    <SupportAgentIcon sx={{ fontSize: 60, color: theme.palette.text.disabled }} />
                     <Typography color="text.secondary" sx={{ 
                         fontSize: { xs: '0.875rem', sm: '0.9375rem', md: '1rem' },
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        fontWeight: 500
                     }}>
                         Select a chat to start messaging
                     </Typography>
@@ -1492,7 +1576,11 @@ export default function AdminChatsPage() {
                 display: 'flex', 
                 gap: { xs: 0, md: 2 }, 
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                p: { xs: 0, md: 3 },
+                background: theme.palette.mode === 'dark' 
+                    ? 'radial-gradient(circle at 50% 50%, #2d3748 0%, #1a202c 100%)' 
+                    : 'radial-gradient(circle at 50% 50%, #f7fafc 0%, #edf2f7 100%)'
             }}>
                 {error && (
                     <Alert 
@@ -1503,7 +1591,9 @@ export default function AdminChatsPage() {
                             left: '50%', 
                             transform: 'translateX(-50%)', 
                             zIndex: 1000,
-                            width: { xs: '90%', md: 'auto' }
+                            width: { xs: '90%', md: 'auto' },
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                            borderRadius: 2
                         }}
                     >
                         {error}
@@ -1530,8 +1620,15 @@ export default function AdminChatsPage() {
                 aria-labelledby="delete-dialog-title"
                 maxWidth="xs"
                 fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        backdropFilter: 'blur(10px)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(30,30,30,0.9)' : 'rgba(255,255,255,0.9)'
+                    }
+                }}
             >
-                <DialogTitle id="delete-dialog-title">
+                <DialogTitle id="delete-dialog-title" sx={{ fontWeight: 700 }}>
                     Delete Chat?
                 </DialogTitle>
                 <DialogContent>
@@ -1546,6 +1643,7 @@ export default function AdminChatsPage() {
                         variant="outlined"
                         disabled={deleting}
                         fullWidth={isMobile}
+                        sx={{ borderRadius: 2 }}
                     >
                         Cancel
                     </Button>
@@ -1555,7 +1653,8 @@ export default function AdminChatsPage() {
                         variant="contained"
                         disabled={deleting}
                         fullWidth={isMobile}
-                        startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+                        startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+                        sx={{ borderRadius: 2, boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)' }}
                     >
                         {deleting ? 'Deleting...' : 'Delete'}
                     </Button>

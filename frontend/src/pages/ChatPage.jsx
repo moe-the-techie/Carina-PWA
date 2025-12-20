@@ -12,6 +12,7 @@ import {
     Skeleton,
     CircularProgress
 } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import DoneIcon from '@mui/icons-material/Done';
@@ -468,55 +469,64 @@ export default function ChatPage() {
                     height: { xs: 'calc(100vh - 60px)', sm: 'calc(100vh - 60px)', md: 'calc(100vh - 10vh - 48px)' }, 
                     display: 'flex', 
                     justifyContent: 'center', 
-                    p: { xs: 0, sm: 1, md: 2 },
-                    overflow: 'hidden'
+                    p: { xs: 2, md: 4 },
+                    overflow: 'hidden',
+                    background: theme.palette.mode === 'dark' 
+                        ? 'radial-gradient(circle at 50% 50%, #2d3748 0%, #1a202c 100%)' 
+                        : 'radial-gradient(circle at 50% 50%, #f7fafc 0%, #edf2f7 100%)'
                 }}>
-                    <Paper sx={{ 
-                        width: '100%', 
-                        maxWidth: { xs: '100%', md: 800 },
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        backgroundColor: theme.palette.background.paper,
-                        borderRadius: { xs: 0, sm: 2, md: 1 },
-                        overflow: 'hidden'
-                    }}>
+                    <Paper 
+                        component={motion.div}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        sx={{ 
+                            width: '100%', 
+                            maxWidth: { xs: '100%', md: 900 },
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            background: theme.palette.mode === 'dark' 
+                                ? 'rgba(30, 30, 30, 0.6)' 
+                                : 'rgba(255, 255, 255, 0.7)',
+                            backdropFilter: 'blur(20px)',
+                            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                            border: '1px solid rgba(255, 255, 255, 0.18)',
+                            borderRadius: { xs: 2, md: 3 },
+                            overflow: 'hidden'
+                        }}
+                    >
                         {/* Header Skeleton */}
                         <Box sx={{ 
-                            p: { xs: 1.25, sm: 1.5, md: 2 }, 
-                            borderBottom: 1, 
-                            borderColor: 'divider', 
+                            p: 2, 
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: { xs: 1, md: 2 },
-                            minHeight: { xs: 56, md: 64 }
+                            gap: 2,
+                            minHeight: 70
                         }}>
-                            <Skeleton variant="circular" width={40} height={40} />
+                            <Skeleton variant="circular" width={45} height={45} />
                             <Box sx={{ flex: 1 }}>
-                                <Skeleton variant="text" width="50%" height={28} />
-                                <Skeleton variant="text" width="70%" height={16} sx={{ mt: 0.5 }} />
+                                <Skeleton variant="text" width="40%" height={30} />
+                                <Skeleton variant="text" width="60%" height={20} sx={{ mt: 0.5 }} />
                             </Box>
                         </Box>
 
                         {/* Messages Skeleton */}
-                        <Box sx={{ flexGrow: 1, overflow: 'auto', p: { xs: 1, sm: 1.5, md: 2 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            {/* User message */}
+                        <Box sx={{ flexGrow: 1, overflow: 'hidden', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <Skeleton variant="rounded" width="70%" height={60} sx={{ borderRadius: 2 }} />
+                                <Skeleton variant="rounded" width="60%" height={60} sx={{ borderRadius: '20px 20px 5px 20px' }} />
                             </Box>
-                            {/* Admin message */}
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1 }}>
-                                <Skeleton variant="circular" width={32} height={32} />
-                                <Skeleton variant="rounded" width="70%" height={80} sx={{ borderRadius: 2 }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', gap: 1.5 }}>
+                                <Skeleton variant="circular" width={35} height={35} />
+                                <Skeleton variant="rounded" width="60%" height={80} sx={{ borderRadius: '20px 20px 20px 5px' }} />
                             </Box>
-                            {/* User message */}
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <Skeleton variant="rounded" width="60%" height={50} sx={{ borderRadius: 2 }} />
+                                <Skeleton variant="rounded" width="50%" height={50} sx={{ borderRadius: '20px 20px 5px 20px' }} />
                             </Box>
                         </Box>
 
                         {/* Input Skeleton */}
-                        <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 }, borderTop: 1, borderColor: 'divider' }}>
-                            <Skeleton variant="rounded" width="100%" height={56} sx={{ borderRadius: 2 }} />
+                        <Box sx={{ p: 2, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            <Skeleton variant="rounded" width="100%" height={60} sx={{ borderRadius: 3 }} />
                         </Box>
                     </Paper>
                 </Box>
@@ -533,59 +543,68 @@ export default function ChatPage() {
                 p: { xs: 0, sm: 1, md: 2 },
                 overflow: 'hidden'
             }}>
-                <Paper sx={{ 
-                    width: '100%', 
-                    maxWidth: { xs: '100%', md: 800 },
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    backgroundColor: theme.palette.background.paper,
-                    borderRadius: { xs: 0, sm: 2, md: 1 },
-                    overflow: 'hidden'
-                }}>
+                <Paper 
+                    component={motion.div}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    sx={{ 
+                        width: '100%', 
+                        maxWidth: { xs: '100%', md: 900 },
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        background: theme.palette.mode === 'dark' 
+                            ? 'rgba(30, 30, 30, 0.6)' 
+                            : 'rgba(255, 255, 255, 0.8)',
+                        backdropFilter: 'blur(20px)',
+                        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
+                        border: '1px solid rgba(255, 255, 255, 0.18)',
+                        borderRadius: { xs: 0, md: 3 },
+                        overflow: 'hidden'
+                    }}
+                >
                     <Box sx={{ 
-                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
-                        borderBottom: 1, 
-                        borderColor: 'divider', 
+                        p: 2, 
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: { xs: 1, md: 2 },
-                        minHeight: { xs: 56, md: 64 },
-                        flexShrink: 0
+                        gap: 2,
+                        minHeight: 70,
+                        background: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                        backdropFilter: 'blur(10px)'
                     }}>
                         <Avatar sx={{ 
-                            bgcolor: theme.palette.primary.main,
-                            width: { xs: 36, sm: 38, md: 40 },
-                            height: { xs: 36, sm: 38, md: 40 }
+                            width: 45,
+                            height: 45,
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                         }}>
-                            <SupportAgentIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                            <SupportAgentIcon sx={{ fontSize: 24, color: 'white' }} />
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Typography variant="h6" sx={{ 
-                                fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.25rem' },
-                                fontWeight: 600
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
+                                letterSpacing: 0.5
                             }}>
                                 Chat with Carina
                             </Typography>
-                            <Typography 
-                                variant="caption" 
-                                color="text.secondary" 
-                                sx={{ 
-                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
-                                    display: { xs: 'none', sm: 'block' }
-                                }}
-                            >
-                                Send us a message and we'll get back to you soon
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#4caf50', boxShadow: '0 0 5px #4caf50' }} />
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                    Online
+                                </Typography>
+                            </Box>
                         </Box>
                     </Box>
                     <Box sx={{ 
                         flexGrow: 1, 
                         overflow: 'auto', 
                         overflowX: 'hidden',
-                        p: { xs: 1, sm: 1.5, md: 2 }, 
+                        p: 3, 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        gap: { xs: 0.75, md: 1 },
+                        gap: 2,
                         WebkitOverflowScrolling: 'touch',
                         scrollBehavior: 'smooth'
                     }}>
@@ -596,345 +615,371 @@ export default function ChatPage() {
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
                                 flexDirection: 'column', 
-                                gap: { xs: 1.5, md: 2 },
-                                p: { xs: 2, sm: 3, md: 4 }
+                                gap: 2,
+                                opacity: 0.7
                             }}>
-                                <SupportAgentIcon sx={{ 
-                                    fontSize: { xs: 48, sm: 54, md: 60 }, 
-                                    color: theme.palette.grey[400] 
-                                }} />
+                                <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    <SupportAgentIcon sx={{ fontSize: 80, color: theme.palette.text.disabled }} />
+                                </motion.div>
                                 <Typography 
                                     color="text.secondary" 
                                     align="center" 
-                                    sx={{ 
-                                        fontSize: { xs: '0.875rem', sm: '0.9375rem', md: '1rem' },
-                                        px: 2
-                                    }}
+                                    sx={{ fontWeight: 500 }}
                                 >
                                     No messages yet. Start a conversation with Carina!
                                 </Typography>
                             </Box>
                         ) : (
-                            messages.map((message, index) => {
-                                const isUser = message.senderRole === 'user';
-                                const isImage = message.messageType === 'image';
-                                const isVoice = message.messageType === 'voice';
-                                return (
-                                    <Box key={message._id || index} sx={{ 
-                                        display: 'flex', 
-                                        justifyContent: isUser ? 'flex-end' : 'flex-start',
-                                        mb: 0.5
-                                    }}>
-                                        <Box sx={{ 
-                                            maxWidth: { xs: '85%', sm: '80%', md: '70%' }, 
-                                            p: { xs: 1.25, sm: 1.375, md: 1.5 }, 
-                                            borderRadius: { xs: 2.5, md: 2 },
-                                            backgroundColor: isUser 
-                                                ? theme.palette.primary.main 
-                                                : theme.palette.mode === 'dark' 
-                                                    ? theme.palette.grey[800] 
-                                                    : theme.palette.grey[200], 
-                                            color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
-                                            wordWrap: 'break-word',
-                                            overflowWrap: 'break-word'
-                                        }}>
+                            <AnimatePresence>
+                                {messages.map((message, index) => {
+                                    const isUser = message.senderRole === 'user';
+                                    const isImage = message.messageType === 'image';
+                                    const isVoice = message.messageType === 'voice';
+                                    return (
+                                        <motion.div
+                                            key={message._id || index}
+                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: isUser ? 'flex-end' : 'flex-start',
+                                                marginBottom: 8
+                                            }}
+                                        >
                                             {!isUser && (
-                                                <Chip 
-                                                    label="Carina" 
-                                                    size="small" 
-                                                    sx={{ 
-                                                        mb: 0.5, 
-                                                        height: { xs: 20, sm: 22, md: 24 }, 
-                                                        backgroundColor: 'rgba(0,0,0,0.1)',
-                                                        fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
-                                                        fontWeight: 500
-                                                    }} 
-                                                />
-                                            )}
-                                            {isVoice && message.voiceUrl && (
-                                                <Box sx={{ 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
-                                                    gap: 1,
-                                                    mb: message.content && message.content !== 'Sent a voice message' ? 1 : 0
+                                                <Avatar sx={{ 
+                                                    width: 32, 
+                                                    height: 32, 
+                                                    mr: 1.5, 
+                                                    mt: 0.5,
+                                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                                                 }}>
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => toggleVoicePlayback(message._id)}
-                                                        disabled={loadingVoice[message._id]}
-                                                        sx={{
-                                                            color: isUser ? 'white' : theme.palette.primary.main,
-                                                            backgroundColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-                                                            '&:hover': {
-                                                                backgroundColor: isUser ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)'
-                                                            }
-                                                        }}
-                                                    >
-                                                        {loadingVoice[message._id] ? (
-                                                            <CircularProgress size={20} color="inherit" />
-                                                        ) : (
-                                                            playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />
-                                                        )}
-                                                    </IconButton>
-                                                    <Box 
-                                                        onClick={(e) => handleProgressBarClick(message._id, e)}
-                                                        onMouseMove={(e) => handleMouseMove(message._id, e)}
-                                                        sx={{ 
-                                                            flex: 1, 
-                                                            height: 24,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            cursor: 'pointer',
-                                                            minWidth: 100,
-                                                            position: 'relative',
-                                                            userSelect: 'none'
-                                                        }}
-                                                    >
-                                                        <Box sx={{
-                                                            width: '100%',
-                                                            height: 4,
-                                                            backgroundColor: isUser ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
-                                                            borderRadius: 2,
-                                                            position: 'relative',
-                                                            overflow: 'visible'
-                                                        }}>
-                                                            <Box sx={{
-                                                                width: `${audioProgress[message._id] || 0}%`,
-                                                                height: '100%',
-                                                                backgroundColor: isUser ? 'white' : theme.palette.primary.main,
-                                                                borderRadius: 2,
-                                                                transition: isDragging === message._id ? 'none' : 'width 0.1s linear',
-                                                                position: 'relative'
-                                                            }}>
-                                                                <Box
-                                                                    onMouseDown={(e) => handleMouseDown(message._id, e)}
-                                                                    sx={{
-                                                                        position: 'absolute',
-                                                                        right: -6,
-                                                                        top: '50%',
-                                                                        transform: 'translateY(-50%)',
-                                                                        width: 12,
-                                                                        height: 12,
-                                                                        borderRadius: '50%',
-                                                                        backgroundColor: isUser ? 'white' : theme.palette.primary.main,
-                                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                                        cursor: 'grab',
-                                                                        '&:active': {
-                                                                            cursor: 'grabbing'
-                                                                        },
-                                                                        '&:hover': {
-                                                                            transform: 'translateY(-50%) scale(1.2)'
-                                                                        },
-                                                                        transition: 'transform 0.1s ease'
-                                                                    }}
-                                                                />
-                                                            </Box>
-                                                        </Box>
-                                                    </Box>
-                                                    <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
-                                                        {message.voiceDuration ? formatRecordingTime(message.voiceDuration) : '0:00'}
-                                                    </Typography>
-                                                </Box>
+                                                    <SupportAgentIcon sx={{ fontSize: 18, color: 'white' }} />
+                                                </Avatar>
                                             )}
-                                            {isImage && message.imageUrl && (
-                                                <Box 
-                                                    component="img" 
-                                                    src={message.imageUrl} 
-                                                    alt="Shared image" 
-                                                    onClick={() => handleImageClick(message.imageUrl)}
-                                                    loading="lazy"
-                                                    sx={{ 
-                                                        width: '100%', 
-                                                        maxWidth: { xs: 280, sm: 300 },
-                                                        borderRadius: { xs: 1.5, md: 1 },
-                                                        cursor: 'pointer',
-                                                        mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
-                                                        display: 'block',
-                                                        touchAction: 'manipulation',
-                                                        '&:hover': {
-                                                            opacity: 0.9
-                                                        },
-                                                        '&:active': {
-                                                            opacity: 0.85
-                                                        }
-                                                    }} 
-                                                />
-                                            )}
-                                            {message.content && (!isImage || message.content !== 'Sent an image') && (!isVoice || message.content !== 'Sent a voice message') && (
-                                                <>
-                                                    <Typography 
-                                                        variant="body1" 
-                                                        sx={{ 
-                                                            fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
-                                                            whiteSpace: 'pre-wrap',
-                                                            wordBreak: 'break-word',
-                                                            lineHeight: { xs: 1.5, md: 1.6 }
-                                                        }}
-                                                    >
-                                                        {message.content.length > 300 && !expandedMessages[message._id] 
-                                                            ? `${message.content.substring(0, 300)}...` 
-                                                            : message.content}
-                                                    </Typography>
-                                                    {message.content.length > 300 && (
-                                                        <Typography
-                                                            variant="caption"
-                                                            onClick={() => setExpandedMessages(prev => ({
-                                                                ...prev,
-                                                                [message._id]: !prev[message._id]
-                                                            }))}
+                                            <Box sx={{ 
+                                                maxWidth: { xs: '85%', sm: '80%', md: '70%' }, 
+                                                p: 2, 
+                                                borderRadius: isUser ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
+                                                background: isUser 
+                                                    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                                                    : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'white',
+                                                color: isUser ? 'white' : theme.palette.text.primary,
+                                                boxShadow: isUser 
+                                                    ? '0 4px 15px rgba(118, 75, 162, 0.3)' 
+                                                    : '0 4px 15px rgba(0,0,0,0.05)',
+                                                position: 'relative',
+                                                backdropFilter: !isUser ? 'blur(10px)' : 'none',
+                                                border: !isUser ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                                                wordWrap: 'break-word',
+                                                overflowWrap: 'break-word'
+                                            }}>
+                                                {/* Content Logic */}
+                                                {isVoice && message.voiceUrl && (
+                                                    <Box sx={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: 1,
+                                                        mb: message.content && message.content !== 'Sent a voice message' ? 1 : 0
+                                                    }}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => toggleVoicePlayback(message._id)}
+                                                            disabled={loadingVoice[message._id]}
                                                             sx={{
-                                                                display: 'inline-flex',
-                                                                mt: 0.5,
-                                                                cursor: 'pointer',
-                                                                color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
-                                                                fontWeight: 'bold',
-                                                                fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.85rem' },
-                                                                minHeight: { xs: 32, md: 24 },
-                                                                alignItems: 'center',
-                                                                touchAction: 'manipulation',
+                                                                color: isUser ? 'white' : theme.palette.primary.main,
+                                                                backgroundColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
                                                                 '&:hover': {
-                                                                    textDecoration: 'underline'
-                                                                },
-                                                                '&:active': {
-                                                                    opacity: 0.7
+                                                                    backgroundColor: isUser ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)'
                                                                 }
                                                             }}
                                                         >
-                                                            {expandedMessages[message._id] ? 'Read less' : 'Read more'}
+                                                            {loadingVoice[message._id] ? (
+                                                                <CircularProgress size={20} color="inherit" />
+                                                            ) : (
+                                                                playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />
+                                                            )}
+                                                        </IconButton>
+                                                        <Box 
+                                                            onClick={(e) => handleProgressBarClick(message._id, e)}
+                                                            onMouseMove={(e) => handleMouseMove(message._id, e)}
+                                                            sx={{ 
+                                                                flex: 1, 
+                                                                height: 24,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                cursor: 'pointer',
+                                                                minWidth: 100,
+                                                                position: 'relative',
+                                                                userSelect: 'none'
+                                                            }}
+                                                        >
+                                                            <Box sx={{
+                                                                width: '100%',
+                                                                height: 4,
+                                                                backgroundColor: isUser ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)',
+                                                                borderRadius: 2,
+                                                                position: 'relative',
+                                                                overflow: 'visible'
+                                                            }}>
+                                                                <Box sx={{
+                                                                    width: `${audioProgress[message._id] || 0}%`,
+                                                                    height: '100%',
+                                                                    backgroundColor: isUser ? 'white' : theme.palette.primary.main,
+                                                                    borderRadius: 2,
+                                                                    transition: isDragging === message._id ? 'none' : 'width 0.1s linear',
+                                                                    position: 'relative'
+                                                                }}>
+                                                                    <Box
+                                                                        onMouseDown={(e) => handleMouseDown(message._id, e)}
+                                                                        sx={{
+                                                                            position: 'absolute',
+                                                                            right: -6,
+                                                                            top: '50%',
+                                                                            transform: 'translateY(-50%)',
+                                                                            width: 12,
+                                                                            height: 12,
+                                                                            borderRadius: '50%',
+                                                                            backgroundColor: isUser ? 'white' : theme.palette.primary.main,
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                                                            cursor: 'grab',
+                                                                            '&:active': {
+                                                                                cursor: 'grabbing'
+                                                                            },
+                                                                            '&:hover': {
+                                                                                transform: 'translateY(-50%) scale(1.2)'
+                                                                            },
+                                                                            transition: 'transform 0.1s ease'
+                                                                        }}
+                                                                    />
+                                                                </Box>
+                                                            </Box>
+                                                        </Box>
+                                                        <Typography variant="caption" sx={{ fontSize: '0.75rem', color: isUser ? 'rgba(255,255,255,0.9)' : 'text.secondary' }}>
+                                                            {message.voiceDuration ? formatRecordingTime(message.voiceDuration) : '0:00'}
                                                         </Typography>
-                                                    )}
-                                                </>
-                                            )}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75 }}>
-                                                <Typography variant="caption" sx={{ 
-                                                    opacity: 0.7,
-                                                    fontSize: { xs: '0.7rem', sm: '0.725rem', md: '0.75rem' },
-                                                    lineHeight: 1
-                                                }}>
-                                                    {formatTime(message.createdAt)}
-                                                </Typography>
-                                                {isUser && (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
-                                                        {message.readByAdmins ? (
-                                                            <DoneAllIcon sx={{ 
-                                                                fontSize: { xs: 13, sm: 14, md: 16 },
-                                                                color: '#4fc3f7',
-                                                                opacity: 0.9
-                                                            }} />
-                                                        ) : (
-                                                            <DoneAllIcon sx={{ 
-                                                                fontSize: { xs: 13, sm: 14, md: 16 },
-                                                                opacity: 0.5
-                                                            }} />
-                                                        )}
                                                     </Box>
                                                 )}
+                                                {isImage && message.imageUrl && (
+                                                    <Box 
+                                                        component="img" 
+                                                        src={message.imageUrl} 
+                                                        alt="Shared image" 
+                                                        onClick={() => handleImageClick(message.imageUrl)}
+                                                        loading="lazy"
+                                                        sx={{ 
+                                                            width: '100%', 
+                                                            maxWidth: { xs: 280, sm: 300 },
+                                                            borderRadius: 2,
+                                                            cursor: 'pointer',
+                                                            mb: message.content && message.content !== 'Sent an image' ? 1 : 0,
+                                                            display: 'block',
+                                                            touchAction: 'manipulation',
+                                                            transition: 'transform 0.2s',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.02)'
+                                                            }
+                                                        }} 
+                                                    />
+                                                )}
+                                                {message.content && (!isImage || message.content !== 'Sent an image') && (!isVoice || message.content !== 'Sent a voice message') && (
+                                                    <>
+                                                        <Typography 
+                                                            variant="body1" 
+                                                            sx={{ 
+                                                                fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
+                                                                whiteSpace: 'pre-wrap',
+                                                                wordBreak: 'break-word',
+                                                                lineHeight: 1.6
+                                                            }}
+                                                        >
+                                                            {message.content.length > 300 && !expandedMessages[message._id] 
+                                                                ? `${message.content.substring(0, 300)}...` 
+                                                                : message.content}
+                                                        </Typography>
+                                                        {message.content.length > 300 && (
+                                                            <Typography
+                                                                variant="caption"
+                                                                onClick={() => setExpandedMessages(prev => ({
+                                                                    ...prev,
+                                                                    [message._id]: !prev[message._id]
+                                                                }))}
+                                                                sx={{
+                                                                    display: 'inline-flex',
+                                                                    mt: 0.5,
+                                                                    cursor: 'pointer',
+                                                                    color: isUser ? 'rgba(255,255,255,0.9)' : theme.palette.primary.main,
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: '0.85rem',
+                                                                    '&:hover': {
+                                                                        textDecoration: 'underline'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {expandedMessages[message._id] ? 'Read less' : 'Read more'}
+                                                            </Typography>
+                                                        )}
+                                                    </>
+                                                )}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.75, justifyContent: 'flex-end' }}>
+                                                    <Typography variant="caption" sx={{ 
+                                                        opacity: 0.7,
+                                                        fontSize: '0.7rem',
+                                                        color: isUser ? 'rgba(255,255,255,0.8)' : 'text.secondary'
+                                                    }}>
+                                                        {formatTime(message.createdAt)}
+                                                    </Typography>
+                                                    {isUser && (
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 0.5 }}>
+                                                            {message.readByAdmins ? (
+                                                                <DoneAllIcon sx={{ 
+                                                                    fontSize: 16,
+                                                                    color: 'white',
+                                                                    opacity: 0.9
+                                                                }} />
+                                                            ) : (
+                                                                <DoneAllIcon sx={{ 
+                                                                    fontSize: 16,
+                                                                    color: 'white',
+                                                                    opacity: 0.5
+                                                                }} />
+                                                            )}
+                                                        </Box>
+                                                    )}
+                                                </Box>
                                             </Box>
-                                        </Box>
-                                    </Box>
-                                );
-                            })
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
                         )}
                         <div ref={messagesEndRef} />
                     </Box>
                     <Box sx={{ 
-                        p: { xs: 1.25, sm: 1.5, md: 2 }, 
-                        borderTop: 1, 
-                        borderColor: 'divider',
-                        backgroundColor: theme.palette.background.paper,
+                        p: 2, 
+                        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)',
+                        backdropFilter: 'blur(10px)',
                         flexShrink: 0
                     }}>
                         {imagePreview && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                position: 'relative', 
-                                display: 'inline-block' 
-                            }}>
-                                <Box 
-                                    component="img" 
-                                    src={imagePreview} 
-                                    alt="Preview" 
-                                    sx={{ 
-                                        maxWidth: { xs: 150, sm: 180, md: 200 },
-                                        maxHeight: { xs: 120, sm: 140, md: 150 },
-                                        borderRadius: { xs: 1.5, md: 1 },
-                                        display: 'block'
-                                    }} 
-                                />
-                                <IconButton 
-                                    size="small" 
-                                    onClick={handleRemoveImage}
-                                    sx={{ 
-                                        position: 'absolute', 
-                                        top: 4, 
-                                        right: 4, 
-                                        backgroundColor: 'rgba(0,0,0,0.6)',
-                                        color: 'white',
-                                        width: { xs: 32, md: 28 },
-                                        height: { xs: 32, md: 28 },
-                                        '&:hover': {
-                                            backgroundColor: 'rgba(0,0,0,0.8)'
-                                        },
-                                        '&:active': {
-                                            backgroundColor: 'rgba(0,0,0,0.9)'
-                                        }
-                                    }}
-                                >
-                                    <CloseIcon sx={{ fontSize: { xs: 18, md: 16 } }} />
-                                </IconButton>
-                            </Box>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    position: 'relative', 
+                                    display: 'inline-block',
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}>
+                                    <Box 
+                                        component="img" 
+                                        src={imagePreview} 
+                                        alt="Preview" 
+                                        sx={{ 
+                                            maxWidth: 200,
+                                            maxHeight: 150,
+                                            display: 'block'
+                                        }} 
+                                    />
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={handleRemoveImage}
+                                        sx={{ 
+                                            position: 'absolute', 
+                                            top: 4, 
+                                            right: 4, 
+                                            backgroundColor: 'rgba(0,0,0,0.6)',
+                                            color: 'white',
+                                            '&:hover': {
+                                                backgroundColor: 'rgba(0,0,0,0.8)'
+                                            }
+                                        }}
+                                    >
+                                        <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         {voiceBlob && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                p: 1.5,
-                                backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                            }}>
-                                <MicIcon color="primary" />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                    Voice message ({formatRecordingTime(recordingTime)})
-                                </Typography>
-                                <IconButton 
-                                    size="small" 
-                                    onClick={cancelVoiceRecording}
-                                    sx={{ color: 'error.main' }}
-                                >
-                                    <CloseIcon />
-                                </IconButton>
-                            </Box>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    p: 2,
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    boxShadow: '0 4px 12px rgba(118, 75, 162, 0.2)'
+                                }}>
+                                    <MicIcon />
+                                    <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+                                        Voice message ({formatRecordingTime(recordingTime)})
+                                    </Typography>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={cancelVoiceRecording}
+                                        sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                    >
+                                        <CloseIcon />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         {isRecording && (
-                            <Box sx={{ 
-                                mb: 1, 
-                                p: 1.5,
-                                backgroundColor: 'error.main',
-                                color: 'white',
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1
-                            }}>
-                                <MicIcon sx={{ animation: 'pulse 1.5s infinite' }} />
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                    Recording... {formatRecordingTime(recordingTime)}
-                                </Typography>
-                                <IconButton 
-                                    size="small" 
-                                    onClick={stopRecording}
-                                    sx={{ color: 'white' }}
-                                >
-                                    <StopIcon />
-                                </IconButton>
-                            </Box>
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                            >
+                                <Box sx={{ 
+                                    mb: 2, 
+                                    p: 2,
+                                    backgroundColor: '#ef5350',
+                                    color: 'white',
+                                    borderRadius: 2,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 2,
+                                    boxShadow: '0 4px 12px rgba(239, 83, 80, 0.3)'
+                                }}>
+                                    <MicIcon sx={{ animation: 'pulse 1.5s infinite' }} />
+                                    <Typography variant="body2" sx={{ flex: 1, fontWeight: 500 }}>
+                                        Recording... {formatRecordingTime(recordingTime)}
+                                    </Typography>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={stopRecording}
+                                        sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1 } }}
+                                    >
+                                        <StopIcon />
+                                    </IconButton>
+                                </Box>
+                            </motion.div>
                         )}
                         <Box component="form" onSubmit={handleSendMessage} sx={{ 
                             display: 'flex', 
-                            gap: { xs: 0.75, md: 1 },
-                            alignItems: 'flex-end'
+                            gap: 1,
+                            alignItems: 'center',
+                            background: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'white',
+                            p: '8px 12px',
+                            borderRadius: 4,
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)'
                         }}>
                             <input
                                 type="file"
@@ -946,64 +991,66 @@ export default function ChatPage() {
                             {!voiceBlob && !isRecording && (
                                 <>
                                     <IconButton 
-                                        color="primary" 
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={sending || uploading}
-                                        aria-label="Attach image"
                                         sx={{ 
-                                            width: { xs: 44, sm: 46, md: 48 },
-                                            height: { xs: 44, sm: 46, md: 48 },
-                                            flexShrink: 0
+                                            color: theme.palette.text.secondary,
+                                            '&:hover': { color: theme.palette.primary.main, background: 'rgba(102, 126, 234, 0.1)' }
                                         }}
                                     >
-                                        <ImageIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                        <ImageIcon />
                                     </IconButton>
                                     <IconButton 
-                                        color="error" 
                                         onClick={startRecording}
                                         disabled={sending || uploading || selectedFile}
-                                        aria-label="Record voice"
                                         sx={{ 
-                                            width: { xs: 44, sm: 46, md: 48 },
-                                            height: { xs: 44, sm: 46, md: 48 },
-                                            flexShrink: 0
+                                            color: theme.palette.text.secondary,
+                                            '&:hover': { color: '#ef5350', background: 'rgba(239, 83, 80, 0.1)' }
                                         }}
                                     >
-                                        <MicIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />
+                                        <MicIcon />
                                     </IconButton>
                                 </>
                             )}
                             <TextField 
                                 fullWidth 
-                                placeholder={selectedFile ? "Add a caption (optional)..." : voiceBlob ? "Add a caption (optional)..." : "Type your message..."} 
+                                placeholder={selectedFile ? "Add a caption..." : voiceBlob ? "Add a caption..." : "Type a message..."} 
                                 value={newMessage} 
                                 onChange={(e) => setNewMessage(e.target.value)} 
                                 disabled={sending || uploading || isRecording} 
                                 multiline 
                                 maxRows={4}
-                                size="small"
+                                variant="standard"
+                                InputProps={{
+                                    disableUnderline: true
+                                }}
                                 sx={{ 
+                                    px: 1,
                                     '& .MuiInputBase-root': {
-                                        fontSize: { xs: '0.9rem', sm: '0.9375rem', md: '1rem' },
-                                        padding: { xs: '10px 12px', md: '8px 14px' }
-                                    },
-                                    '& .MuiInputBase-input': {
-                                        lineHeight: 1.5
+                                        fontSize: '0.95rem',
+                                        padding: '4px 0'
                                     }
                                 }}
                             />
                             <IconButton 
-                                color="primary" 
                                 type="submit" 
                                 disabled={(!newMessage.trim() && !selectedFile && !voiceBlob) || sending || uploading || isRecording}
-                                aria-label="Send message"
                                 sx={{ 
-                                    width: { xs: 44, sm: 46, md: 48 },
-                                    height: { xs: 44, sm: 46, md: 48 },
-                                    flexShrink: 0
+                                    bgcolor: (!newMessage.trim() && !selectedFile && !voiceBlob) ? 'action.disabledBackground' : 'primary.main',
+                                    color: 'white',
+                                    width: 40,
+                                    height: 40,
+                                    '&:hover': {
+                                        bgcolor: 'primary.dark'
+                                    },
+                                    '&.Mui-disabled': {
+                                        bgcolor: 'action.disabledBackground',
+                                        color: 'action.disabled'
+                                    },
+                                    transition: 'all 0.2s'
                                 }}
                             >
-                                {(sending || uploading) ? <CircularProgress size={20} /> : <SendIcon sx={{ fontSize: { xs: 20, sm: 22, md: 24 } }} />}
+                                {(sending || uploading) ? <CircularProgress size={20} color="inherit" /> : <SendIcon fontSize="small" />}
                             </IconButton>
                         </Box>
                     </Box>
@@ -1020,7 +1067,7 @@ export default function ChatPage() {
                         <Alert 
                             onClose={() => setSnackbar({ ...snackbar, open: false })} 
                             severity={snackbar.severity}
-                            sx={{ width: '100%' }}
+                            sx={{ width: '100%', borderRadius: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                         >
                             {snackbar.message}
                         </Alert>
