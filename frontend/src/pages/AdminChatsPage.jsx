@@ -113,7 +113,7 @@ export default function AdminChatsPage() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, loadingMessages]);
 
     const loadChats = async (resetPagination = false) => {
         try {
@@ -1070,6 +1070,7 @@ export default function AdminChatsPage() {
                                 ))}
                             </>
                         ) : (
+                            <>
                             <AnimatePresence>
                                 {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
@@ -1296,8 +1297,9 @@ export default function AdminChatsPage() {
                                 </motion.div>
                             );
                         })}
-                                <div ref={messagesEndRef} />
                             </AnimatePresence>
+                            <div ref={messagesEndRef} />
+                            </>
                         )}
                     </Box>
                     

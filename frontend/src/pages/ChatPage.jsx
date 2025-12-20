@@ -79,7 +79,7 @@ export default function ChatPage() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, loading]);
 
     const loadChat = async () => {
         try {
