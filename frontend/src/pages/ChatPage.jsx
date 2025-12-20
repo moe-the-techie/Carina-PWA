@@ -9,7 +9,8 @@ import {
     Chip,
     Snackbar,
     Alert,
-    Skeleton
+    Skeleton,
+    CircularProgress
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -60,6 +61,7 @@ export default function ChatPage() {
     const [recordingTime, setRecordingTime] = useState(0);
     const [voiceBlob, setVoiceBlob] = useState(null);
     const [playingVoice, setPlayingVoice] = useState({});
+    const [loadingVoice, setLoadingVoice] = useState({});
     const [audioProgress, setAudioProgress] = useState({});
     const [isDragging, setIsDragging] = useState(null);
     const messagesEndRef = useRef(null);
@@ -194,10 +196,13 @@ export default function ChatPage() {
     };
 
     const toggleVoicePlayback = async (messageId) => {
+        if (loadingVoice[messageId]) return;
+
         const audio = audioRefs.current[messageId];
         
         if (!audio) {
             try {
+                setLoadingVoice(prev => ({ ...prev, [messageId]: true }));
                 // Pause all other playing audio
                 Object.entries(audioRefs.current).forEach(([id, audioElement]) => {
                     if (id !== messageId && audioElement && !audioElement.paused) {
@@ -236,6 +241,8 @@ export default function ChatPage() {
             } catch (err) {
                 console.error('Error loading/playing audio:', err);
                 setSnackbar({ open: true, message: 'Failed to play voice message', severity: 'error' });
+            } finally {
+                setLoadingVoice(prev => ({ ...prev, [messageId]: false }));
             }
         } else {
             if (playingVoice[messageId]) {
@@ -654,6 +661,7 @@ export default function ChatPage() {
                                                     <IconButton
                                                         size="small"
                                                         onClick={() => toggleVoicePlayback(message._id)}
+                                                        disabled={loadingVoice[message._id]}
                                                         sx={{
                                                             color: isUser ? 'white' : theme.palette.primary.main,
                                                             backgroundColor: isUser ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
@@ -662,7 +670,11 @@ export default function ChatPage() {
                                                             }
                                                         }}
                                                     >
-                                                        {playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />}
+                                                        {loadingVoice[message._id] ? (
+                                                            <CircularProgress size={20} color="inherit" />
+                                                        ) : (
+                                                            playingVoice[message._id] ? <PauseIcon /> : <PlayArrowIcon />
+                                                        )}
                                                     </IconButton>
                                                     <Box 
                                                         onClick={(e) => handleProgressBarClick(message._id, e)}
