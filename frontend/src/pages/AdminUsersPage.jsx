@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -21,7 +21,6 @@ import {
     Card,
     CardContent,
     Divider,
-    Stack,
     Avatar,
     Alert,
     Snackbar,
@@ -31,9 +30,26 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
-    Skeleton
+    Skeleton,
+    IconButton,
+    Tooltip,
+    InputAdornment,
+    Container,
+    alpha
 } from '@mui/material';
-import { Circle as CircleIcon } from '@mui/icons-material';
+import {
+    Circle as CircleIcon,
+    Search as SearchIcon,
+    FilterList as FilterListIcon,
+    MoreVert as MoreVertIcon,
+    Person as PersonIcon,
+    Email as EmailIcon,
+    Cake as CakeIcon,
+    AccessTime as AccessTimeIcon,
+    Wc as GenderIcon,
+    ChildCare as ChildCareIcon,
+    Refresh as RefreshIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -304,27 +320,103 @@ export default function AdminUsersPage() {
 
     return (
         <PageFade>
-            <Box sx={{ p: 3 }}>
-                <Typography variant="h4" gutterBottom>
-                    User Management
-                </Typography>
+            <Container maxWidth="xl" sx={{ py: 4 }}>
+                {/* Header Section */}
+                <Box sx={{ 
+                    mb: 5, 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', md: 'row' },
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', md: 'center' },
+                    gap: 2
+                }}>
+                    <Box>
+                        <Typography variant="h4" sx={{ 
+                            fontWeight: 800, 
+                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                            backgroundClip: 'text',
+                            textFillColor: 'transparent',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            mb: 1
+                        }}>
+                            User Management
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary">
+                            Manage your users, assign classes, and monitor activity.
+                        </Typography>
+                    </Box>
+                    <Button 
+                        variant="outlined" 
+                        startIcon={<RefreshIcon />}
+                        onClick={fetchUsers}
+                        sx={{ 
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            borderWidth: 2,
+                            '&:hover': { borderWidth: 2 }
+                        }}
+                    >
+                        Refresh List
+                    </Button>
+                </Box>
 
-                {/* Search and Filter */}
-                <Box sx={{ mb: 3, display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+                {/* Search and Filter Bar */}
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 2,
+                        mb: 4,
+                        borderRadius: 4,
+                        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                        backdropFilter: 'blur(20px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        gap: 2,
+                        alignItems: 'center'
+                    }}
+                >
                     <TextField
                         fullWidth
-                        label="Search users by name or email"
+                        placeholder="Search users by name or email..."
                         value={search}
                         onChange={handleSearchChange}
                         variant="outlined"
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon color="action" />
+                                </InputAdornment>
+                            ),
+                            sx: { 
+                                borderRadius: 3,
+                                backgroundColor: alpha(theme.palette.background.default, 0.5),
+                                '& fieldset': { border: 'none' }
+                            }
+                        }}
                     />
                     {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
                         <FormControl sx={{ minWidth: 200, width: { xs: '100%', md: 'auto' } }}>
-                            <InputLabel>Filter by Class</InputLabel>
                             <Select
                                 value={classFilter}
                                 onChange={handleClassFilterChange}
-                                label="Filter by Class"
+                                displayEmpty
+                                variant="outlined"
+                                sx={{ 
+                                    borderRadius: 3,
+                                    backgroundColor: alpha(theme.palette.background.default, 0.5),
+                                    '& fieldset': { border: 'none' }
+                                }}
+                                renderValue={(selected) => {
+                                    if (selected === '') {
+                                        return <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}><FilterListIcon fontSize="small" /> All Classes</Box>;
+                                    }
+                                    const selectedClass = availableClasses.find(c => c._id === selected);
+                                    if (selected === 'unassigned') return 'Unassigned';
+                                    return selectedClass ? selectedClass.name : selected;
+                                }}
                             >
                                 <MenuItem value="">All Classes</MenuItem>
                                 <MenuItem value="unassigned">Unassigned</MenuItem>
@@ -344,263 +436,314 @@ export default function AdminUsersPage() {
                             </Select>
                         </FormControl>
                     )}
-                </Box>
+                </Paper>
 
                 {error && (
-                    <Typography color="error" sx={{ mb: 2 }}>
-                        Error: {error}
-                    </Typography>
+                    <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                        {error}
+                    </Alert>
                 )}
 
-                {/* Users Table/Cards */}
+                {/* Users Content */}
                 {isMobile ? (
                     // Mobile Card View
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {loading && users.length === 0 ? (
                             Array.from(new Array(5)).map((_, index) => (
-                                <Card key={index}>
+                                <Card key={index} sx={{ borderRadius: 4, boxShadow: 'none', border: `1px solid ${theme.palette.divider}` }}>
                                     <CardContent>
                                         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                                             <Skeleton variant="circular" width={56} height={56} />
                                             <Box sx={{ flex: 1 }}>
                                                 <Skeleton variant="text" width="60%" height={32} />
                                                 <Skeleton variant="text" width="40%" height={20} />
-                                                <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>
-                                                    <Skeleton variant="rounded" width={60} height={24} />
-                                                    <Skeleton variant="rounded" width={60} height={24} />
-                                                </Box>
                                             </Box>
                                         </Box>
-                                        <Skeleton variant="rectangular" width="100%" height={36} sx={{ mt: 2 }} />
+                                        <Skeleton variant="rectangular" width="100%" height={36} sx={{ borderRadius: 2 }} />
                                     </CardContent>
                                 </Card>
                             ))
                         ) : (
                             users.map((user) => (
-                                <Card key={user._id}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                                        <Avatar
-                                            src={user.profileImageUrl}
-                                            alt={user.name}
-                                            sx={{ 
-                                                width: 56, 
-                                                height: 56,
-                                                cursor: user.profileImageUrl ? 'pointer' : 'default',
-                                                '&:hover': user.profileImageUrl ? {
-                                                    opacity: 0.8,
-                                                    transition: 'opacity 0.2s'
-                                                } : {}
-                                            }}
-                                            onClick={() => {
-                                                if (user.profileImageUrl) {
-                                                    setSelectedImage(user.profileImageUrl);
-                                                    setImageDialogOpen(true);
-                                                }
-                                            }}
-                                        >
-                                            {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
-                                        </Avatar>
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Typography variant="h6" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {user.name}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {user.email}
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-                                                {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && user.userClass && (
-                                                    <Chip 
-                                                        icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
-                                                        label={user.userClass.name}
-                                                        size="small"
-                                                        sx={{ 
-                                                            borderColor: user.userClass.color,
-                                                            color: user.userClass.color
-                                                        }}
-                                                        variant="outlined"
-                                                    />
-                                                )}
-                                                <Chip 
-                                                    label={user.gender || 'Not specified'} 
-                                                    size="small"
-                                                    color={user.gender === 'female' ? 'secondary' : 'primary'}
-                                                />
-                                                {user.gender === 'female' && (
-                                                    <Chip 
-                                                        label={user.isMother ? 'Mother' : 'Not Mother'} 
-                                                        size="small"
-                                                        color={user.isMother ? 'success' : 'default'}
-                                                    />
-                                                )}
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                    {!isSmallMobile && (
-                                        <>
-                                            <Divider sx={{ my: 1.5 }} />
-                                            <Grid container spacing={1}>
-                                                <Grid item xs={6}>
-                                                    <Typography variant="caption" color="text.secondary">Date of Birth</Typography>
-                                                    <Typography variant="body2">
-                                                        {user.dateOfBirth 
-                                                            ? new Date(user.dateOfBirth).toLocaleDateString()
-                                                            : 'Not provided'
+                                <Card 
+                                    key={user._id}
+                                    sx={{
+                                        borderRadius: 4,
+                                        border: '1px solid transparent',
+                                        boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                                <Avatar
+                                                    src={user.profileImageUrl}
+                                                    alt={user.name}
+                                                    sx={{ 
+                                                        width: 56, 
+                                                        height: 56,
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                        border: `2px solid ${theme.palette.background.paper}`,
+                                                        cursor: user.profileImageUrl ? 'pointer' : 'default'
+                                                    }}
+                                                    onClick={() => {
+                                                        if (user.profileImageUrl) {
+                                                            setSelectedImage(user.profileImageUrl);
+                                                            setImageDialogOpen(true);
                                                         }
+                                                    }}
+                                                >
+                                                    {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
+                                                </Avatar>
+                                                <Box>
+                                                    <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                                                        {user.name}
                                                     </Typography>
-                                                </Grid>
-                                                <Grid item xs={6}>
-                                                    <Typography variant="caption" color="text.secondary">Joined</Typography>
-                                                    <Typography variant="body2">
-                                                        {new Date(user.createdAt).toLocaleDateString()}
+                                                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                                        <EmailIcon sx={{ fontSize: 14 }} /> {user.email}
                                                     </Typography>
-                                                </Grid>
+                                                </Box>
+                                            </Box>
+                                            <IconButton onClick={() => handleOpenActionsDialog(user)}>
+                                                <MoreVertIcon />
+                                            </IconButton>
+                                        </Box>
+
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                            {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && user.userClass && (
+                                                <Chip 
+                                                    icon={<CircleIcon sx={{ fontSize: 10, color: user.userClass.color + ' !important' }} />}
+                                                    label={user.userClass.name}
+                                                    size="small"
+                                                    sx={{ 
+                                                        bgcolor: alpha(user.userClass.color, 0.1),
+                                                        color: user.userClass.color,
+                                                        fontWeight: 600,
+                                                        border: 'none'
+                                                    }}
+                                                />
+                                            )}
+                                            <Chip 
+                                                label={user.gender || 'Not specified'} 
+                                                size="small"
+                                                icon={<GenderIcon sx={{ fontSize: 14 }} />}
+                                                sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.1), color: theme.palette.secondary.main, fontWeight: 600 }}
+                                            />
+                                            {user.gender === 'female' && user.isMother && (
+                                                <Chip 
+                                                    label="Mother" 
+                                                    size="small"
+                                                    icon={<ChildCareIcon sx={{ fontSize: 14 }} />}
+                                                    sx={{ bgcolor: alpha(theme.palette.success.main, 0.1), color: theme.palette.success.main, fontWeight: 600 }}
+                                                />
+                                            )}
+                                        </Box>
+
+                                        <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={6}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <CakeIcon sx={{ fontSize: 14 }} /> Date of Birth
+                                                </Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {user.dateOfBirth 
+                                                        ? new Date(user.dateOfBirth).toLocaleDateString()
+                                                        : 'Not provided'
+                                                    }
+                                                </Typography>
                                             </Grid>
-                                        </>
-                                    )}
-                                    <Box sx={{ mt: 2 }}>
-                                        <Button
-                                            fullWidth
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => handleOpenActionsDialog(user)}
-                                        >
-                                            Actions
-                                        </Button>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        )))}
+                                            <Grid item xs={6}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <AccessTimeIcon sx={{ fontSize: 14 }} /> Joined
+                                                </Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {new Date(user.createdAt).toLocaleDateString()}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        )}
                     </Box>
                 ) : (
                     // Desktop Table View
-                    <TableContainer component={Paper}>
+                    <TableContainer 
+                        component={Paper} 
+                        elevation={0}
+                        sx={{ 
+                            borderRadius: 4,
+                            boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                            overflow: 'hidden'
+                        }}
+                    >
                         <Table>
-                            <TableHead>
+                            <TableHead sx={{ bgcolor: alpha(theme.palette.primary.main, 0.05) }}>
                                 <TableRow>
-                                    <TableCell>Photo</TableCell>
-                                    <TableCell>Name</TableCell>
-                                    <TableCell>Email</TableCell>
-                                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && <TableCell>Class</TableCell>}
-                                    <TableCell>Gender</TableCell>
-                                    <TableCell>Date of Birth</TableCell>
-                                    <TableCell>Is Mother</TableCell>
-                                    <TableCell>Joined</TableCell>
-                                    <TableCell>Actions</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>User</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>Contact</TableCell>
+                                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>Class</TableCell>}
+                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>Details</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>Joined</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 1 }}>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {loading && users.length === 0 ? (
                                     Array.from(new Array(5)).map((_, index) => (
                                         <TableRow key={index}>
-                                            <TableCell><Skeleton variant="circular" width={40} height={40} /></TableCell>
-                                            <TableCell><Skeleton variant="text" width={120} /></TableCell>
+                                            <TableCell><Box sx={{ display: 'flex', gap: 2 }}><Skeleton variant="circular" width={40} height={40} /><Skeleton variant="text" width={120} /></Box></TableCell>
                                             <TableCell><Skeleton variant="text" width={180} /></TableCell>
                                             {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && <TableCell><Skeleton variant="rounded" width={80} height={24} /></TableCell>}
-                                            <TableCell><Skeleton variant="rounded" width={60} height={24} /></TableCell>
                                             <TableCell><Skeleton variant="text" width={100} /></TableCell>
-                                            <TableCell><Skeleton variant="rounded" width={40} height={24} /></TableCell>
                                             <TableCell><Skeleton variant="text" width={100} /></TableCell>
                                             <TableCell><Skeleton variant="rectangular" width={64} height={30} /></TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     users.map((user) => (
-                                        <TableRow key={user._id}>
-                                        <TableCell>
-                                            <Avatar
-                                                src={user.profileImageUrl}
-                                                alt={user.name}
-                                                sx={{ 
-                                                    width: 40, 
-                                                    height: 40,
-                                                    cursor: user.profileImageUrl ? 'pointer' : 'default',
-                                                    '&:hover': user.profileImageUrl ? {
-                                                        opacity: 0.8,
-                                                        transition: 'opacity 0.2s'
-                                                    } : {}
-                                                }}
-                                                onClick={() => {
-                                                    if (user.profileImageUrl) {
-                                                        setSelectedImage(user.profileImageUrl);
-                                                        setImageDialogOpen(true);
-                                                    }
-                                                }}
-                                            >
-                                                {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
-                                            </Avatar>
-                                        </TableCell>
-                                        <TableCell>{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                                        <TableRow 
+                                            key={user._id}
+                                            sx={{ 
+                                                '&:hover': { 
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                                    transform: 'scale(1.002)',
+                                                    transition: 'all 0.2s ease'
+                                                },
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        >
                                             <TableCell>
-                                                {user.userClass ? (
-                                                    <Chip 
-                                                        icon={<CircleIcon sx={{ fontSize: 12, color: user.userClass.color + ' !important' }} />}
-                                                        label={user.userClass.name}
-                                                        size="small"
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                    <Avatar
+                                                        src={user.profileImageUrl}
+                                                        alt={user.name}
                                                         sx={{ 
-                                                            borderColor: user.userClass.color,
-                                                            color: user.userClass.color
+                                                            width: 44, 
+                                                            height: 44,
+                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                            cursor: user.profileImageUrl ? 'pointer' : 'default',
+                                                            transition: 'transform 0.2s',
+                                                            '&:hover': { transform: 'scale(1.1)' }
                                                         }}
-                                                        variant="outlined"
-                                                    />
-                                                ) : (
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        None
-                                                    </Typography>
-                                                )}
+                                                        onClick={() => {
+                                                            if (user.profileImageUrl) {
+                                                                setSelectedImage(user.profileImageUrl);
+                                                                setImageDialogOpen(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        {!user.profileImageUrl && user.name?.charAt(0)?.toUpperCase()}
+                                                    </Avatar>
+                                                    <Box>
+                                                        <Typography variant="subtitle2" fontWeight={600}>
+                                                            {user.name}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {user.gender || 'Unknown'}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
                                             </TableCell>
-                                        )}
-                                        <TableCell>
-                                            <Chip 
-                                                label={user.gender || 'Not specified'} 
-                                                size="small"
-                                                color={user.gender === 'female' ? 'secondary' : 'primary'}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            {user.dateOfBirth 
-                                                ? new Date(user.dateOfBirth).toLocaleDateString()
-                                                : 'Not provided'
-                                            }
-                                        </TableCell>
-                                        <TableCell>
-                                            {user.gender === 'female' ? (
-                                                <Chip 
-                                                    label={user.isMother ? 'Yes' : 'No'} 
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                                    <Typography variant="body2">{user.email}</Typography>
+                                                </Box>
+                                            </TableCell>
+                                            {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                                                <TableCell>
+                                                    {user.userClass ? (
+                                                        <Chip 
+                                                            icon={<CircleIcon sx={{ fontSize: 10, color: user.userClass.color + ' !important' }} />}
+                                                            label={user.userClass.name}
+                                                            size="small"
+                                                            sx={{ 
+                                                                bgcolor: alpha(user.userClass.color, 0.1),
+                                                                color: user.userClass.color,
+                                                                fontWeight: 600,
+                                                                border: 'none'
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                                            Unassigned
+                                                        </Typography>
+                                                    )}
+                                                </TableCell>
+                                            )}
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    {user.gender === 'female' && user.isMother && (
+                                                        <Tooltip title="Mother">
+                                                            <Chip 
+                                                                label="Mom" 
+                                                                size="small" 
+                                                                sx={{ 
+                                                                    height: 24, 
+                                                                    fontSize: '0.7rem',
+                                                                    bgcolor: alpha(theme.palette.success.main, 0.1), 
+                                                                    color: theme.palette.success.main 
+                                                                }} 
+                                                            />
+                                                        </Tooltip>
+                                                    )}
+                                                    {user.dateOfBirth && (
+                                                        <Tooltip title={`DOB: ${new Date(user.dateOfBirth).toLocaleDateString()}`}>
+                                                            <Chip 
+                                                                icon={<CakeIcon sx={{ fontSize: '12px !important' }} />}
+                                                                label={new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()} 
+                                                                size="small" 
+                                                                sx={{ height: 24, fontSize: '0.7rem' }} 
+                                                            />
+                                                        </Tooltip>
+                                                    )}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {new Date(user.createdAt).toLocaleDateString()}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Button
+                                                    variant="contained"
                                                     size="small"
-                                                    color={user.isMother ? 'success' : 'default'}
-                                                />
-                                            ) : 'N/A'}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(user.createdAt).toLocaleDateString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                color="primary"
-                                                onClick={() => handleOpenActionsDialog(user)}
-                                            >
-                                                Actions
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )))}
+                                                    onClick={() => handleOpenActionsDialog(user)}
+                                                    sx={{ 
+                                                        borderRadius: 2,
+                                                        textTransform: 'none',
+                                                        boxShadow: 'none',
+                                                        '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                                                    }}
+                                                >
+                                                    Actions
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
                 )}
 
                 {/* Pagination */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                     <Pagination
                         count={totalPages}
                         page={page}
                         onChange={handlePageChange}
                         color="primary"
+                        size="large"
+                        sx={{
+                            '& .MuiPaginationItem-root': {
+                                borderRadius: 2
+                            }
+                        }}
                     />
                 </Box>
 
@@ -610,29 +753,31 @@ export default function AdminUsersPage() {
                     onClose={() => setUserDetailsOpen(false)}
                     maxWidth="md"
                     fullWidth
+                    PaperProps={{
+                        sx: { borderRadius: 4 }
+                    }}
                 >
-                    <DialogTitle>User Details</DialogTitle>
-                    <DialogContent>
+                    <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}`, pb: 2 }}>
+                        <Typography variant="h5" fontWeight={700}>User Details</Typography>
+                    </DialogTitle>
+                    <DialogContent sx={{ py: 3 }}>
                         {selectedUser && (
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
-                                    <Card>
+                                    <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, height: '100%' }}>
                                         <CardContent>
-                                            <Typography variant="h6" gutterBottom>
+                                            <Typography variant="h6" gutterBottom fontWeight={600} color="primary">
                                                 Personal Information
                                             </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2, mt: 2 }}>
                                                 <Avatar
                                                     src={selectedUser.user.profileImageUrl}
                                                     alt={selectedUser.user.name}
                                                     sx={{ 
-                                                        width: 64, 
-                                                        height: 64,
-                                                        cursor: selectedUser.user.profileImageUrl ? 'pointer' : 'default',
-                                                        '&:hover': selectedUser.user.profileImageUrl ? {
-                                                            opacity: 0.8,
-                                                            transition: 'opacity 0.2s'
-                                                        } : {}
+                                                        width: 80, 
+                                                        height: 80,
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                        cursor: selectedUser.user.profileImageUrl ? 'pointer' : 'default'
                                                     }}
                                                     onClick={() => {
                                                         if (selectedUser.user.profileImageUrl) {
@@ -644,73 +789,103 @@ export default function AdminUsersPage() {
                                                     {!selectedUser.user.profileImageUrl && selectedUser.user.name?.charAt(0)?.toUpperCase()}
                                                 </Avatar>
                                                 <Box>
-                                                    <Typography variant="h6">{selectedUser.user.name}</Typography>
+                                                    <Typography variant="h6" fontWeight={700}>{selectedUser.user.name}</Typography>
                                                     <Typography variant="body2" color="text.secondary">
                                                         {selectedUser.user.email}
                                                     </Typography>
                                                 </Box>
                                             </Box>
-                                            <Typography><strong>Name:</strong> {selectedUser.user.name}</Typography>
-                                            <Typography><strong>Email:</strong> {selectedUser.user.email}</Typography>
-                                            <Typography><strong>Gender:</strong> {selectedUser.user.gender || 'Not specified'}</Typography>
-                                            <Typography><strong>Date of Birth:</strong> {
-                                                selectedUser.user.dateOfBirth 
-                                                    ? new Date(selectedUser.user.dateOfBirth).toLocaleDateString()
-                                                    : 'Not provided'
-                                            }</Typography>
-                                            {selectedUser.user.gender === 'female' && (
-                                                <Typography><strong>Is Mother:</strong> {selectedUser.user.isMother ? 'Yes' : 'No'}</Typography>
-                                            )}
-                                            <Typography><strong>Joined:</strong> {new Date(selectedUser.user.createdAt).toLocaleDateString()}</Typography>
+                                            
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography color="text.secondary">Gender</Typography>
+                                                    <Typography fontWeight={500}>{selectedUser.user.gender || 'Not specified'}</Typography>
+                                                </Box>
+                                                <Divider />
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography color="text.secondary">Date of Birth</Typography>
+                                                    <Typography fontWeight={500}>{
+                                                        selectedUser.user.dateOfBirth 
+                                                            ? new Date(selectedUser.user.dateOfBirth).toLocaleDateString()
+                                                            : 'Not provided'
+                                                        }</Typography>
+                                                </Box>
+                                                {selectedUser.user.gender === 'female' && (
+                                                    <>
+                                                        <Divider />
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <Typography color="text.secondary">Is Mother</Typography>
+                                                            <Typography fontWeight={500}>{selectedUser.user.isMother ? 'Yes' : 'No'}</Typography>
+                                                        </Box>
+                                                    </>
+                                                )}
+                                                <Divider />
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    <Typography color="text.secondary">Joined</Typography>
+                                                    <Typography fontWeight={500}>{new Date(selectedUser.user.createdAt).toLocaleDateString()}</Typography>
+                                                </Box>
+                                            </Box>
                                         </CardContent>
                                     </Card>
                                 </Grid>
                                 
                                 <Grid item xs={12} md={6}>
-                                    <Card>
-                                        <CardContent>
-                                            <Typography variant="h6" gutterBottom>
-                                                Activity Summary
-                                            </Typography>
-                                            <Typography><strong>Forms Submitted:</strong> {selectedUser.forms.length}</Typography>
-                                            <Typography><strong>Plans Created:</strong> {selectedUser.plans.length}</Typography>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-
-                                {selectedUser.forms.length > 0 && (
-                                    <Grid item xs={12}>
-                                        <Card>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
+                                        <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3 }}>
                                             <CardContent>
-                                                <Typography variant="h6" gutterBottom>
-                                                    Recent Forms
+                                                <Typography variant="h6" gutterBottom fontWeight={600} color="primary">
+                                                    Activity Summary
                                                 </Typography>
-                                                {selectedUser.forms.slice(0, 3).map((form, index) => (
-                                                    <Box key={form._id} sx={{ mb: 1 }}>
-                                                        <Typography variant="body2">
-                                                            <strong>Form {index + 1}:</strong> Weight: {form.currentWeight}kg → {form.desiredWeight}kg 
-                                                            <Chip 
-                                                                label={form.reviewed ? 'Reviewed' : 'Pending'} 
-                                                                size="small" 
-                                                                color={form.reviewed ? 'success' : 'warning'}
-                                                                sx={{ ml: 1 }}
-                                                            />
-                                                        </Typography>
-                                                        <Typography variant="caption" color="textSecondary">
-                                                            {new Date(form.createdAt).toLocaleDateString()}
-                                                        </Typography>
-                                                        {index < 2 && <Divider sx={{ my: 1 }} />}
-                                                    </Box>
-                                                ))}
+                                                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                                                    <Paper elevation={0} sx={{ flex: 1, p: 2, bgcolor: alpha(theme.palette.primary.main, 0.05), borderRadius: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="primary" fontWeight={700}>{selectedUser.forms.length}</Typography>
+                                                        <Typography variant="body2" color="text.secondary">Forms Submitted</Typography>
+                                                    </Paper>
+                                                    <Paper elevation={0} sx={{ flex: 1, p: 2, bgcolor: alpha(theme.palette.secondary.main, 0.05), borderRadius: 2, textAlign: 'center' }}>
+                                                        <Typography variant="h4" color="secondary" fontWeight={700}>{selectedUser.plans.length}</Typography>
+                                                        <Typography variant="body2" color="text.secondary">Plans Created</Typography>
+                                                    </Paper>
+                                                </Box>
                                             </CardContent>
                                         </Card>
-                                    </Grid>
-                                )}
+
+                                        {selectedUser.forms.length > 0 && (
+                                            <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, flex: 1 }}>
+                                                <CardContent>
+                                                    <Typography variant="h6" gutterBottom fontWeight={600} color="primary">
+                                                        Recent Forms
+                                                    </Typography>
+                                                    {selectedUser.forms.slice(0, 3).map((form, index) => (
+                                                        <Box key={form._id} sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.background.default, 0.5) }}>
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                                <Typography variant="subtitle2" fontWeight={600}>
+                                                                    Form {index + 1}
+                                                                </Typography>
+                                                                <Chip 
+                                                                    label={form.reviewed ? 'Reviewed' : 'Pending'} 
+                                                                    size="small" 
+                                                                    color={form.reviewed ? 'success' : 'warning'}
+                                                                    sx={{ height: 20, fontSize: '0.7rem' }}
+                                                                />
+                                                            </Box>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                Weight: {form.currentWeight}kg → {form.desiredWeight}kg
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                                                {new Date(form.createdAt).toLocaleDateString()}
+                                                            </Typography>
+                                                        </Box>
+                                                    ))}
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                    </Box>
+                                </Grid>
                             </Grid>
                         )}
                     </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setUserDetailsOpen(false)}>Close</Button>
+                    <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
+                        <Button onClick={() => setUserDetailsOpen(false)} sx={{ borderRadius: 2 }}>Close</Button>
                         <Button 
                             variant="contained" 
                             color="primary"
@@ -718,6 +893,7 @@ export default function AdminUsersPage() {
                                 setUserDetailsOpen(false);
                                 handleMessageUser(selectedUser?.user?._id);
                             }}
+                            sx={{ borderRadius: 2 }}
                         >
                             Message User
                         </Button>
@@ -728,6 +904,7 @@ export default function AdminUsersPage() {
                                 setUserDetailsOpen(false);
                                 handleBanClick(selectedUser?.user);
                             }}
+                            sx={{ borderRadius: 2 }}
                         >
                             Ban User
                         </Button>
@@ -738,6 +915,7 @@ export default function AdminUsersPage() {
                                 setUserDetailsOpen(false);
                                 handleDeleteClick(selectedUser?.user);
                             }}
+                            sx={{ borderRadius: 2 }}
                         >
                             Delete User
                         </Button>
@@ -768,6 +946,7 @@ export default function AdminUsersPage() {
                     onClose={() => setClassDialogOpen(false)}
                     maxWidth="sm"
                     fullWidth
+                    PaperProps={{ sx: { borderRadius: 3 } }}
                 >
                     <DialogTitle>Assign User Class</DialogTitle>
                     <DialogContent>
@@ -780,6 +959,7 @@ export default function AdminUsersPage() {
                                 value={selectedClassId}
                                 onChange={(e) => setSelectedClassId(e.target.value)}
                                 label="User Class"
+                                sx={{ borderRadius: 2 }}
                             >
                                 <MenuItem value="">
                                     <em>None</em>
@@ -795,11 +975,11 @@ export default function AdminUsersPage() {
                             </Select>
                         </FormControl>
                     </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setClassDialogOpen(false)}>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setClassDialogOpen(false)} sx={{ borderRadius: 2 }}>
                             Cancel
                         </Button>
-                        <Button onClick={handleAssignClassConfirm} variant="contained">
+                        <Button onClick={handleAssignClassConfirm} variant="contained" sx={{ borderRadius: 2 }}>
                             Assign
                         </Button>
                     </DialogActions>
@@ -809,30 +989,30 @@ export default function AdminUsersPage() {
                 <Dialog
                     open={deleteDialogOpen}
                     onClose={() => setDeleteDialogOpen(false)}
+                    PaperProps={{ sx: { borderRadius: 3 } }}
                 >
                     <DialogTitle>Confirm Delete User</DialogTitle>
                     <DialogContent>
                         <Typography>
                             Are you sure you want to delete user <strong>{userToDelete?.name}</strong> ({userToDelete?.email})?
                         </Typography>
-                        <Typography color="error" sx={{ mt: 2 }}>
-                            This action will:
-                        </Typography>
-                        <ul>
-                            <li>Permanently delete the user account</li>
-                            <li>Delete all their forms and plans</li>
-                            <li>Delete all their chat messages</li>
-                            <li>Delete their profile image</li>
-                            <li>Delete their Firebase authentication</li>
-                            <li><strong>User can recreate an account with the same email</strong></li>
-                        </ul>
+                        <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold">This action cannot be undone.</Typography>
+                            <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                                <li>Permanently delete the user account</li>
+                                <li>Delete all their forms and plans</li>
+                                <li>Delete all their chat messages</li>
+                                <li>Delete their profile image</li>
+                            </ul>
+                        </Alert>
                     </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setDeleteDialogOpen(false)} sx={{ borderRadius: 2 }}>Cancel</Button>
                         <Button 
                             onClick={handleDeleteConfirm} 
                             color="error" 
                             variant="contained"
+                            sx={{ borderRadius: 2 }}
                         >
                             Delete User
                         </Button>
@@ -843,30 +1023,29 @@ export default function AdminUsersPage() {
                 <Dialog
                     open={banDialogOpen}
                     onClose={() => setBanDialogOpen(false)}
+                    PaperProps={{ sx: { borderRadius: 3 } }}
                 >
                     <DialogTitle>Confirm Ban User</DialogTitle>
                     <DialogContent>
                         <Typography>
                             Are you sure you want to ban user <strong>{userToBan?.name}</strong> ({userToBan?.email})?
                         </Typography>
-                        <Typography color="warning.main" sx={{ mt: 2 }}>
-                            This action will:
-                        </Typography>
-                        <ul>
-                            <li>Mark the user account as banned</li>
-                            <li>Delete all their forms and plans</li>
-                            <li>Delete all their chat messages</li>
-                            <li>Delete their profile image</li>
-                            <li>Delete their Firebase authentication</li>
-                            <li><strong>User CANNOT recreate an account with the same email</strong></li>
-                        </ul>
+                        <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold">Warning</Typography>
+                            <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                                <li>Mark the user account as banned</li>
+                                <li>User will not be able to log in</li>
+                                <li><strong>User CANNOT recreate an account with the same email</strong></li>
+                            </ul>
+                        </Alert>
                     </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => setBanDialogOpen(false)}>Cancel</Button>
+                    <DialogActions sx={{ p: 2 }}>
+                        <Button onClick={() => setBanDialogOpen(false)} sx={{ borderRadius: 2 }}>Cancel</Button>
                         <Button 
                             onClick={handleBanConfirm} 
                             color="warning" 
                             variant="contained"
+                            sx={{ borderRadius: 2 }}
                         >
                             Ban User
                         </Button>
@@ -883,12 +1062,12 @@ export default function AdminUsersPage() {
                     <Alert 
                         onClose={handleCloseSnackbar} 
                         severity={snackbar.severity}
-                        sx={{ width: '100%' }}
+                        sx={{ width: '100%', borderRadius: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     >
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
-            </Box>
+            </Container>
         </PageFade>
     );
 }
