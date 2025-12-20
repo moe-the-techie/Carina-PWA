@@ -112,7 +112,7 @@ export async function getAllFormsAdmin(req, res) {
         }
 
         const forms = await Form.find(query)
-            .populate('user', 'name email dateOfBirth gender')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl')
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit);
