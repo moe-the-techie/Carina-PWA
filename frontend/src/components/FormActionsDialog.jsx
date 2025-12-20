@@ -175,7 +175,7 @@ export default function FormActionsDialog({
                                     </ListItemIcon>
                                     <ListItemText 
                                         primary="Send Plan" 
-                                        secondary={!isMobile ? "Create and send a meal plan" : null}
+                                        secondary={!isMobile ? "Create and send a plan" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
                                         }}
@@ -199,7 +199,7 @@ export default function FormActionsDialog({
                                     </ListItemIcon>
                                     <ListItemText 
                                         primary="View Plan" 
-                                        secondary={!isMobile ? "See the sent meal plan" : null}
+                                        secondary={!isMobile ? "See the sent plan" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
                                         }}
@@ -222,7 +222,7 @@ export default function FormActionsDialog({
                                     </ListItemIcon>
                                     <ListItemText 
                                         primary="Edit Plan" 
-                                        secondary={!isMobile ? "Modify the existing meal plan" : null}
+                                        secondary={!isMobile ? "Modify the existing plan" : null}
                                         primaryTypographyProps={{ 
                                             variant: isMobile ? 'body1' : 'body2' 
                                         }}

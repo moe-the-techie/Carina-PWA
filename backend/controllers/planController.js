@@ -11,7 +11,6 @@ export async function createPlan(req, res) {
             title, 
             description, 
             duration, 
-            weeklyPlans, 
             goals,
             recommendations,
             templateId 
@@ -36,7 +35,6 @@ export async function createPlan(req, res) {
             existingPlan.title = title;
             existingPlan.description = description;
             existingPlan.duration = duration;
-            existingPlan.weeklyPlans = weeklyPlans || [];
             existingPlan.goals = goals || {};
             existingPlan.recommendations = recommendations || {};
             existingPlan.status = 'draft'; // Reset to draft when updated
@@ -68,7 +66,6 @@ export async function createPlan(req, res) {
             title,
             description,
             duration,
-            weeklyPlans: weeklyPlans || [],
             goals: goals || {},
             recommendations: recommendations || {},
             createdBy: req.user._id,

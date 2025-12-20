@@ -1,57 +1,6 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
-const mealTemplateSchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    description: {
-        type: String,
-        trim: true
-    },
-    calories: {
-        type: Number,
-        required: true
-    },
-    nutrients: {
-        protein: { type: Number, default: 0 },
-        carbs: { type: Number, default: 0 },
-        fats: { type: Number, default: 0 },
-        fiber: { type: Number, default: 0 }
-    },
-    ingredients: [{
-        type: String,
-        trim: true
-    }],
-    instructions: [{
-        type: String,
-        trim: true
-    }]
-});
-
-const dayTemplateSchema = new Schema({
-    day: {
-        type: Number,
-        required: true,
-        min: 1,
-        max: 7
-    },
-    breakfast: mealTemplateSchema,
-    lunch: mealTemplateSchema,
-    dinner: mealTemplateSchema,
-    snacks: [mealTemplateSchema],
-    totalCalories: {
-        type: Number,
-        default: 0
-    },
-    notes: {
-        type: String,
-        trim: true
-    }
-});
-
 const planTemplateSchema = new Schema({
     name: {
         type: String,
@@ -73,7 +22,6 @@ const planTemplateSchema = new Schema({
         min: 1,
         default: 1
     },
-    weeklyTemplate: [dayTemplateSchema],
     defaultGoals: {
         targetCalories: Number,
         targetProtein: Number,

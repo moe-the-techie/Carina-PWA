@@ -70,7 +70,6 @@ export async function createTemplate(req, res) {
             description,
             category,
             duration,
-            weeklyTemplate,
             defaultGoals,
             defaultRecommendations,
             defaultWarnings,
@@ -82,7 +81,6 @@ export async function createTemplate(req, res) {
             description,
             category,
             duration,
-            weeklyTemplate: weeklyTemplate || [],
             defaultGoals: defaultGoals || {},
             defaultRecommendations: defaultRecommendations || {},
             defaultWarnings: defaultWarnings || [],
@@ -190,7 +188,6 @@ export async function createTemplateFromPlan(req, res) {
             description: description || plan.description,
             category: category || 'General',
             duration: plan.duration,
-            weeklyTemplate: plan.weeklyPlans,
             defaultGoals: plan.goals,
             tags: tags || [],
             createdBy: req.user._id
@@ -228,7 +225,6 @@ export async function duplicateTemplate(req, res) {
             description: originalTemplate.description,
             category: originalTemplate.category,
             duration: originalTemplate.duration,
-            weeklyTemplate: originalTemplate.weeklyTemplate,
             defaultGoals: originalTemplate.defaultGoals,
             tags: originalTemplate.tags,
             createdBy: req.user._id

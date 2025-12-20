@@ -816,8 +816,10 @@ export default function ViewPlanPage () {
                                 </motion.div>
                             )}
 
-                            {/* Weekly Meal Plans */}
-                            {plan.weeklyPlans && plan.weeklyPlans.length > 0 && (
+                            {/* Meal Guidelines */}
+                            {(plan.recommendations?.breakfast?.length > 0 || 
+                              plan.recommendations?.lunch?.length > 0 || 
+                              plan.recommendations?.dinner?.length > 0) && (
                                 <motion.div variants={itemVariants}>
                                     <Paper sx={{ ...glassCardStyle, p: 3, mb: 3 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
@@ -828,133 +830,98 @@ export default function ViewPlanPage () {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
-                                                boxShadow: `0 4px 12px ${theme.palette.secondary.main}40`,
+                                                background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                                             }}>
                                                 <RestaurantIcon sx={{ color: 'white', fontSize: 20 }} />
                                             </Box>
                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                                Weekly Meal Plan
+                                                Meal Guidelines
                                             </Typography>
                                         </Box>
                                         
-                                        {plan.weeklyPlans.map((day, index) => (
-                                            <Accordion 
-                                                key={index} 
-                                                sx={{ 
-                                                    mb: 1,
-                                                    borderRadius: 2,
-                                                    overflow: 'hidden',
-                                                    '&:before': { display: 'none' },
-                                                    boxShadow: 'none',
-                                                    border: `1px solid ${theme.palette.divider}`,
-                                                    '&.Mui-expanded': {
-                                                        margin: 0,
-                                                        mb: 1,
-                                                    }
-                                                }}
-                                            >
-                                                <AccordionSummary 
-                                                    expandIcon={<ExpandMoreIcon />}
-                                                    sx={{ 
+                                        <Grid container spacing={3}>
+                                            {[
+                                                { label: 'Breakfast', data: plan.recommendations.breakfast, color: '#F59E0B', icon: '☀️' },
+                                                { label: 'Lunch', data: plan.recommendations.lunch, color: '#10B981', icon: '🌤️' },
+                                                { label: 'Dinner', data: plan.recommendations.dinner, color: '#6366F1', icon: '🌙' },
+                                            ].map((meal, idx) => (
+                                                <Grid item xs={12} md={4} key={idx}>
+                                                    <Box sx={{
+                                                        p: 2.5,
+                                                        borderRadius: 3,
                                                         backgroundColor: theme.palette.mode === 'dark' 
-                                                            ? 'rgba(255,255,255,0.02)'
-                                                            : 'rgba(0,0,0,0.02)',
-                                                    }}
-                                                >
-                                                    <Box sx={{ 
-                                                        display: 'flex', 
-                                                        justifyContent: 'space-between', 
-                                                        alignItems: 'center',
-                                                        width: '100%', 
-                                                        pr: 2,
+                                                            ? alpha(meal.color, 0.05)
+                                                            : alpha(meal.color, 0.05),
+                                                        border: `1px solid ${alpha(meal.color, 0.2)}`,
+                                                        height: '100%',
                                                     }}>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                                            Day {day.day} - {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day.day - 1]}
-                                                        </Typography>
-                                                        {day.totalCalories && (
-                                                            <Chip 
-                                                                label={`${day.totalCalories} kcal`}
-                                                                size="small"
-                                                                sx={{
-                                                                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                                                                    color: 'white',
-                                                                    fontWeight: 600,
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                                            <Typography variant="h6" sx={{ fontSize: '1.5rem' }}>
+                                                                {meal.icon}
+                                                            </Typography>
+                                                            <Typography 
+                                                                variant="h6" 
+                                                                sx={{ 
+                                                                    color: meal.color, 
+                                                                    fontWeight: 700,
                                                                 }}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </AccordionSummary>
-                                                <AccordionDetails sx={{ p: 2 }}>
-                                                    <Grid container spacing={2}>
-                                                        {[
-                                                            { label: 'Breakfast', icon: '🌅', data: day.breakfast, color: theme.palette.primary.main },
-                                                            { label: 'Lunch', icon: '🍽️', data: day.lunch, color: theme.palette.secondary.main },
-                                                            { label: 'Dinner', icon: '🌙', data: day.dinner, color: '#8B5CF6' },
-                                                            { label: 'Snacks', icon: '🍪', data: day.snacks, color: '#F59E0B' },
-                                                        ].filter(meal => meal.data).map((meal, mealIndex) => (
-                                                            <Grid item xs={12} sm={6} lg={3} key={mealIndex}>
-                                                                <Card 
-                                                                    sx={{ 
-                                                                        height: '100%',
-                                                                        borderRadius: 2,
-                                                                        border: `1px solid ${alpha(meal.color, 0.2)}`,
-                                                                        boxShadow: 'none',
-                                                                        transition: 'all 0.2s ease',
-                                                                        '&:hover': {
-                                                                            transform: 'translateY(-2px)',
-                                                                            boxShadow: `0 4px 12px ${alpha(meal.color, 0.2)}`,
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <CardContent sx={{ p: 2 }}>
+                                                            >
+                                                                {meal.label}
+                                                            </Typography>
+                                                        </Box>
+                                                        
+                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                            {meal.data?.map((category, catIdx) => (
+                                                                category.items && category.items.length > 0 && (
+                                                                    <Box key={catIdx}>
                                                                         <Typography 
                                                                             variant="subtitle2" 
                                                                             sx={{ 
-                                                                                color: meal.color,
-                                                                                fontWeight: 600,
+                                                                                fontWeight: 600, 
                                                                                 mb: 1,
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                gap: 1
+                                                                                opacity: 0.8
                                                                             }}
                                                                         >
-                                                                            {meal.icon} {meal.label}
+                                                                            {category.category}
                                                                         </Typography>
-                                                                        <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                                                            {meal.data.name}
-                                                                        </Typography>
-                                                                        <Chip 
-                                                                            label={`${meal.data.calories} cal`}
-                                                                            size="small"
-                                                                            sx={{
-                                                                                backgroundColor: alpha(meal.color, 0.1),
-                                                                                color: meal.color,
-                                                                                fontSize: '0.7rem',
-                                                                                fontWeight: 600,
-                                                                                height: 22,
-                                                                            }}
-                                                                        />
-                                                                        {meal.data.description && (
-                                                                            <Typography 
-                                                                                variant="body2" 
-                                                                                color="text.secondary"
-                                                                                sx={{ mt: 1, fontSize: '0.8rem', lineHeight: 1.4 }}
-                                                                            >
-                                                                                {meal.data.description}
-                                                                            </Typography>
-                                                                        )}
-                                                                    </CardContent>
-                                                                </Card>
-                                                            </Grid>
-                                                        ))}
-                                                    </Grid>
-                                                </AccordionDetails>
-                                            </Accordion>
-                                        ))}
+                                                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                                            {category.items.map((item, itemIdx) => (
+                                                                                <Chip 
+                                                                                    key={itemIdx} 
+                                                                                    label={item} 
+                                                                                    size="small" 
+                                                                                    onClick={() => openChipDetailDialog(item, `${category.category} Item`, meal.label)}
+                                                                                    sx={{ 
+                                                                                        cursor: 'pointer',
+                                                                                        backgroundColor: theme.palette.mode === 'dark' ? alpha(meal.color, 0.15) : 'white',
+                                                                                        color: theme.palette.mode === 'dark' ? meal.color : 'inherit',
+                                                                                        border: `1px solid ${alpha(meal.color, 0.2)}`,
+                                                                                        '&:hover': { 
+                                                                                            backgroundColor: alpha(meal.color, 0.1),
+                                                                                        } 
+                                                                                    }}
+                                                                                />
+                                                                            ))}
+                                                                        </Box>
+                                                                    </Box>
+                                                                )
+                                                            ))}
+                                                            {(!meal.data || meal.data.every(c => !c.items || c.items.length === 0)) && (
+                                                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                                                    No specific guidelines
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
                                     </Paper>
                                 </motion.div>
                             )}
+
+
                         </motion.div>
                     )}
                 </Box>
