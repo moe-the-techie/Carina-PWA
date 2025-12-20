@@ -34,18 +34,60 @@ import {
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Skeleton
+    Skeleton,
+    IconButton,
+    Tooltip,
+    LinearProgress,
+    alpha,
+    InputAdornment,
+    TextField,
+    Fade,
+    Zoom
 } from '@mui/material';
 import ChatIcon from '@mui/icons-material/Chat';
 import FeedbackIcon from '@mui/icons-material/Feedback';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PersonIcon from '@mui/icons-material/Person';
+import ScaleIcon from '@mui/icons-material/Scale';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { useTheme } from '@mui/material/styles';
+import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import FormActionsDialog from '../components/FormActionsDialog';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.4,
+            ease: [0.16, 1, 0.3, 1]
+        }
+    }
+};
 
 export default function AdminFormsPage() {
     const theme = useTheme();
@@ -206,222 +248,520 @@ export default function AdminFormsPage() {
         setActionsDialogOpen(true);
     };
 
+    // Glassmorphism card style
+    const glassCardStyle = {
+        background: theme.palette.mode === 'dark'
+            ? 'rgba(255, 255, 255, 0.03)'
+            : 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+        boxShadow: theme.palette.mode === 'dark'
+            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+            : '0 8px 32px rgba(0, 0, 0, 0.06)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        overflow: 'hidden',
+    };
+
+    // Stats for header
+    const getStats = () => {
+        const pending = forms.filter(f => !f.reviewed).length;
+        const reviewed = forms.filter(f => f.reviewed).length;
+        const withFeedback = forms.filter(f => f.planSent).length;
+        return { pending, reviewed, withFeedback, total: forms.length };
+    };
+
     if (loading && forms.length === 0) {
         return (
             <PageFade>
                 <Box sx={{ 
-                    p: 3, 
-                    textAlign: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '60vh',
-                    gap: 2
+                    p: { xs: 2, sm: 3, md: 4 },
+                    minHeight: '100vh',
+                    background: theme.palette.mode === 'dark'
+                        ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
+                        : `linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)`,
                 }}>
-                    <Box sx={{ width: '100%' }}>
-                        <Skeleton variant="text" width="40%" height={48} sx={{ mb: 3 }} />
-                        
-                        {/* Filter Skeleton */}
-                        <Skeleton variant="rounded" width={200} height={56} sx={{ mb: 3 }} />
-                        
-                        {/* Table Skeleton */}
-                        <TableContainer component={Paper}>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        {[1, 2, 3, 4, 5, 6].map((col) => (
-                                            <TableCell key={col}>
-                                                <Skeleton variant="text" width="80%" />
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {[1, 2, 3, 4, 5, 6, 7, 8].map((row) => (
-                                        <TableRow key={row}>
-                                            {[1, 2, 3, 4, 5, 6].map((col) => (
-                                                <TableCell key={col}>
-                                                    <Skeleton variant="text" width="90%" />
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                    {/* Header Skeleton */}
+                    <Box sx={{ mb: 4 }}>
+                        <Skeleton variant="text" width="30%" height={48} sx={{ mb: 1 }} />
+                        <Skeleton variant="text" width="50%" height={24} />
                     </Box>
+
+                    {/* Stats Cards Skeleton */}
+                    <Grid container spacing={2} sx={{ mb: 4 }}>
+                        {[1, 2, 3, 4].map((i) => (
+                            <Grid item xs={6} md={3} key={i}>
+                                <Paper sx={{ ...glassCardStyle, p: 3 }}>
+                                    <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
+                                    <Skeleton variant="text" width="60%" height={32} />
+                                    <Skeleton variant="text" width="80%" height={20} />
+                                </Paper>
+                            </Grid>
+                        ))}
+                    </Grid>
+                        
+                    {/* Cards Skeleton */}
+                    <Grid container spacing={2}>
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <Grid item xs={12} sm={6} lg={4} key={i}>
+                                <Paper sx={{ ...glassCardStyle, p: 2.5 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                        <Skeleton variant="circular" width={48} height={48} />
+                                        <Box sx={{ flex: 1 }}>
+                                            <Skeleton variant="text" width="70%" height={24} />
+                                            <Skeleton variant="text" width="50%" height={18} />
+                                        </Box>
+                                    </Box>
+                                    <Divider sx={{ my: 2 }} />
+                                    <Skeleton variant="rectangular" width="100%" height={60} sx={{ borderRadius: 2 }} />
+                                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                        <Skeleton variant="rounded" width={80} height={28} />
+                                        <Skeleton variant="rounded" width={80} height={28} />
+                                    </Box>
+                                </Paper>
+                            </Grid>
+                        ))}
+                    </Grid>
                 </Box>
             </PageFade>
         );
     }
 
+    const stats = getStats();
+
     return (
         <PageFade>
-            <Box sx={{ p: 3 }}>
-                <Typography variant="h4" gutterBottom>
-                    Form Management
-                </Typography>
+            <Box sx={{ 
+                p: { xs: 2, sm: 3, md: 4 },
+                minHeight: '100vh',
+                background: theme.palette.mode === 'dark'
+                    ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
+                    : `linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)`,
+            }}>
+                {/* Header Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <Box sx={{ 
+                        mb: 4, 
+                        display: 'flex', 
+                        flexDirection: { xs: 'column', md: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'flex-start', md: 'center' },
+                        gap: 2
+                    }}>
+                        <Box>
+                            <Typography 
+                                variant="h4" 
+                                sx={{ 
+                                    fontWeight: 700,
+                                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                    backgroundClip: 'text',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    mb: 0.5
+                                }}
+                            >
+                                Form Management
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Review and manage user nutrition assessment forms
+                            </Typography>
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            <Tooltip title="Refresh">
+                                <IconButton 
+                                    onClick={fetchForms}
+                                    sx={{
+                                        backgroundColor: theme.palette.mode === 'dark' 
+                                            ? 'rgba(255,255,255,0.05)' 
+                                            : 'rgba(0,0,0,0.04)',
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.mode === 'dark' 
+                                                ? 'rgba(255,255,255,0.1)' 
+                                                : 'rgba(0,0,0,0.08)',
+                                        }
+                                    }}
+                                >
+                                    <RefreshIcon />
+                                </IconButton>
+                            </Tooltip>
+                            
+                            <FormControl 
+                                size="small" 
+                                sx={{ 
+                                    minWidth: 180,
+                                    '& .MuiOutlinedInput-root': {
+                                        backgroundColor: theme.palette.mode === 'dark' 
+                                            ? 'rgba(255,255,255,0.05)' 
+                                            : 'rgba(255,255,255,0.9)',
+                                        borderRadius: 2,
+                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: theme.palette.primary.main,
+                                        }
+                                    }
+                                }}
+                            >
+                                <InputLabel>Status Filter</InputLabel>
+                                <Select
+                                    value={reviewedFilter}
+                                    onChange={handleFilterChange}
+                                    label="Status Filter"
+                                    startAdornment={
+                                        <InputAdornment position="start">
+                                            <FilterListIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                                        </InputAdornment>
+                                    }
+                                >
+                                    <MenuItem value="">All Forms</MenuItem>
+                                    <MenuItem value="false">Pending Review</MenuItem>
+                                    <MenuItem value="true">Reviewed</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                    </Box>
+                </motion.div>
 
-                {/* Filter */}
-                <Box sx={{ mb: 3 }}>
-                    <FormControl sx={{ minWidth: 200 }}>
-                        <InputLabel>Filter by Status</InputLabel>
-                        <Select
-                            value={reviewedFilter}
-                            onChange={handleFilterChange}
-                            label="Filter by Status"
-                        >
-                            <MenuItem value="">All Forms</MenuItem>
-                            <MenuItem value="false">Pending Review</MenuItem>
-                            <MenuItem value="true">Reviewed</MenuItem>
-                        </Select>
-                    </FormControl>
-                </Box>
+                {/* Stats Cards */}
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <Grid container spacing={2} sx={{ mb: 4 }}>
+                        {[
+                            { 
+                                label: 'Total Forms', 
+                                value: stats.total, 
+                                icon: DescriptionIcon, 
+                                color: theme.palette.primary.main,
+                                gradient: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+                            },
+                            { 
+                                label: 'Pending Review', 
+                                value: stats.pending, 
+                                icon: CalendarTodayIcon, 
+                                color: '#F59E0B',
+                                gradient: 'linear-gradient(135deg, #F59E0B, #D97706)'
+                            },
+                            { 
+                                label: 'Reviewed', 
+                                value: stats.reviewed, 
+                                icon: PersonIcon, 
+                                color: '#10B981',
+                                gradient: 'linear-gradient(135deg, #10B981, #059669)'
+                            },
+                            { 
+                                label: 'Plans Sent', 
+                                value: stats.withFeedback, 
+                                icon: FeedbackIcon, 
+                                color: '#8B5CF6',
+                                gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
+                            },
+                        ].map((stat, index) => (
+                            <Grid item xs={6} md={3} key={index}>
+                                <motion.div variants={itemVariants}>
+                                    <Paper 
+                                        sx={{ 
+                                            ...glassCardStyle, 
+                                            p: { xs: 2, sm: 3 },
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            '&:hover': {
+                                                transform: 'translateY(-4px)',
+                                                boxShadow: theme.palette.mode === 'dark'
+                                                    ? '0 20px 40px rgba(0, 0, 0, 0.4)'
+                                                    : '0 20px 40px rgba(0, 0, 0, 0.1)',
+                                            }
+                                        }}
+                                    >
+                                        <Box sx={{
+                                            position: 'absolute',
+                                            top: -20,
+                                            right: -20,
+                                            width: 100,
+                                            height: 100,
+                                            borderRadius: '50%',
+                                            background: `${stat.color}10`,
+                                            pointerEvents: 'none',
+                                        }} />
+                                        <Box sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: stat.gradient,
+                                            boxShadow: `0 4px 12px ${stat.color}40`,
+                                            mb: 2
+                                        }}>
+                                            <stat.icon sx={{ color: 'white', fontSize: 24 }} />
+                                        </Box>
+                                        <Typography 
+                                            variant="h4" 
+                                            sx={{ 
+                                                fontWeight: 700, 
+                                                mb: 0.5,
+                                                color: theme.palette.text.primary 
+                                            }}
+                                        >
+                                            {stat.value}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {stat.label}
+                                        </Typography>
+                                    </Paper>
+                                </motion.div>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </motion.div>
 
                 {error && (
-                    <Typography color="error" sx={{ mb: 2 }}>
-                        Error: {error}
-                    </Typography>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                    >
+                        <Paper sx={{ 
+                            p: 2, 
+                            mb: 3, 
+                            backgroundColor: alpha(theme.palette.error.main, 0.1),
+                            border: `1px solid ${theme.palette.error.main}`,
+                            borderRadius: 2 
+                        }}>
+                            <Typography color="error" sx={{ fontWeight: 500 }}>
+                                ⚠️ {error}
+                            </Typography>
+                        </Paper>
+                    </motion.div>
                 )}
 
-                {/* Forms Table/Cards */}
-                {isMobile ? (
-                    // Mobile Card View
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {forms.map((form) => (
-                            <Card key={form._id}>
-                                <CardContent>
-                                    <Box sx={{ mb: 2 }}>
-                                        <Typography variant="h6" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {form.user?.name || 'Unknown User'}
-                                        </Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {form.user?.email}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-                                            <Chip 
-                                                label={form.reviewed ? 'Reviewed' : 'Pending'} 
-                                                color={form.reviewed ? 'success' : 'warning'}
-                                                size="small"
-                                            />
-                                            {form.reviewed && form.planSent && (
-                                                <Chip 
-                                                    label="Plan Sent" 
-                                                    color="success" 
-                                                    size="small" 
-                                                />
-                                            )}
-                                        </Box>
-                                    </Box>
-                                    <Divider sx={{ my: 1.5 }} />
-                                    <Grid container spacing={1}>
-                                        <Grid item xs={6}>
-                                            <Typography variant="caption" color="text.secondary">Current Weight</Typography>
-                                            <Typography variant="body1" fontWeight="medium">{form.currentWeight}kg</Typography>
-                                        </Grid>
-                                        <Grid item xs={6}>
-                                            <Typography variant="caption" color="text.secondary">Desired Weight</Typography>
-                                            <Typography variant="body1" fontWeight="medium">{form.desiredWeight}kg</Typography>
-                                        </Grid>
-                                        {!isSmallMobile && (
-                                            <Grid item xs={12}>
-                                                <Typography variant="caption" color="text.secondary">Date Submitted</Typography>
-                                                <Typography variant="body2">{new Date(form.createdAt).toLocaleDateString()}</Typography>
-                                            </Grid>
-                                        )}
-                                    </Grid>
-                                    <Box sx={{ mt: 2 }}>
-                                        <Button
-                                            fullWidth
-                                            variant="contained"
-                                            color="primary"
+                {/* Forms Grid */}
+                <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
+                    <Grid container spacing={2}>
+                        <AnimatePresence mode="popLayout">
+                            {forms.map((form, index) => (
+                                <Grid item xs={12} sm={6} lg={4} key={form._id}>
+                                    <motion.div
+                                        variants={itemVariants}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ delay: index * 0.05 }}
+                                    >
+                                        <Paper 
+                                            sx={{ 
+                                                ...glassCardStyle,
+                                                p: 0,
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 20px 40px rgba(0, 0, 0, 0.4)'
+                                                        : '0 20px 40px rgba(0, 0, 0, 0.12)',
+                                                    '& .action-button': {
+                                                        opacity: 1,
+                                                    }
+                                                }
+                                            }}
                                             onClick={() => handleOpenActionsDialog(form)}
                                         >
-                                            Actions
-                                        </Button>
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </Box>
-                ) : (
-                    // Desktop Table View
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>User</TableCell>
-                                    <TableCell>Current Weight</TableCell>
-                                    <TableCell>Desired Weight</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Date Submitted</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {forms.map((form) => (
-                                    <React.Fragment key={form._id}>
-                                        <TableRow>
-                                            <TableCell>
-                                                <Box>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {form.user?.name || 'Unknown User'}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="textSecondary">
-                                                        {form.user?.email}
-                                                    </Typography>
+                                            {/* Status Bar */}
+                                            <Box sx={{
+                                                height: 4,
+                                                background: form.reviewed 
+                                                    ? form.planSent 
+                                                        ? 'linear-gradient(90deg, #10B981, #34D399)'
+                                                        : 'linear-gradient(90deg, #3B82F6, #60A5FA)'
+                                                    : 'linear-gradient(90deg, #F59E0B, #FBBF24)',
+                                            }} />
+                                            
+                                            <Box sx={{ p: 2.5 }}>
+                                                {/* Header */}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
+                                                        <Avatar
+                                                            src={form.user?.profileImageUrl}
+                                                            sx={{
+                                                                width: 48,
+                                                                height: 48,
+                                                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                                fontSize: '1.1rem',
+                                                                fontWeight: 600,
+                                                            }}
+                                                        >
+                                                            {form.user?.name?.charAt(0)?.toUpperCase()}
+                                                        </Avatar>
+                                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                            <Typography 
+                                                                variant="subtitle1" 
+                                                                sx={{ 
+                                                                    fontWeight: 600,
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                            >
+                                                                {form.user?.name || 'Unknown User'}
+                                                            </Typography>
+                                                            <Typography 
+                                                                variant="caption" 
+                                                                color="text.secondary"
+                                                                sx={{
+                                                                    display: 'block',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                            >
+                                                                {form.user?.email}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <IconButton 
+                                                        size="small" 
+                                                        className="action-button"
+                                                        sx={{ 
+                                                            opacity: { xs: 1, md: 0.6 },
+                                                            transition: 'opacity 0.2s',
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenActionsDialog(form);
+                                                        }}
+                                                    >
+                                                        <MoreVertIcon />
+                                                    </IconButton>
                                                 </Box>
-                                            </TableCell>
-                                            <TableCell>{form.currentWeight}kg</TableCell>
-                                            <TableCell>{form.desiredWeight}kg</TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                    <Chip 
-                                                        label={form.reviewed ? 'Reviewed' : 'Pending'} 
-                                                        color={form.reviewed ? 'success' : 'warning'}
-                                                        size="small"
-                                                    />
-                                                    {form.reviewed && form.planSent && (
-                                                        <Chip 
-                                                            label="Plan Sent" 
-                                                            color="success" 
-                                                            size="small" 
+
+                                                {/* Weight Info Card */}
+                                                <Box sx={{
+                                                    p: 2,
+                                                    borderRadius: 2,
+                                                    backgroundColor: theme.palette.mode === 'dark' 
+                                                        ? 'rgba(255,255,255,0.03)'
+                                                        : 'rgba(0,0,0,0.02)',
+                                                    mb: 2
+                                                }}>
+                                                    <Grid container spacing={2}>
+                                                        <Grid item xs={6}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <ScaleIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                                                                <Box>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        Current
+                                                                    </Typography>
+                                                                    <Typography variant="body2" fontWeight={600}>
+                                                                        {form.currentWeight} kg
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </Grid>
+                                                        <Grid item xs={6}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                {form.desiredWeight < form.currentWeight ? (
+                                                                    <TrendingDownIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                                                                ) : (
+                                                                    <TrendingUpIcon sx={{ fontSize: 18, color: 'info.main' }} />
+                                                                )}
+                                                                <Box>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        Goal
+                                                                    </Typography>
+                                                                    <Typography variant="body2" fontWeight={600}>
+                                                                        {form.desiredWeight} kg
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Box>
+
+                                                {/* Footer */}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                        <Chip
+                                                            label={form.reviewed ? 'Reviewed' : 'Pending'}
+                                                            size="small"
+                                                            sx={{
+                                                                fontWeight: 600,
+                                                                fontSize: '0.7rem',
+                                                                backgroundColor: form.reviewed 
+                                                                    ? alpha('#10B981', 0.1)
+                                                                    : alpha('#F59E0B', 0.1),
+                                                                color: form.reviewed ? '#10B981' : '#F59E0B',
+                                                                border: `1px solid ${form.reviewed ? '#10B98130' : '#F59E0B30'}`,
+                                                            }}
                                                         />
-                                                    )}
+                                                        {form.reviewed && form.planSent && (
+                                                            <Chip
+                                                                label="Plan Sent"
+                                                                size="small"
+                                                                sx={{
+                                                                    fontWeight: 600,
+                                                                    fontSize: '0.7rem',
+                                                                    backgroundColor: alpha('#8B5CF6', 0.1),
+                                                                    color: '#8B5CF6',
+                                                                    border: '1px solid #8B5CF630',
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </Box>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {new Date(form.createdAt).toLocaleDateString()}
+                                                    </Typography>
                                                 </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                {new Date(form.createdAt).toLocaleDateString()}
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell colSpan={5} sx={{ py: 1, borderBottom: '2px solid', borderBottomColor: 'divider' }}>
-                                                <Button
-                                                    size="small"
-                                                    variant="contained"
-                                                    color="primary"
-                                                    onClick={() => handleOpenActionsDialog(form)}
-                                                >
-                                                    Actions
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    </React.Fragment>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                )}
+                                            </Box>
+                                        </Paper>
+                                    </motion.div>
+                                </Grid>
+                            ))}
+                        </AnimatePresence>
+                    </Grid>
+                </motion.div>
 
                 {/* Pagination */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                    <Pagination
-                        count={totalPages}
-                        page={page}
-                        onChange={handlePageChange}
-                        color="primary"
-                    />
-                </Box>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        mt: 4,
+                        pt: 3,
+                        borderTop: `1px solid ${theme.palette.divider}`
+                    }}>
+                        <Pagination
+                            count={totalPages}
+                            page={page}
+                            onChange={handlePageChange}
+                            color="primary"
+                            size={isMobile ? 'small' : 'medium'}
+                            sx={{
+                                '& .MuiPaginationItem-root': {
+                                    fontWeight: 500,
+                                    borderRadius: 2,
+                                    '&.Mui-selected': {
+                                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                                        boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,
+                                    }
+                                }
+                            }}
+                        />
+                    </Box>
+                </motion.div>
 
                 {/* Form Actions Dialog */}
                 <FormActionsDialog
@@ -443,15 +783,40 @@ export default function AdminFormsPage() {
                     onClose={() => setFormDetailsOpen(false)}
                     maxWidth="md"
                     fullWidth
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            borderRadius: 3,
+                            background: theme.palette.mode === 'dark'
+                                ? 'rgba(26, 26, 46, 0.95)'
+                                : 'rgba(255, 255, 255, 0.98)',
+                            backdropFilter: 'blur(20px)',
+                        }
+                    }}
                 >
-                    <DialogTitle>Form Details</DialogTitle>
-                    <DialogContent>
+                    <DialogTitle sx={{
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        py: 2.5,
+                    }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            📋 Form Details
+                        </Typography>
+                    </DialogTitle>
+                    <DialogContent sx={{ mt: 2 }}>
                         {selectedForm && (
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                    <Card sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        height: '100%',
+                                        borderRadius: 2,
+                                        boxShadow: 'none',
+                                        border: `1px solid ${theme.palette.divider}`,
+                                    }}>
                                         <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
+                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <PersonIcon color="primary" />
                                                 User Information
                                             </Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
