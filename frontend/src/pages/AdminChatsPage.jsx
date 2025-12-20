@@ -735,7 +735,7 @@ export default function AdminChatsPage() {
             display: 'flex', 
             flexDirection: 'column', 
             backgroundColor: theme.palette.background.paper,
-            height: { xs: '100%', md: 'auto' },
+            height: '100%',
             borderRadius: { xs: 0, md: 1 },
             overflow: 'hidden'
         }}>
@@ -881,7 +881,7 @@ export default function AdminChatsPage() {
             flexDirection: 'column', 
             backgroundColor: theme.palette.background.paper,
             width: { xs: '100%', md: 'auto' },
-            height: { xs: '100%', md: 'auto' },
+            height: '100%',
             borderRadius: { xs: 0, md: 1 },
             overflow: 'hidden'
         }}>
@@ -1477,10 +1477,9 @@ export default function AdminChatsPage() {
     return (
         <PageFade>
             <Box sx={{ 
-                height: { xs: 'calc(100vh - 60px)', sm: 'calc(100vh - 60px)', md: 'calc(100vh - 10vh - 48px)' }, 
+                height: '100%', 
                 display: 'flex', 
                 gap: { xs: 0, md: 2 }, 
-                p: { xs: 0, md: 2 },
                 position: 'relative',
                 overflow: 'hidden'
             }}>

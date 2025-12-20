@@ -14,7 +14,7 @@ export default function AdminLayout({ children, onLogout }) {
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
             <AdminSidebar 
                 onLogout={onLogout} 
                 mobileOpen={mobileOpen}
@@ -25,7 +25,8 @@ export default function AdminLayout({ children, onLogout }) {
                 sx={{
                     flexGrow: 1,
                     mt: { xs: 'calc(64px + env(safe-area-inset-top))', md: 0 }, // Add top margin on mobile for AppBar
-                    minHeight: '100vh',
+                    height: { xs: 'calc(100vh - 64px - env(safe-area-inset-top))', md: '100vh' },
+                    overflow: 'auto',
                     bgcolor: 'background.default',
                     p: { xs: 2, md: 3 }, // Add padding for better mobile spacing
                     pl: { xs: 'calc(16px + env(safe-area-inset-left))', md: 3 },
