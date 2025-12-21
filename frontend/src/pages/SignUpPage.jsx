@@ -81,7 +81,7 @@ export default function SignUpPage({ onLogin }) {
           body: JSON.stringify({
             email, password, passwordConfirmation, name, gender,
             isMother: isMother === 'yes',
-            dob: dob?.toISOString(),
+            dateOfBirth: dob?.toISOString(),
           }),
         });
 
