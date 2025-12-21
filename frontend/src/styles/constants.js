@@ -141,9 +141,10 @@ export const gradients = {
 
 // ===== Z-INDEX TOKENS =====
 export const zIndex = {
+    navigation: 1000,
+    fab: 1050,
     drawer: 1200,
     modal: 1300,
     snackbar: 1400,
     tooltip: 1500,
-    fab: 1050,
 };

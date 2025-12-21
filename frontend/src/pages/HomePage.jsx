@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PageFade from '../components/PageFade';
-import Button from '@mui/material/Button';
+import Fab from '@mui/material/Fab';
+import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
@@ -9,7 +10,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
-import { spacing, borderRadius, shadows } from '../styles';
+import { spacing, borderRadius, shadows, zIndex } from '../styles';
 import { glassCard } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
 
@@ -91,7 +92,7 @@ export default function HomePage() {
           alignItems: 'center',
           justifyContent: 'flex-start',
           pb: spacing.md,
-          pt: spacing.md,
+          pt: { xs: `calc(${theme.spacing(spacing.lg)} + env(safe-area-inset-top))`, md: spacing.md },
           px: spacing.sm,
           mx: 'auto',
         }}
@@ -151,19 +152,21 @@ export default function HomePage() {
               <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
             ))}
 
-            <Button
-              onClick={() => navigate('/new-form')}
-              variant="contained"
+            <Fab
+              variant="extended"
               color="primary"
+              onClick={() => navigate('/new-form')}
               sx={{
-                width: { xs: '100%', md: '30%' },
-                mt: spacing.lg,
-                borderRadius: borderRadius.md,
+                position: 'fixed',
+                bottom: { xs: 'calc(80px + env(safe-area-inset-bottom) + 16px)', md: spacing.lg },
+                right: spacing.lg,
+                zIndex: zIndex.fab,
                 boxShadow: shadows.button,
               }}
             >
+              <AddIcon sx={{ mr: 1 }} />
               Submit New Form
-            </Button>
+            </Fab>
 
             {backendError && (
               <Typography align="center" color="error" sx={{ mt: spacing.md }}>
