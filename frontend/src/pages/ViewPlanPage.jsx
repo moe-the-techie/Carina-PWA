@@ -834,7 +834,7 @@ export default function ViewPlanPage () {
                                                 borderRadius: 2,
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
+                                                justifyContent: 'space-evenly',
                                                 background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
                                                 boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                                             }}>
