@@ -24,7 +24,8 @@ import {
     AccordionDetails,
     Divider,
     useMediaQuery,
-    Slide
+    Slide,
+    Skeleton
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -50,6 +51,8 @@ export default function AdminPlanBuilderPage() {
     const [templates, setTemplates] = useState([]);
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [loading, setLoading] = useState(false);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [formsLoading, setFormsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isEditingPlan, setIsEditingPlan] = useState(false);
     const [editingPlanId, setEditingPlanId] = useState(null);
@@ -422,6 +425,7 @@ export default function AdminPlanBuilderPage() {
     };
 
     const fetchUsers = async () => {
+        setUsersLoading(true);
         try {
             const response = await fetch(`${apiBaseUrl}/api/admin/users`, {
                 headers: {
@@ -438,10 +442,13 @@ export default function AdminPlanBuilderPage() {
         } catch (error) {
             console.error('Error fetching users:', error);
             setError(error.message);
+        } finally {
+            setUsersLoading(false);
         }
     };
 
     const fetchUserForms = async () => {
+        setFormsLoading(true);
         try {
             const response = await fetch(`${apiBaseUrl}/api/admin/users/${selectedUser}`, {
                 headers: {
@@ -458,6 +465,8 @@ export default function AdminPlanBuilderPage() {
         } catch (error) {
             console.error('Error fetching user forms:', error);
             setError(error.message);
+        } finally {
+            setFormsLoading(false);
         }
     };
 
@@ -1005,39 +1014,47 @@ export default function AdminPlanBuilderPage() {
                                         Select User & Form
                                     </Typography>
                                     
-                                    <FormControl fullWidth sx={{ mb: 2 }}>
-                                        <InputLabel>Select User</InputLabel>
-                                        <Select
-                                            value={selectedUser}
-                                            onChange={(e) => setSelectedUser(e.target.value)}
-                                            label="Select User"
-                                            MenuProps={{ disableScrollLock: true }}
-                                        >
-                                            {users.map((user) => (
-                                                <MenuItem key={user._id} value={user._id}>
-                                                    {user.name} ({user.email})
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    {usersLoading ? (
+                                        <Skeleton variant="rectangular" height={56} sx={{ mb: 2, borderRadius: 1 }} />
+                                    ) : (
+                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                            <InputLabel>Select User</InputLabel>
+                                            <Select
+                                                value={selectedUser}
+                                                onChange={(e) => setSelectedUser(e.target.value)}
+                                                label="Select User"
+                                                MenuProps={{ disableScrollLock: true }}
+                                            >
+                                                {users.map((user) => (
+                                                    <MenuItem key={user._id} value={user._id}>
+                                                        {user.name} ({user.email})
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    )}
 
-                                    <FormControl fullWidth sx={{ mb: 2 }}>
-                                        <InputLabel>Select Form</InputLabel>
-                                        <Select
-                                            value={selectedForm}
-                                            onChange={(e) => setSelectedForm(e.target.value)}
-                                            label="Select Form"
-                                            disabled={!selectedUser}
-                                            MenuProps={{ disableScrollLock: true }}
-                                        >
-                                            {userForms.map((form) => (
-                                                <MenuItem key={form._id} value={form._id}>
-                                                    Form from {new Date(form.createdAt).toLocaleDateString()} 
-                                                    (Weight: {form.currentWeight}kg → {form.desiredWeight}kg)
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    {formsLoading ? (
+                                        <Skeleton variant="rectangular" height={56} sx={{ mb: 2, borderRadius: 1 }} />
+                                    ) : (
+                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                            <InputLabel>Select Form</InputLabel>
+                                            <Select
+                                                value={selectedForm}
+                                                onChange={(e) => setSelectedForm(e.target.value)}
+                                                label="Select Form"
+                                                disabled={!selectedUser}
+                                                MenuProps={{ disableScrollLock: true }}
+                                            >
+                                                {userForms.map((form) => (
+                                                    <MenuItem key={form._id} value={form._id}>
+                                                        Form from {new Date(form.createdAt).toLocaleDateString()} 
+                                                        (Weight: {form.currentWeight}kg → {form.desiredWeight}kg)
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    )}
                                 </CardContent>
                             </Card>
                         </Grid>
