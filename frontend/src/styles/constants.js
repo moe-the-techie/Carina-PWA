@@ -5,6 +5,11 @@
 
 // ===== SPACING TOKENS =====
 export const spacing = {
+    xs: 1,
+    sm: 2,
+    md: 3,
+    lg: 4,
+    xl: 6,
     page: {
         padding: { xs: 2, sm: 3, md: 4 },
         paddingTop: { xs: 2, sm: 3 },
@@ -104,6 +109,7 @@ export const shadows = {
         light: '0 2px 12px rgba(0, 0, 0, 0.08)',
         dark: '0 4px 20px rgba(0, 0, 0, 0.4)',
     },
+    button: '0 4px 6px rgba(0, 0, 0, 0.12)',
 };
 
 // ===== TRANSITION TOKENS =====

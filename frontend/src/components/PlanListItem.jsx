@@ -13,11 +13,11 @@ export default function PlanListItem ({ form, plan, onClick }) {
             sx={{ 
                 ...glassCard(theme),
                 p: spacing.md, 
-                m: spacing.sm, 
-                borderRadius: borderRadius.lg, 
+                mb: spacing.sm, 
+                borderRadius: borderRadius.md, 
                 alignSelf: 'stretch',
                 cursor: 'pointer',
-                transition: transitions.default,
+                transition: transitions.normal,
                 '&:hover': glassCardHover(theme),
             }}
         >
