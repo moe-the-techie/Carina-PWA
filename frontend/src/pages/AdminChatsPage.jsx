@@ -906,6 +906,9 @@ export default function AdminChatsPage() {
                                             sx={{ 
                                                 width: 48, 
                                                 height: 48,
+                                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                fontSize: '1.1rem',
+                                                fontWeight: 600,
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                                 cursor: chat.user?.profileImageUrl ? 'pointer' : 'default',
                                                 border: `2px solid ${theme.palette.background.paper}`
@@ -917,9 +920,7 @@ export default function AdminChatsPage() {
                                                 }
                                             }}
                                         >
-                                            {!chat.user?.profileImageUrl && (
-                                                chat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon />
-                                            )}
+                                            {chat.user?.name?.charAt(0)?.toUpperCase()}
                                         </Avatar>
                                     </Badge>
                                     <ListItemText
@@ -1041,6 +1042,9 @@ export default function AdminChatsPage() {
                             sx={{ 
                                 width: 45, 
                                 height: 45,
+                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                fontSize: '1.1rem',
+                                fontWeight: 600,
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                                 cursor: selectedChat.user?.profileImageUrl ? 'pointer' : 'default',
                                 border: `2px solid ${theme.palette.background.paper}`
@@ -1051,9 +1055,7 @@ export default function AdminChatsPage() {
                                 }
                             }}
                         >
-                            {!selectedChat.user?.profileImageUrl && (
-                                selectedChat.user?.name?.charAt(0)?.toUpperCase() || <PersonIcon />
-                            )}
+                            {selectedChat.user?.name?.charAt(0)?.toUpperCase()}
                         </Avatar>
                         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                             <Typography variant="h6" sx={{ 
