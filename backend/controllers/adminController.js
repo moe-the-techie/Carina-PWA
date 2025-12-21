@@ -8,10 +8,10 @@ import { deleteImage } from '../config/cloudinary.js';
 import { adminAuth } from '../config/firebase.js';
 export async function getDashboardStats(req, res) {
     try {
-        const totalUsers = await User.countDocuments({ role: 'user' });
+        const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
         const totalForms = await Form.countDocuments();
         const pendingForms = await Form.countDocuments({ reviewed: false });
-        const recentUsers = await User.find({ role: 'user' })
+        const recentUsers = await User.find({ role: 'user', isVerified: true })
             .sort({ createdAt: -1 })
             .limit(5)
             .select('name email createdAt profileImageUrl');
@@ -37,9 +37,13 @@ export async function getDashboardStats(req, res) {
 
 export async function getAllUsersAdmin(req, res) {
     try {
-        const { page = 1, limit = 10, search = '', classFilter = '' } = req.query;
+        const { page = 1, limit = 10, search = '', classFilter = '', includeUnverified = 'false' } = req.query;
         const query = { role: 'user' };
         
+        if (includeUnverified !== 'true') {
+            query.isVerified = true;
+        }
+
         if (search) {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },

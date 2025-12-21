@@ -157,6 +157,11 @@ export async function login(req, res) {
             });
         }
 
+        if (userCredential.user.emailVerified && !user.isVerified) {
+            user.isVerified = true;
+            await user.save();
+        }
+
         if (user.isBanned) {
             return res.status(403).json({ error: 'Your account has been banned. Please contact support.' });
         }

@@ -35,7 +35,9 @@ import {
     Tooltip,
     InputAdornment,
     Container,
-    alpha
+    alpha,
+    FormControlLabel,
+    Checkbox
 } from '@mui/material';
 import {
     Circle as CircleIcon,
@@ -88,6 +90,7 @@ export default function AdminUsersPage() {
     const [userToAssignClass, setUserToAssignClass] = useState(null);
     const [availableClasses, setAvailableClasses] = useState([]);
     const [selectedClassId, setSelectedClassId] = useState('');
+    const [includeUnverified, setIncludeUnverified] = useState(false);
 
     // Debounce search input
     useEffect(() => {
@@ -101,7 +104,7 @@ export default function AdminUsersPage() {
     useEffect(() => {
         fetchUsers();
         fetchClasses();
-    }, [page, debouncedSearch, classFilter]);
+    }, [page, debouncedSearch, classFilter, includeUnverified]);
 
     const fetchClasses = async () => {
         if (import.meta.env.VITE_ENABLE_USER_CLASSES === 'false') return;
@@ -125,7 +128,7 @@ export default function AdminUsersPage() {
         try {
             setLoading(true);
             const response = await fetch(
-                `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}&classFilter=${classFilter}`,
+                `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}&classFilter=${classFilter}&includeUnverified=${includeUnverified}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -375,70 +378,94 @@ export default function AdminUsersPage() {
                         backdropFilter: 'blur(20px)',
                         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                         boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
-                        display: 'flex',
+                    }}
+                >
+                    <Box sx={{ 
+                        display: 'flex', 
                         flexDirection: { xs: 'column', md: 'row' },
                         gap: 2,
                         alignItems: 'center'
-                    }}
-                >
-                    <TextField
-                        fullWidth
-                        placeholder="Search users by name or email..."
-                        value={search}
-                        onChange={handleSearchChange}
-                        variant="outlined"
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon color="action" />
-                                </InputAdornment>
-                            ),
-                            sx: { 
-                                borderRadius: 3,
-                                backgroundColor: alpha(theme.palette.background.default, 0.5),
-                                '& fieldset': { border: 'none' }
-                            }
-                        }}
-                    />
-                    {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
-                        <FormControl sx={{ minWidth: 200, width: { xs: '100%', md: 'auto' } }}>
-                            <Select
-                                value={classFilter}
-                                onChange={handleClassFilterChange}
-                                displayEmpty
-                                variant="outlined"
-                                sx={{ 
+                    }}>
+                        <TextField
+                            fullWidth
+                            placeholder={isMobile ? "Search users..." : "Search users by name or email..."}
+                            value={search}
+                            onChange={handleSearchChange}
+                            variant="outlined"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon color="action" />
+                                    </InputAdornment>
+                                ),
+                                sx: { 
                                     borderRadius: 3,
                                     backgroundColor: alpha(theme.palette.background.default, 0.5),
                                     '& fieldset': { border: 'none' }
-                                }}
-                                renderValue={(selected) => {
-                                    if (selected === '') {
-                                        return <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}><FilterListIcon fontSize="small" /> All Classes</Box>;
-                                    }
-                                    const selectedClass = availableClasses.find(c => c._id === selected);
-                                    if (selected === 'unassigned') return 'Unassigned';
-                                    return selectedClass ? selectedClass.name : selected;
-                                }}
-                            >
-                                <MenuItem value="">All Classes</MenuItem>
-                                <MenuItem value="unassigned">Unassigned</MenuItem>
-                                {availableClasses.map((classItem) => (
-                                    <MenuItem key={classItem._id} value={classItem._id}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <CircleIcon 
-                                                sx={{ 
-                                                    fontSize: 12, 
-                                                    color: classItem.color 
-                                                }} 
-                                            />
-                                            {classItem.name}
-                                        </Box>
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    )}
+                                }
+                            }}
+                        />
+                        
+                        <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'row', 
+                            gap: 2, 
+                            width: { xs: '100%', md: 'auto' },
+                            alignItems: 'center',
+                            justifyContent: { xs: 'space-between', md: 'flex-start' }
+                        }}>
+                            {import.meta.env.VITE_ENABLE_USER_CLASSES !== 'false' && (
+                                <FormControl sx={{ minWidth: { xs: '120px', md: 200 }, flex: { xs: 1, md: 'none' } }}>
+                                    <Select
+                                        value={classFilter}
+                                        onChange={handleClassFilterChange}
+                                        displayEmpty
+                                        variant="outlined"
+                                        sx={{ 
+                                            borderRadius: 3,
+                                            backgroundColor: alpha(theme.palette.background.default, 0.5),
+                                            '& fieldset': { border: 'none' }
+                                        }}
+                                        renderValue={(selected) => {
+                                            if (selected === '') {
+                                                return <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}><FilterListIcon fontSize="small" /> {isMobile ? 'Class' : 'All Classes'}</Box>;
+                                            }
+                                            const selectedClass = availableClasses.find(c => c._id === selected);
+                                            if (selected === 'unassigned') return 'Unassigned';
+                                            return selectedClass ? selectedClass.name : selected;
+                                        }}
+                                    >
+                                        <MenuItem value="">All Classes</MenuItem>
+                                        <MenuItem value="unassigned">Unassigned</MenuItem>
+                                        {availableClasses.map((classItem) => (
+                                            <MenuItem key={classItem._id} value={classItem._id}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <CircleIcon 
+                                                        sx={{ 
+                                                            fontSize: 12, 
+                                                            color: classItem.color 
+                                                        }} 
+                                                    />
+                                                    {classItem.name}
+                                                </Box>
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            )}
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={includeUnverified}
+                                        onChange={(e) => setIncludeUnverified(e.target.checked)}
+                                        color="primary"
+                                    />
+                                }
+                                label={isMobile ? "Unverified" : "Include Unverified"}
+                                sx={{ whiteSpace: 'nowrap', mr: 0 }}
+                            />
+                        </Box>
+                    </Box>
                 </Paper>
 
                 {error && (
