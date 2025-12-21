@@ -146,7 +146,17 @@ export const getMessages = async (req, res) => {
 
         const query = { chatId };
         if (before) {
-            query.createdAt = { $lt: new Date(before) };
+            // If 'before' is a message ID, fetch that message to get its createdAt timestamp
+            const beforeMessage = await Message.findById(before);
+            if (beforeMessage) {
+                query.createdAt = { $lt: beforeMessage.createdAt };
+            } else {
+                // If not found as ID, try as a date string
+                const beforeDate = new Date(before);
+                if (!isNaN(beforeDate.getTime())) {
+                    query.createdAt = { $lt: beforeDate };
+                }
+            }
         }
 
         const messages = await Message.find(query)

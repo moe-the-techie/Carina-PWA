@@ -101,8 +101,12 @@ export default function AdminChatsPage() {
     const [loadingVoice, setLoadingVoice] = useState({});
     const [audioProgress, setAudioProgress] = useState({});
     const [isDragging, setIsDragging] = useState(null);
+    const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+    const [hasMoreMessages, setHasMoreMessages] = useState(true);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const previousScrollHeight = useRef(0);
+    const isLoadingOlderRef = useRef(false);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
     const fileInputRef = useRef(null);
@@ -113,14 +117,16 @@ export default function AdminChatsPage() {
 
     const scrollToBottom = () => {
         setTimeout(() => {
-            if (messagesContainerRef.current) {
+            if (messagesContainerRef.current && !isLoadingOlderRef.current) {
                 messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
             }
         }, 100);
     };
 
     useEffect(() => {
-        scrollToBottom();
+        if (!isLoadingOlderRef.current) {
+            scrollToBottom();
+        }
     }, [messages]);
 
     const loadChats = async (resetPagination = false) => {
@@ -158,6 +164,7 @@ export default function AdminChatsPage() {
         try {
             const response = await getMessages(chatId);
             setMessages(response.messages);
+            setHasMoreMessages(response.hasMore !== false);
             await markMessagesAsRead(chatId);
             setCurrentlyViewingChat(chatId);
             setChats(prevChats =>
@@ -175,6 +182,52 @@ export default function AdminChatsPage() {
             console.error('Error loading messages:', error);
         } finally {
             setLoadingMessages(false);
+        }
+    };
+
+    const loadOlderMessages = async () => {
+        if (loadingOlderMessages || !hasMoreMessages || !selectedChat || messages.length === 0) return;
+
+        isLoadingOlderRef.current = true;
+        setLoadingOlderMessages(true);
+        try {
+            const oldestMessage = messages[0];
+            const messagesResponse = await getMessages(selectedChat.chatId, oldestMessage._id);
+            
+            if (messagesResponse.messages.length > 0) {
+                const container = messagesContainerRef.current;
+                if (container) {
+                    previousScrollHeight.current = container.scrollHeight;
+                }
+                
+                setMessages(prev => [...messagesResponse.messages, ...prev]);
+                setHasMoreMessages(messagesResponse.hasMore !== false);
+                
+                // Maintain scroll position after prepending messages
+                setTimeout(() => {
+                    if (container) {
+                        const newScrollHeight = container.scrollHeight;
+                        container.scrollTop = newScrollHeight - previousScrollHeight.current;
+                    }
+                    isLoadingOlderRef.current = false;
+                }, 50);
+            } else {
+                setHasMoreMessages(false);
+                isLoadingOlderRef.current = false;
+            }
+        } catch (error) {
+            console.error('Error loading older messages:', error);
+            isLoadingOlderRef.current = false;
+        } finally {
+            setLoadingOlderMessages(false);
+        }
+    };
+
+    const handleScroll = (e) => {
+        const container = e.target;
+        // Load more messages when scrolled near the top (within 100px)
+        if (container.scrollTop < 100 && !loadingOlderMessages && hasMoreMessages) {
+            loadOlderMessages();
         }
     };
 
@@ -1048,6 +1101,7 @@ export default function AdminChatsPage() {
                     
                     <Box 
                         ref={messagesContainerRef}
+                        onScroll={handleScroll}
                         sx={{ 
                             flexGrow: 1,
                             minHeight: 0,
@@ -1084,7 +1138,12 @@ export default function AdminChatsPage() {
                             </>
                         ) : (
                             <>
-                            <AnimatePresence>
+                                {loadingOlderMessages && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                        <CircularProgress size={24} />
+                                    </Box>
+                                )}
+                                <AnimatePresence>
                                 {messages.map((message, index) => {
                             const isAdmin = message.senderRole === 'admin';
                             const isImage = message.messageType === 'image';
