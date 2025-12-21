@@ -47,7 +47,7 @@ import { useUnreadCount } from '../contexts/UnreadCountContext';
 
 export default function ChatPage() {
     const theme = useTheme();
-    const { resetUnreadCount } = useUnreadCount();
+    const { resetUnreadCount, fetchUnreadCount } = useUnreadCount();
     const [chat, setChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -486,9 +486,11 @@ export default function ChatPage() {
                 });
 
                 if (messageData.senderRole !== 'user') {
-                    markMessagesAsRead(chat.chatId).catch(err => 
-                        console.error('Error marking messages as read:', err)
-                    );
+                    markMessagesAsRead(chat.chatId)
+                        .then(() => fetchUnreadCount())
+                        .catch(err => 
+                            console.error('Error marking messages as read:', err)
+                        );
                 }
             };
 
@@ -912,8 +914,7 @@ export default function ChatPage() {
                                                             {message.readByAdmins ? (
                                                                 <DoneAllIcon sx={{ 
                                                                     fontSize: 16,
-                                                                    color: 'white',
-                                                                    opacity: 0.9
+                                                                    color: '#4ade80'
                                                                 }} />
                                                             ) : (
                                                                 <DoneAllIcon sx={{ 

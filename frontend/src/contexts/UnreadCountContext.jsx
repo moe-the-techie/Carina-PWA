@@ -62,7 +62,10 @@ export const UnreadCountProvider = ({ children, user }) => {
                 // Only increment unread count if message is from a user AND not viewing that chat
                 if (messageData.senderRole === 'user') {
                     const viewingChatId = getCurrentlyViewingChat();
-                    if (viewingChatId !== messageData.chatId) {
+                    const isViewing = viewingChatId && messageData.chatId && 
+                        String(viewingChatId).trim() === String(messageData.chatId).trim();
+                    
+                    if (!isViewing) {
                         setUnreadCount(prev => prev + 1);
                     }
                 }
@@ -81,7 +84,10 @@ export const UnreadCountProvider = ({ children, user }) => {
                 // Only increment unread count if message is from admin AND not viewing the chat
                 if (messageData.senderRole === 'admin') {
                     const viewingChatId = getCurrentlyViewingChat();
-                    if (viewingChatId !== messageData.chatId) {
+                    const isViewing = viewingChatId && messageData.chatId && 
+                        String(viewingChatId).trim() === String(messageData.chatId).trim();
+
+                    if (!isViewing) {
                         setUnreadCount(prev => prev + 1);
                     }
                 }

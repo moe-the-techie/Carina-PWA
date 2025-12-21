@@ -161,12 +161,12 @@ export default function AdminChatsPage() {
 
     const loadMessages = async (chatId) => {
         setLoadingMessages(true);
+        setCurrentlyViewingChat(chatId);
         try {
             const response = await getMessages(chatId);
             setMessages(response.messages);
             setHasMoreMessages(response.hasMore !== false);
             await markMessagesAsRead(chatId);
-            setCurrentlyViewingChat(chatId);
             setChats(prevChats =>
                 prevChats.map(chat =>
                     chat.chatId === chatId
@@ -650,7 +650,7 @@ export default function AdminChatsPage() {
                     return;
                 }
                 // Update messages if this is the selected chat
-                if (selectedChat && messageData.chatId === selectedChat.chatId) {
+                if (selectedChat && String(messageData.chatId).trim() === String(selectedChat.chatId).trim()) {
                     setMessages(prev => {
                         const exists = prev.some(m => m._id === messageData._id);
                         if (exists) return prev;
@@ -681,7 +681,7 @@ export default function AdminChatsPage() {
                                     createdAt: messageData.createdAt
                                 },
                                 lastMessageAt: messageData.createdAt,
-                                unreadByAdmins: messageData.senderRole === 'user' && selectedChat?.chatId !== messageData.chatId
+                                unreadByAdmins: messageData.senderRole === 'user' && (!selectedChat || String(selectedChat.chatId).trim() !== String(messageData.chatId).trim())
                                     ? messageData.unreadByAdmins
                                     : chat.unreadByAdmins
                             }
@@ -703,6 +703,12 @@ export default function AdminChatsPage() {
                 removeMessageHandler('admin:chats', handleMessage);
                 hasSubscribed.current = false;
             };
+        }
+    }, [selectedChat]);
+
+    useEffect(() => {
+        if (selectedChat?.chatId) {
+            setCurrentlyViewingChat(selectedChat.chatId);
         }
     }, [selectedChat]);
 
@@ -1340,8 +1346,7 @@ export default function AdminChatsPage() {
                                                     {message.readByUser ? (
                                                         <DoneAllIcon sx={{ 
                                                             fontSize: 16,
-                                                            color: 'white',
-                                                            opacity: 0.9
+                                                            color: '#4ade80'
                                                         }} />
                                                     ) : (
                                                         <DoneAllIcon sx={{ 
