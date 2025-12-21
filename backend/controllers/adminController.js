@@ -14,7 +14,7 @@ export async function getDashboardStats(req, res) {
         const recentUsers = await User.find({ role: 'user' })
             .sort({ createdAt: -1 })
             .limit(5)
-            .select('name email createdAt');
+            .select('name email createdAt profileImageUrl');
 
         const recentForms = await Form.find()
             .populate('user', 'name email')

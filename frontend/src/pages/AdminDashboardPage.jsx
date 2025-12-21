@@ -311,7 +311,13 @@ export default function AdminDashboardPage() {
                                                     <TableRow key={user._id} hover>
                                                         <TableCell>
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                                <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                                                                <Avatar 
+                                                                    src={user.profileImageUrl}
+                                                                    sx={{ 
+                                                                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                                        fontWeight: 600
+                                                                    }}
+                                                                >
                                                                     {user.name.charAt(0).toUpperCase()}
                                                                 </Avatar>
                                                                 <Box>
