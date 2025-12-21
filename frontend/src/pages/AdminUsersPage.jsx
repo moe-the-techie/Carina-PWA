@@ -972,7 +972,7 @@ export default function AdminUsersPage() {
                     open={actionsDialogOpen}
                     onClose={() => setActionsDialogOpen(false)}
                     user={selectedUserForActions}
-                    onViewDetails={fetchUserDetails}
+                    onViewDetails={(user) => fetchUserDetails(user._id)}
                     onMessage={handleMessageUser}
                     onAssignClass={handleAssignClassClick}
                     onBan={handleBanClick}
