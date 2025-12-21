@@ -68,6 +68,7 @@ export default function AdminPlanBuilderPage() {
     const [planData, setPlanData] = useState({
         title: '',
         description: '',
+        status: 'draft',
         duration: 1,
         goals: {
             targetWeight: '',
@@ -356,6 +357,7 @@ export default function AdminPlanBuilderPage() {
                 setPlanData({
                     title: existingPlan.title,
                     description: existingPlan.description,
+                    status: existingPlan.status || 'draft',
                     duration: existingPlan.duration,
                     goals: existingPlan.goals || {
                         targetWeight: '',
@@ -802,6 +804,7 @@ export default function AdminPlanBuilderPage() {
             setPlanData({
                 title: '',
                 description: '',
+                status: 'draft',
                 duration: 1,
                 goals: {
                     targetWeight: '',
@@ -899,6 +902,7 @@ export default function AdminPlanBuilderPage() {
             setPlanData({
                 title: '',
                 description: '',
+                status: 'draft',
                 duration: 1,
                 goals: {
                     targetWeight: '',
@@ -1221,7 +1225,23 @@ export default function AdminPlanBuilderPage() {
                                             label="Duration (weeks)"
                                             value={planData.duration}
                                             onChange={(e) => handlePlanChange('duration', parseInt(e.target.value))}
+                                            sx={{ mb: 2 }}
                                         />
+
+                                        <FormControl fullWidth>
+                                            <InputLabel>Status</InputLabel>
+                                            <Select
+                                                value={planData.status}
+                                                onChange={(e) => handlePlanChange('status', e.target.value)}
+                                                label="Status"
+                                                MenuProps={{ disableScrollLock: true }}
+                                            >
+                                                <MenuItem value="draft">Draft</MenuItem>
+                                                <MenuItem value="active">Active</MenuItem>
+                                                <MenuItem value="completed">Completed</MenuItem>
+                                                <MenuItem value="paused">Paused</MenuItem>
+                                            </Select>
+                                        </FormControl>
                                     </>
                                 )}
                             </CardContent>
@@ -1815,6 +1835,7 @@ export default function AdminPlanBuilderPage() {
                                                 setPlanData({
                                                     title: '',
                                                     description: '',
+                                                    status: 'draft',
                                                     duration: 1,
                                                     goals: {
                                                         targetWeight: '',

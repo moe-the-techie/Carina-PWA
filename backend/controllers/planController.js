@@ -13,7 +13,8 @@ export async function createPlan(req, res) {
             duration, 
             goals,
             recommendations,
-            templateId 
+            templateId,
+            status
         } = req.body;
 
         // Verify the form exists and belongs to the user
@@ -37,7 +38,7 @@ export async function createPlan(req, res) {
             existingPlan.duration = duration;
             existingPlan.goals = goals || {};
             existingPlan.recommendations = recommendations || {};
-            existingPlan.status = 'draft'; // Reset to draft when updated
+            existingPlan.status = status || 'draft'; // Use provided status or default to draft
             
             await existingPlan.save();
             
@@ -69,7 +70,7 @@ export async function createPlan(req, res) {
             goals: goals || {},
             recommendations: recommendations || {},
             createdBy: req.user._id,
-            status: 'draft'
+            status: status || 'draft'
         });
 
         await newPlan.save();
