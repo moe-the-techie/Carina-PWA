@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Pagination from '@mui/material/Pagination';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
 import { spacing, borderRadius, shadows, zIndex, gradients } from '../styles';
@@ -21,16 +22,18 @@ export default function HomePage() {
   const [backendError, setBackendError] = useState('');
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const theme = useTheme();
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   async function fetchData() {
     try {
       setLoading(true);
-      const data = await fetch(`${apiBaseUrl}/api/forms/my`, {
+      const data = await fetch(`${apiBaseUrl}/api/forms/my?page=${page}&limit=10`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -48,6 +51,7 @@ export default function HomePage() {
 
       const response = await data.json();
       const formsWithPlans = response.forms || [];
+      setTotalPages(response.totalPages || 1);
       
       // Fetch plan data for each form
       const formsWithPlanData = await Promise.all(
@@ -151,6 +155,18 @@ export default function HomePage() {
             {forms.map((form) => (
               <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
             ))}
+
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 8 }}>
+                <Pagination 
+                  count={totalPages} 
+                  page={page} 
+                  onChange={(e, value) => setPage(value)} 
+                  color="primary" 
+                  size="medium"
+                />
+              </Box>
+            )}
 
             <Fab
               variant="extended"
