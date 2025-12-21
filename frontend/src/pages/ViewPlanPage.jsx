@@ -429,7 +429,7 @@ export default function ViewPlanPage () {
                         >
                             {/* Quick Stats Cards */}
                             <motion.div variants={itemVariants}>
-                                <Grid container spacing={2} sx={{ mb: 4 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
                                     {[
                                         { 
                                             label: 'Target Weight', 
@@ -460,61 +460,76 @@ export default function ViewPlanPage () {
                                             gradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)'
                                         },
                                     ].map((stat, index) => (
-                                        <Grid item xs={6} md={3} key={index}>
-                                            <Paper 
-                                                sx={{ 
-                                                    ...glassCardStyle, 
-                                                    p: { xs: 2, sm: 3 },
-                                                    position: 'relative',
-                                                    overflow: 'hidden',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-4px)',
-                                                        boxShadow: theme.palette.mode === 'dark'
-                                                            ? '0 20px 40px rgba(0, 0, 0, 0.4)'
-                                                            : '0 20px 40px rgba(0, 0, 0, 0.1)',
-                                                    }
-                                                }}
-                                            >
-                                                <Box sx={{
-                                                    position: 'absolute',
-                                                    top: -20,
-                                                    right: -20,
-                                                    width: 80,
-                                                    height: 80,
-                                                    borderRadius: '50%',
-                                                    background: `${stat.color}10`,
-                                                    pointerEvents: 'none',
-                                                }} />
-                                                <Box sx={{
-                                                    width: 44,
-                                                    height: 44,
-                                                    borderRadius: 2,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    background: stat.gradient,
-                                                    boxShadow: `0 4px 12px ${stat.color}40`,
-                                                    mb: 1.5
-                                                }}>
-                                                    <stat.icon sx={{ color: 'white', fontSize: 22 }} />
-                                                </Box>
+                                        <Paper 
+                                            key={index}
+                                            sx={{ 
+                                                ...glassCardStyle, 
+                                                p: 3,
+                                                position: 'relative',
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 2,
+                                                transition: 'all 0.3s',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: theme.palette.mode === 'dark'
+                                                        ? '0 20px 40px rgba(0, 0, 0, 0.4)'
+                                                        : '0 20px 40px rgba(0, 0, 0, 0.1)',
+                                                }
+                                            }}
+                                        >
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: -20,
+                                                right: -20,
+                                                width: 100,
+                                                height: 100,
+                                                borderRadius: '50%',
+                                                background: `${stat.color}10`,
+                                                pointerEvents: 'none',
+                                            }} />
+                                            <Box sx={{
+                                                width: 56,
+                                                height: 56,
+                                                borderRadius: 2,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: stat.gradient,
+                                                boxShadow: `0 4px 12px ${stat.color}40`,
+                                                flexShrink: 0
+                                            }}>
+                                                <stat.icon sx={{ color: 'white', fontSize: 28 }} />
+                                            </Box>
+                                            <Box sx={{ flex: 1, minWidth: 0 }}>
                                                 <Typography 
                                                     variant="h5" 
                                                     sx={{ 
                                                         fontWeight: 700, 
                                                         mb: 0.5,
-                                                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                                                        fontSize: '1.75rem',
+                                                        background: stat.gradient,
+                                                        WebkitBackgroundClip: 'text',
+                                                        WebkitTextFillColor: 'transparent',
                                                     }}
                                                 >
                                                     {stat.value}
                                                 </Typography>
-                                                <Typography variant="body2" color="text.secondary">
+                                                <Typography 
+                                                    variant="body1" 
+                                                    sx={{ 
+                                                        color: 'text.secondary',
+                                                        fontWeight: 500,
+                                                        fontSize: '1rem'
+                                                    }}
+                                                >
                                                     {stat.label}
                                                 </Typography>
-                                            </Paper>
-                                        </Grid>
+                                            </Box>
+                                        </Paper>
                                     ))}
-                                </Grid>
+                                </Box>
                             </motion.div>
 
                             {/* Plan Overview */}
@@ -538,60 +553,71 @@ export default function ViewPlanPage () {
                                         </Typography>
                                     </Box>
                                     
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} md={6}>
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                        <Box>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                                                 Title
                                             </Typography>
-                                            <Typography variant="body1" sx={{ fontWeight: 500, mb: 2 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
                                                 {plan.title}
                                             </Typography>
                                             
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                                                 Description
                                             </Typography>
-                                            <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+                                            <Typography variant="body1" sx={{ lineHeight: 1.8, fontSize: '1rem' }}>
                                                 {plan.description || 'Personalized nutrition plan'}
                                             </Typography>
-                                        </Grid>
-                                        <Grid item xs={12} md={6}>
-                                            <Box sx={{
-                                                p: 2,
-                                                borderRadius: 2,
-                                                backgroundColor: theme.palette.mode === 'dark' 
-                                                    ? 'rgba(255,255,255,0.03)'
-                                                    : 'rgba(0,0,0,0.02)',
-                                            }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-                                                    Macro Targets
-                                                </Typography>
-                                                <Grid container spacing={1}>
-                                                    {[
-                                                        { label: 'Protein', value: plan.goals?.targetProtein, color: '#EF4444' },
-                                                        { label: 'Carbs', value: plan.goals?.targetCarbs, color: '#F59E0B' },
-                                                        { label: 'Fats', value: plan.goals?.targetFats, color: '#10B981' },
-                                                    ].map((macro) => (
-                                                        <Grid item xs={4} key={macro.label}>
-                                                            <Box sx={{ textAlign: 'center' }}>
-                                                                <Typography 
-                                                                    variant="h6" 
-                                                                    sx={{ 
-                                                                        fontWeight: 700,
-                                                                        color: macro.color,
-                                                                    }}
-                                                                >
-                                                                    {macro.value || '--'}g
-                                                                </Typography>
-                                                                <Typography variant="caption" color="text.secondary">
-                                                                    {macro.label}
-                                                                </Typography>
-                                                            </Box>
-                                                        </Grid>
-                                                    ))}
-                                                </Grid>
+                                        </Box>
+                                        <Box sx={{
+                                            p: 3,
+                                            borderRadius: 3,
+                                            backgroundColor: theme.palette.mode === 'dark' 
+                                                ? 'rgba(255,255,255,0.05)'
+                                                : 'rgba(0,0,0,0.03)',
+                                            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                                        }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                                                Macro Targets
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                {[
+                                                    { label: 'Protein', value: plan.goals?.targetProtein, color: '#EF4444' },
+                                                    { label: 'Carbs', value: plan.goals?.targetCarbs, color: '#F59E0B' },
+                                                    { label: 'Fats', value: plan.goals?.targetFats, color: '#10B981' },
+                                                ].map((macro) => (
+                                                    <Box 
+                                                        key={macro.label}
+                                                        sx={{ 
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            p: 2,
+                                                            borderRadius: 2,
+                                                            backgroundColor: alpha(macro.color, 0.08),
+                                                            border: `1px solid ${alpha(macro.color, 0.2)}`
+                                                        }}
+                                                    >
+                                                        <Typography 
+                                                            variant="body1"
+                                                            sx={{ fontWeight: 500 }}
+                                                        >
+                                                            {macro.label}
+                                                        </Typography>
+                                                        <Typography 
+                                                            variant="h5" 
+                                                            sx={{ 
+                                                                fontWeight: 700,
+                                                                color: macro.color,
+                                                            }}
+                                                        >
+                                                            {macro.value || '--'}g
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
                                             </Box>
-                                        </Grid>
-                                    </Grid>
+                                        </Box>
+                                    </Box>
                                 </Paper>
                             </motion.div>
 
@@ -743,60 +769,77 @@ export default function ViewPlanPage () {
                                             </Typography>
                                         </Box>
                                         
-                                        <Grid container spacing={2}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                             {[
-                                                { label: 'Avoid', items: plan.recommendations.avoid, color: '#EF4444', bgColor: alpha('#EF4444', 0.1) },
-                                                { label: 'Use Carefully', items: plan.recommendations.useCarefully, color: '#F59E0B', bgColor: alpha('#F59E0B', 0.1) },
-                                                { label: 'Eat Daily', items: plan.recommendations.eatDaily, color: '#10B981', bgColor: alpha('#10B981', 0.1) },
-                                                { label: 'Exercise', items: plan.recommendations.exercise, color: '#3B82F6', bgColor: alpha('#3B82F6', 0.1) },
+                                                { label: 'Avoid', items: plan.recommendations.avoid, color: '#EF4444', bgColor: alpha('#EF4444', 0.08), icon: '🚫' },
+                                                { label: 'Use Carefully', items: plan.recommendations.useCarefully, color: '#F59E0B', bgColor: alpha('#F59E0B', 0.08), icon: '⚠️' },
+                                                { label: 'Eat Daily', items: plan.recommendations.eatDaily, color: '#10B981', bgColor: alpha('#10B981', 0.08), icon: '✅' },
+                                                { label: 'Exercise', items: plan.recommendations.exercise, color: '#3B82F6', bgColor: alpha('#3B82F6', 0.08), icon: '💪' },
                                             ].map((category, idx) => (
-                                                <Grid item xs={12} sm={6} md={3} key={idx}>
-                                                    <Box sx={{
-                                                        p: 2,
-                                                        borderRadius: 2,
+                                                <Box 
+                                                    key={idx}
+                                                    sx={{
+                                                        p: 3,
+                                                        borderRadius: 3,
                                                         backgroundColor: category.bgColor,
-                                                        border: `1px solid ${alpha(category.color, 0.2)}`,
-                                                        height: '100%',
-                                                    }}>
+                                                        border: `2px solid ${alpha(category.color, 0.3)}`,
+                                                        transition: 'transform 0.2s, box-shadow 0.2s',
+                                                        '&:hover': {
+                                                            transform: 'translateY(-2px)',
+                                                            boxShadow: `0 8px 24px ${alpha(category.color, 0.2)}`,
+                                                        }
+                                                    }}
+                                                >
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                                                        <Typography variant="h5" sx={{ fontSize: '1.75rem' }}>
+                                                            {category.icon}
+                                                        </Typography>
                                                         <Typography 
-                                                            variant="subtitle2" 
+                                                            variant="h6" 
                                                             sx={{ 
                                                                 color: category.color, 
-                                                                fontWeight: 600,
-                                                                mb: 1.5 
+                                                                fontWeight: 700,
+                                                                fontSize: '1.25rem'
                                                             }}
                                                         >
                                                             {category.label}
                                                         </Typography>
-                                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                            {category.items?.length > 0 ? (
-                                                                category.items.map((item, index) => (
-                                                                    <Chip 
-                                                                        key={index} 
-                                                                        label={item.length > 25 ? `${item.substring(0, 25)}...` : item} 
-                                                                        size="small" 
-                                                                        onClick={() => openChipDetailDialog(item, `${category.label} Item`, category.label)}
-                                                                        sx={{ 
-                                                                            cursor: 'pointer',
-                                                                            backgroundColor: alpha(category.color, 0.15),
-                                                                            color: category.color,
-                                                                            fontWeight: 500,
-                                                                            '&:hover': { 
-                                                                                backgroundColor: alpha(category.color, 0.25),
-                                                                            } 
-                                                                        }}
-                                                                    />
-                                                                ))
-                                                            ) : (
-                                                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                                                    None specified
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
                                                     </Box>
-                                                </Grid>
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                        {category.items?.length > 0 ? (
+                                                            category.items.map((item, index) => (
+                                                                <Chip 
+                                                                    key={index} 
+                                                                    label={item.length > 25 ? `${item.substring(0, 25)}...` : item} 
+                                                                    size="medium" 
+                                                                    onClick={() => openChipDetailDialog(item, `${category.label} Item`, category.label)}
+                                                                    sx={{ 
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '0.9rem',
+                                                                        py: 2.5,
+                                                                        px: 1.5,
+                                                                        backgroundColor: theme.palette.mode === 'dark' ? alpha(category.color, 0.15) : 'white',
+                                                                        color: theme.palette.mode === 'dark' ? 'white' : category.color,
+                                                                        border: `1px solid ${alpha(category.color, 0.3)}`,
+                                                                        fontWeight: 500,
+                                                                        '&:hover': { 
+                                                                            backgroundColor: alpha(category.color, 0.2),
+                                                                            transform: 'scale(1.05)',
+                                                                            boxShadow: `0 4px 12px ${alpha(category.color, 0.3)}`,
+                                                                        },
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                />
+                                                            ))
+                                                        ) : (
+                                                            <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic', py: 1 }}>
+                                                                None specified
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
                                             ))}
-                                        </Grid>
+                                        </Box>
                                     </Paper>
                                 </motion.div>
                             )}
@@ -825,83 +868,94 @@ export default function ViewPlanPage () {
                                             </Typography>
                                         </Box>
                                         
-                                        <Grid container spacing={3}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                             {[
                                                 { label: 'Breakfast', data: plan.recommendations.breakfast, color: '#F59E0B', icon: '☀️' },
                                                 { label: 'Lunch', data: plan.recommendations.lunch, color: '#10B981', icon: '🌤️' },
                                                 { label: 'Dinner', data: plan.recommendations.dinner, color: '#6366F1', icon: '🌙' },
                                             ].map((meal, idx) => (
-                                                <Grid item xs={12} md={4} key={idx}>
-                                                    <Box sx={{
-                                                        p: 2.5,
-                                                        borderRadius: 3,
-                                                        backgroundColor: theme.palette.mode === 'dark' 
-                                                            ? alpha(meal.color, 0.05)
-                                                            : alpha(meal.color, 0.05),
-                                                        border: `1px solid ${alpha(meal.color, 0.2)}`,
-                                                        height: '100%',
-                                                    }}>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                                            <Typography variant="h6" sx={{ fontSize: '1.5rem' }}>
-                                                                {meal.icon}
-                                                            </Typography>
-                                                            <Typography 
-                                                                variant="h6" 
-                                                                sx={{ 
-                                                                    color: meal.color, 
-                                                                    fontWeight: 700,
-                                                                }}
-                                                            >
-                                                                {meal.label}
-                                                            </Typography>
-                                                        </Box>
-                                                        
-                                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                            {meal.data?.map((category, catIdx) => (
-                                                                category.items && category.items.length > 0 && (
-                                                                    <Box key={catIdx}>
-                                                                        <Typography 
-                                                                            variant="subtitle2" 
-                                                                            sx={{ 
-                                                                                fontWeight: 600, 
-                                                                                mb: 1,
-                                                                                opacity: 0.8
-                                                                            }}
-                                                                        >
-                                                                            {category.category}
-                                                                        </Typography>
-                                                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                                            {category.items.map((item, itemIdx) => (
-                                                                                <Chip 
-                                                                                    key={itemIdx} 
-                                                                                    label={item} 
-                                                                                    size="small" 
-                                                                                    onClick={() => openChipDetailDialog(item, `${category.category} Item`, meal.label)}
-                                                                                    sx={{ 
-                                                                                        cursor: 'pointer',
-                                                                                        backgroundColor: theme.palette.mode === 'dark' ? alpha(meal.color, 0.15) : 'white',
-                                                                                        color: theme.palette.mode === 'dark' ? meal.color : 'inherit',
-                                                                                        border: `1px solid ${alpha(meal.color, 0.2)}`,
-                                                                                        '&:hover': { 
-                                                                                            backgroundColor: alpha(meal.color, 0.1),
-                                                                                        } 
-                                                                                    }}
-                                                                                />
-                                                                            ))}
-                                                                        </Box>
-                                                                    </Box>
-                                                                )
-                                                            ))}
-                                                            {(!meal.data || meal.data.every(c => !c.items || c.items.length === 0)) && (
-                                                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
-                                                                    No specific guidelines
-                                                                </Typography>
-                                                            )}
-                                                        </Box>
+                                                <Box key={idx} sx={{
+                                                    p: 3,
+                                                    borderRadius: 3,
+                                                    backgroundColor: theme.palette.mode === 'dark' 
+                                                        ? alpha(meal.color, 0.08)
+                                                        : alpha(meal.color, 0.08),
+                                                    border: `2px solid ${alpha(meal.color, 0.3)}`,
+                                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-2px)',
+                                                        boxShadow: `0 8px 24px ${alpha(meal.color, 0.2)}`,
+                                                    }
+                                                }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                                                        <Typography variant="h5" sx={{ fontSize: '2rem' }}>
+                                                            {meal.icon}
+                                                        </Typography>
+                                                        <Typography 
+                                                            variant="h5" 
+                                                            sx={{ 
+                                                                color: meal.color, 
+                                                                fontWeight: 700,
+                                                                fontSize: '1.5rem'
+                                                            }}
+                                                        >
+                                                            {meal.label}
+                                                        </Typography>
                                                     </Box>
-                                                </Grid>
+                                                    
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                                                        {meal.data?.map((category, catIdx) => (
+                                                            category.items && category.items.length > 0 && (
+                                                                <Box key={catIdx}>
+                                                                    <Typography 
+                                                                        variant="subtitle1" 
+                                                                        sx={{ 
+                                                                            fontWeight: 600, 
+                                                                            mb: 1.5,
+                                                                            color: meal.color,
+                                                                            fontSize: '1rem'
+                                                                        }}
+                                                                    >
+                                                                        {category.category}
+                                                                    </Typography>
+                                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                                        {category.items.map((item, itemIdx) => (
+                                                                            <Chip 
+                                                                                key={itemIdx} 
+                                                                                label={item} 
+                                                                                size="medium"
+                                                                                onClick={() => openChipDetailDialog(item, `${category.category} Item`, meal.label)}
+                                                                                sx={{ 
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.9rem',
+                                                                                    py: 2.5,
+                                                                                    px: 1.5,
+                                                                                    backgroundColor: theme.palette.mode === 'dark' ? alpha(meal.color, 0.15) : 'white',
+                                                                                    color: theme.palette.mode === 'dark' ? 'white' : meal.color,
+                                                                                    border: `1px solid ${alpha(meal.color, 0.3)}`,
+                                                                                    fontWeight: 500,
+                                                                                    '&:hover': { 
+                                                                                        backgroundColor: alpha(meal.color, 0.2),
+                                                                                        transform: 'scale(1.05)',
+                                                                                        boxShadow: `0 4px 12px ${alpha(meal.color, 0.3)}`,
+                                                                                    },
+                                                                                    transition: 'all 0.2s'
+                                                                                }}
+                                                                            />
+                                                                        ))}
+                                                                    </Box>
+                                                                </Box>
+                                                            )
+                                                        ))}
+                                                        {(!meal.data || meal.data.every(c => !c.items || c.items.length === 0)) && (
+                                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                                                No specific guidelines
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
                                             ))}
-                                        </Grid>
+                                        </Box>
                                     </Paper>
                                 </motion.div>
                             )}
