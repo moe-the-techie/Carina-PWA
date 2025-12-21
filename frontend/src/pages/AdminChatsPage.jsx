@@ -1176,20 +1176,6 @@ export default function AdminChatsPage() {
                                         backdropFilter: !isAdmin ? 'blur(10px)' : 'none',
                                         border: !isAdmin ? '1px solid rgba(255,255,255,0.1)' : 'none'
                                     }}>
-                                        {isAdmin && (
-                                            <Chip 
-                                                label="Admin" 
-                                                size="small" 
-                                                sx={{ 
-                                                    mb: 1, 
-                                                    height: 20, 
-                                                    backgroundColor: 'rgba(255,255,255,0.2)',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 600,
-                                                    color: 'white'
-                                                }} 
-                                            />
-                                        )}
                                         {isVoice && message.voiceUrl && (
                                             <Box sx={{ 
                                                 display: 'flex', 
