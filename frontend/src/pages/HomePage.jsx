@@ -10,8 +10,8 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
-import { spacing, borderRadius, shadows, zIndex } from '../styles';
-import { glassCard } from '../styles/glassmorphism';
+import { spacing, borderRadius, shadows, zIndex, gradients } from '../styles';
+import { glassCard, glassButton } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -154,14 +154,14 @@ export default function HomePage() {
 
             <Fab
               variant="extended"
-              color="primary"
               onClick={() => navigate('/new-form')}
               sx={{
                 position: 'fixed',
                 bottom: { xs: 'calc(80px + env(safe-area-inset-bottom) + 16px)', md: spacing.lg },
                 right: spacing.lg,
                 zIndex: zIndex.fab,
-                boxShadow: shadows.button,
+                ...glassButton(theme, 'primary'),
+                boxShadow: shadows.glow(theme.palette.primary.main),
               }}
             >
               <AddIcon sx={{ mr: 1 }} />
