@@ -92,7 +92,7 @@ export const sendMessage = async (req, res) => {
         }
         await chat.save();
 
-        await message.populate('senderId', 'name email');
+        await message.populate('senderId', 'name email profileImageUrl');
 
         // Publish message to Ably for real-time updates
         const publishData = {

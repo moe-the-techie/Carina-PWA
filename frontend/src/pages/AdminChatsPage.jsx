@@ -670,8 +670,27 @@ export default function AdminChatsPage() {
 
                 // Update chat list
                 setChats(prevChats => {
+                    const chatExists = prevChats.some(chat => String(chat.chatId).trim() === String(messageData.chatId).trim());
+
+                    if (!chatExists && messageData.senderRole === 'user') {
+                        const newChat = {
+                            chatId: messageData.chatId,
+                            user: messageData.senderId,
+                            lastMessageAt: messageData.createdAt,
+                            unreadByAdmins: messageData.unreadByAdmins,
+                            lastMessage: {
+                                content: messageData.content,
+                                senderId: messageData.senderId,
+                                senderRole: messageData.senderRole,
+                                createdAt: messageData.createdAt
+                            },
+                            createdAt: messageData.createdAt
+                        };
+                        return [newChat, ...prevChats];
+                    }
+
                     const updatedChats = prevChats.map(chat =>
-                        chat.chatId === messageData.chatId
+                        String(chat.chatId).trim() === String(messageData.chatId).trim()
                             ? {
                                 ...chat,
                                 lastMessage: {
