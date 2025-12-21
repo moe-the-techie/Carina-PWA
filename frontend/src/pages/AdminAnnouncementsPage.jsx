@@ -28,7 +28,8 @@ import {
     FormControlLabel,
     Switch,
     Alert,
-    Pagination
+    Pagination,
+    Skeleton
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -89,6 +90,7 @@ export default function AdminAnnouncementsPage() {
     
     const [currentAnnouncement, setCurrentAnnouncement] = useState(null);
     const [announcementStats, setAnnouncementStats] = useState(null);
+    const [statsLoading, setStatsLoading] = useState(false);
     
     // Pagination
     const [page, setPage] = useState(1);
@@ -182,13 +184,17 @@ export default function AdminAnnouncementsPage() {
 
     const handleViewStats = async (announcement) => {
         try {
+            setStatsLoading(true);
+            setStatsDialogOpen(true);
             setCurrentAnnouncement(announcement);
+            setAnnouncementStats(null);
             const stats = await getAnnouncementStats(announcement._id);
             setAnnouncementStats(stats);
-            setStatsDialogOpen(true);
         } catch (error) {
             console.error('Error fetching announcement stats:', error);
             setError('Failed to fetch announcement statistics');
+        } finally {
+            setStatsLoading(false);
         }
     };
 
@@ -813,7 +819,39 @@ export default function AdminAnnouncementsPage() {
                             Announcement Statistics
                         </DialogTitle>
                         <DialogContent sx={{ px: { xs: 2, sm: 3 } }}>
-                            {announcementStats && (
+                            {statsLoading ? (
+                                <Grid container spacing={{ xs: 2, sm: 3 }}>
+                                    <Grid item xs={12}>
+                                        <Skeleton variant="text" width="60%" height={32} />
+                                        <Skeleton variant="text" width="90%" />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <Card>
+                                            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                                                <Skeleton variant="text" width="40%" height={60} />
+                                                <Skeleton variant="text" width="60%" />
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                        <Card>
+                                            <CardContent>
+                                                <Skeleton variant="text" width="40%" height={60} />
+                                                <Skeleton variant="text" width="60%" />
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent>
+                                                <Skeleton variant="text" width="40%" height={60} />
+                                                <Skeleton variant="text" width="60%" />
+                                                <Skeleton variant="text" width="30%" />
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                </Grid>
+                            ) : announcementStats && (
                                 <Grid container spacing={{ xs: 2, sm: 3 }}>
                                     <Grid item xs={12}>
                                         <Typography 

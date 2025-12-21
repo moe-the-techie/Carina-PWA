@@ -997,20 +997,46 @@ export default function AdminFormsPage() {
                     </DialogTitle>
                     <DialogContent>
                         {planLoading ? (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column',
-                                alignItems: 'center', 
-                                justifyContent: 'center',
-                                minHeight: { xs: '200px', sm: '300px' },
-                                gap: 2,
-                                p: 2
-                            }}>
-                                <CircularProgress size={{ xs: 40, sm: 60 }} />
-                                <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' }, textAlign: 'center' }}>
-                                    Loading plan details...
-                                </Typography>
-                            </Box>
+                            <Grid container spacing={3}>
+                                <Grid item xs={12}>
+                                    <Card>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
+                                            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Skeleton variant="text" width="80%" />
+                                                    <Skeleton variant="text" width="90%" />
+                                                    <Skeleton variant="text" width="60%" />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Skeleton variant="text" width="70%" />
+                                                    <Skeleton variant="text" width="50%" />
+                                                </Grid>
+                                            </Grid>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+                                            <Skeleton variant="text" width="60%" />
+                                            <Skeleton variant="text" width="60%" />
+                                            <Skeleton variant="text" width="60%" />
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <Card>
+                                        <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
+                                            <Skeleton variant="text" width="30%" height={32} sx={{ mb: 2 }} />
+                                            <Skeleton variant="text" width="60%" />
+                                            <Skeleton variant="text" width="60%" />
+                                            <Skeleton variant="text" width="60%" />
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            </Grid>
                         ) : selectedPlan && (
                             <Grid container spacing={3}>
                                 {/* Plan Overview */}
