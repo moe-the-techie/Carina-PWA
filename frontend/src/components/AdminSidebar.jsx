@@ -29,6 +29,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
+import { spacing, transitions, zIndex } from '../styles';
 
 const drawerWidth = 240;
 
@@ -53,8 +54,8 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             {isMobile && (
                 <Box sx={{ 
-                    p: 2, 
-                    pt: 'calc(16px + env(safe-area-inset-top))',
+                    p: spacing.md, 
+                    pt: `calc(${spacing.md * 8}px + env(safe-area-inset-top))`,
                     bgcolor: theme.palette.primary.main, 
                     color: 'white',
                     display: 'flex',
@@ -71,7 +72,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                     </Box>
                     <IconButton 
                         onClick={handleDrawerToggle}
-                        sx={{ color: 'white' }}
+                        sx={{ color: 'white', transition: transitions.fast }}
                         aria-label="close drawer"
                     >
                         <CloseIcon />
@@ -80,7 +81,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             )}
             
             {!isMobile && (
-                <Box sx={{ p: 2, bgcolor: theme.palette.primary.main, color: 'white' }}>
+                <Box sx={{ p: spacing.md, bgcolor: theme.palette.primary.main, color: 'white' }}>
                     <Typography variant="h6" noWrap>
                         Carina Admin
                     </Typography>
@@ -103,6 +104,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                                 selected={isActive}
                                 onClick={isMobile ? handleDrawerToggle : undefined}
                                 sx={{
+                                    transition: transitions.fast,
                                     '&.Mui-selected': {
                                         bgcolor: theme.palette.primary.light,
                                         color: theme.palette.primary.contrastText,
@@ -145,7 +147,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
-                    <Box sx={{ width: '100%', px: 2, py: 1 }}>
+                    <Box sx={{ width: '100%', px: spacing.md, py: spacing.sm }}>
                         <ThemeToggle />
                     </Box>
                 </ListItem>
@@ -160,7 +162,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
                     position="fixed" 
                     sx={{ 
                         bgcolor: theme.palette.primary.main,
-                        zIndex: theme.zIndex.drawer + 1,
+                        zIndex: zIndex.drawer + 1,
                         pt: 'env(safe-area-inset-top)'
                     }}
                 >

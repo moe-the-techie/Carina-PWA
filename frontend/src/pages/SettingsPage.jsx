@@ -36,6 +36,9 @@ import {
   clearVoiceCache, 
   getVoiceCacheStats 
 } from '../services/chatService';
+import { spacing, borderRadius, transitions } from '../styles';
+import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { pageTitle } from '../styles/typography';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -121,33 +124,40 @@ export default function SettingsPage({ onLogout }) {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center',
-        p: 2
+        p: spacing.md
       }}>
         <Card sx={{ 
+          ...glassCard(theme),
           maxWidth: 600, 
           width: '100%',
-          backgroundColor: theme.palette.background.container 
         }}>
           <CardContent>
-            <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+            <Typography 
+              variant="h4" 
+              gutterBottom 
+              sx={{ 
+                ...pageTitle(theme),
+                mb: spacing.lg,
+              }}
+            >
               Settings
             </Typography>
             
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert severity="error" sx={{ mb: spacing.md, borderRadius: borderRadius.sm }}>
                 {error}
               </Alert>
             )}
 
             {success && (
-              <Alert severity="success" sx={{ mb: 2 }}>
+              <Alert severity="success" sx={{ mb: spacing.md, borderRadius: borderRadius.sm }}>
                 {success}
               </Alert>
             )}
             
             {/* Profile Photo Section */}
             {user && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: spacing.lg, gap: spacing.md }}>
                 <Avatar
                   src={user.profileImageUrl}
                   alt={user.name}
@@ -155,9 +165,9 @@ export default function SettingsPage({ onLogout }) {
                     width: 64, 
                     height: 64,
                     cursor: user.profileImageUrl ? 'pointer' : 'default',
+                    transition: transitions.fast,
                     '&:hover': user.profileImageUrl ? {
                       opacity: 0.8,
-                      transition: 'opacity 0.2s'
                     } : {}
                   }}
                   onClick={() => {
@@ -194,7 +204,7 @@ export default function SettingsPage({ onLogout }) {
                 </ListItemSecondaryAction>
               </ListItem>
               
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: spacing.md }} />
               
               <ListItem>
                 <ListItemText 
@@ -217,7 +227,7 @@ export default function SettingsPage({ onLogout }) {
                 </ListItemSecondaryAction>
               </ListItem>
               
-              <Divider sx={{ my: 2 }} />
+              <Divider sx={{ my: spacing.md }} />
               
               {/* Voice Message Cache Section */}
               <ListItem>
@@ -234,7 +244,8 @@ export default function SettingsPage({ onLogout }) {
                     disabled={cacheStats.count === 0}
                     sx={{ 
                       width: { xs: '40px', md: '48px' },
-                      height: { xs: '40px', md: '48px' }
+                      height: { xs: '40px', md: '48px' },
+                      transition: transitions.fast,
                     }}
                     color="primary"
                   >
@@ -244,7 +255,7 @@ export default function SettingsPage({ onLogout }) {
               </ListItem>
             </List>
             
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+            <Box sx={{ mt: spacing.lg, display: 'flex', justifyContent: 'center' }}>
               <LandingButton 
                 onClick={() => { 
                   onLogout(); 
@@ -276,6 +287,9 @@ export default function SettingsPage({ onLogout }) {
           onClose={() => setClearCacheDialogOpen(false)}
           aria-labelledby="clear-cache-dialog-title"
           aria-describedby="clear-cache-dialog-description"
+          PaperProps={{
+            sx: glassDialog(theme)
+          }}
         >
           <DialogTitle id="clear-cache-dialog-title">
             Clear Voice Message Cache

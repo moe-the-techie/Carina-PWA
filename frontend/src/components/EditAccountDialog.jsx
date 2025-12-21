@@ -28,6 +28,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PhotoCamera, Delete } from '@mui/icons-material';
 import dayjs from 'dayjs';
 import ImageViewerDialog from './ImageViewerDialog';
+import { spacing, borderRadius, transitions } from '../styles';
+import { glassDialog, glassInput } from '../styles/glassmorphism';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 

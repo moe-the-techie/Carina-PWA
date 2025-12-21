@@ -40,6 +40,9 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import { spacing, borderRadius, transitions, accentColors } from '../styles';
+import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { containerVariants, itemVariants } from '../styles/animations';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;

@@ -1,19 +1,26 @@
 import React, { useState } from 'react';
 import {
+  Box,
   TextField,
+  Typography,
   InputAdornment,
   IconButton,
+  Button,
+  Alert,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import { glassCard, glassInput } from '../styles';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function LoginPage({ onLogin }) {
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formErrors, setFormErrors] = useState({});
@@ -62,8 +69,6 @@ export default function LoginPage({ onLogin }) {
         if (!response.ok) {
           if (data && data.error) {
             setBackendError(data.error);
-            
-            // Show resend button if email is not verified
             if (data.email_verified === false && data.canResendVerification) {
               setShowResendButton(true);
             }
@@ -106,8 +111,6 @@ export default function LoginPage({ onLogin }) {
       if (!response.ok) {
         if (data && data.error) {
           setBackendError(data.error);
-          
-          // If email is already verified, hide the resend button
           if (data.emailVerified) {
             setShowResendButton(false);
           }
@@ -117,11 +120,9 @@ export default function LoginPage({ onLogin }) {
         return;
       }
 
-      // Success
       setResendSuccess(data.message || 'Verification email sent successfully!');
       setShowResendButton(false);
       setBackendError('');
-      
     } catch (error) {
       console.error('Resend verification error:', error);
       setBackendError('Network error: ' + error.message);
@@ -130,15 +131,61 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
+  // Shared input styles
+  const inputStyles = glassInput(theme);
+
   return (
     <PageFade>
       <LoadingBackdrop open={submitting} />
-      <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center">
-        <img src="/logo.PNG" alt="App Logo" className="w-40 h-40 mb-8" />
-        <h1 className="text-3xl font-semibold text-gray-800 mb-8">Login</h1>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          px: 3,
+          py: 4,
+          textAlign: 'center',
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(135deg, #121212 0%, #1a1a2e 100%)'
+            : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        }}
+      >
+        <Box
+          component="img"
+          src="/logo.PNG"
+          alt="App Logo"
+          sx={{
+            width: 160,
+            height: 160,
+            mb: 4,
+            borderRadius: 4,
+          }}
+        />
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-          <div className="flex flex-col justify-center items-center gap-4">
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            mb: 4,
+            color: theme.palette.text.primary,
+          }}
+        >
+          Login
+        </Typography>
+
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: '100%',
+            maxWidth: 400,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
           <TextField
             label="Email"
             fullWidth
@@ -147,6 +194,7 @@ export default function LoginPage({ onLogin }) {
             onChange={(e) => setEmail(e.target.value)}
             error={!!formErrors.email}
             helperText={formErrors.email}
+            sx={inputStyles}
           />
 
           <TextField
@@ -158,6 +206,7 @@ export default function LoginPage({ onLogin }) {
             onChange={(e) => setPassword(e.target.value)}
             error={!!formErrors.password}
             helperText={formErrors.password}
+            sx={inputStyles}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -169,52 +218,72 @@ export default function LoginPage({ onLogin }) {
             }}
           />
 
-          </div>
-
-          <div className="min-h-8">
+          <Box sx={{ minHeight: 48 }}>
             {backendError && (
-              <p className="text-red-600 text-base font-light py-1 inline-block">
+              <Alert severity="error" sx={{ borderRadius: 2 }}>
                 {backendError}
-              </p>
+              </Alert>
             )}
             {resendSuccess && (
-              <p className="text-green-600 text-base font-light py-1 inline-block">
+              <Alert severity="success" sx={{ borderRadius: 2 }}>
                 {resendSuccess}
-              </p>
+              </Alert>
             )}
-          </div>
+          </Box>
 
           {showResendButton && (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={handleResendVerification}
-                disabled={resendingEmail}
-                className="w-full py-2 px-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
-              >
-                {resendingEmail ? 'Sending...' : 'Resend Verification Email'}
-              </button>
-            </div>
+            <Button
+              variant="contained"
+              onClick={handleResendVerification}
+              disabled={resendingEmail}
+              sx={{
+                py: 1.5,
+                background: theme.palette.warning.main,
+                color: '#fff',
+                fontWeight: 600,
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': {
+                  background: theme.palette.warning.dark,
+                },
+              }}
+            >
+              {resendingEmail ? 'Sending...' : 'Resend Verification Email'}
+            </Button>
           )}
 
-          <div className="mt-10">
+          <Box sx={{ mt: 4 }}>
             <LandingButton type="submit">Log In</LandingButton>
-          </div>
+          </Box>
 
-          <div className="text-gray-600 text-base">
-            <Link to="/forgot-password" className="text-lime-400 font-semibold hover:underline">
+          <Typography sx={{ color: theme.palette.text.secondary }}>
+            <Link
+              to="/forgot-password"
+              style={{
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
               Forgot Password?
             </Link>
-          </div>
+          </Typography>
 
-          <div className="text-gray-600 text-base">
+          <Typography sx={{ color: theme.palette.text.secondary }}>
             Don't have an account?{' '}
-            <Link to="/register" className="text-lime-400 font-semibold hover:underline">
+            <Link
+              to="/register"
+              style={{
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
               Sign Up
             </Link>
-          </div>
-        </form>
-      </div>
+          </Typography>
+        </Box>
+      </Box>
     </PageFade>
   );
 }

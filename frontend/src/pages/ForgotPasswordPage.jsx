@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { TextField } from '@mui/material';
+import { Box, TextField, Typography, Button, Alert } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { Link, useNavigate } from 'react-router-dom';
 import LandingButton from '../components/LandingButton.jsx';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import { glassInput } from '../styles';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function ForgotPasswordPage() {
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [backendError, setBackendError] = useState('');
@@ -18,12 +21,9 @@ export default function ForgotPasswordPage() {
   const [emailSent, setEmailSent] = useState(false);
   const navigate = useNavigate();
 
-  // Countdown timer effect
   useEffect(() => {
     if (remainingSeconds > 0) {
-      const timer = setTimeout(() => {
-        setRemainingSeconds(remainingSeconds - 1);
-      }, 1000);
+      const timer = setTimeout(() => setRemainingSeconds(remainingSeconds - 1), 1000);
       return () => clearTimeout(timer);
     } else if (remainingSeconds === 0 && !canResend && emailSent) {
       setCanResend(true);
@@ -60,8 +60,6 @@ export default function ForgotPasswordPage() {
         if (!response.ok) {
           if (data && data.error) {
             setBackendError(data.error);
-            
-            // Handle rate limiting
             if (response.status === 429 && data.remainingSeconds) {
               setRemainingSeconds(data.remainingSeconds);
               setCanResend(false);
@@ -72,13 +70,11 @@ export default function ForgotPasswordPage() {
           return;
         }
 
-        // Success
         setSuccessMessage(data.message || 'Password reset email sent successfully!');
         setEmailSent(true);
         setCanResend(false);
-        setRemainingSeconds(120); // 2 minutes in seconds
+        setRemainingSeconds(120);
         setBackendError('');
-        
       } catch (error) {
         console.error('Network error:', error);
         setBackendError('Network error: ' + error.message);
@@ -107,8 +103,6 @@ export default function ForgotPasswordPage() {
       if (!response.ok) {
         if (data && data.error) {
           setBackendError(data.error);
-          
-          // Handle rate limiting
           if (response.status === 429 && data.remainingSeconds) {
             setRemainingSeconds(data.remainingSeconds);
             setCanResend(false);
@@ -119,12 +113,10 @@ export default function ForgotPasswordPage() {
         return;
       }
 
-      // Success
       setSuccessMessage(data.message || 'Password reset email resent successfully!');
       setCanResend(false);
-      setRemainingSeconds(120); // 2 minutes in seconds
+      setRemainingSeconds(120);
       setBackendError('');
-      
     } catch (error) {
       console.error('Network error:', error);
       setBackendError('Network error: ' + error.message);
@@ -139,87 +131,102 @@ export default function ForgotPasswordPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const inputStyles = glassInput(theme);
+
   return (
     <PageFade>
       <LoadingBackdrop open={submitting} />
-      <div className="min-h-screen flex flex-col justify-center items-center px-6 text-center">
-        <img src="/logo.PNG" alt="App Logo" className="w-40 h-40 mb-8" />
-        <h1 className="text-3xl font-semibold text-gray-800 mb-4">Forgot Password</h1>
-        <p className="text-gray-600 mb-8 max-w-md">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          px: 3,
+          py: 4,
+          textAlign: 'center',
+          background: theme.palette.mode === 'dark'
+            ? 'linear-gradient(135deg, #121212 0%, #1a1a2e 100%)'
+            : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        }}
+      >
+        <Box component="img" src="/logo.PNG" alt="App Logo" sx={{ width: 160, height: 160, mb: 4, borderRadius: 4 }} />
+
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: theme.palette.text.primary }}>
+          Forgot Password
+        </Typography>
+
+        <Typography sx={{ color: theme.palette.text.secondary, mb: 4, maxWidth: 400 }}>
           Enter your email address and we'll send you a link to reset your password.
-        </p>
+        </Typography>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-          <div className="flex flex-col justify-center items-center gap-4">
-            <TextField
-              label="Email"
-              fullWidth
-              variant="outlined"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={!!formErrors.email}
-              helperText={formErrors.email}
-              disabled={!canResend && emailSent}
-            />
-          </div>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+          <TextField
+            label="Email" fullWidth variant="outlined" value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={!!formErrors.email} helperText={formErrors.email}
+            disabled={!canResend && emailSent}
+            sx={inputStyles}
+          />
 
-          <div className="min-h-8">
-            {backendError && (
-              <p className="text-red-600 text-base font-light py-1 inline-block">
-                {backendError}
-              </p>
-            )}
-            {successMessage && (
-              <p className="text-green-600 text-base font-light py-1 inline-block">
-                {successMessage}
-              </p>
-            )}
-          </div>
+          <Box sx={{ minHeight: 48 }}>
+            {backendError && <Alert severity="error" sx={{ borderRadius: 2 }}>{backendError}</Alert>}
+            {successMessage && <Alert severity="success" sx={{ borderRadius: 2 }}>{successMessage}</Alert>}
+          </Box>
 
           {emailSent && !canResend && remainingSeconds > 0 && (
-            <div className="mb-4">
-              <p className="text-gray-600 text-sm">
-                You can resend the email in {formatTime(remainingSeconds)}
-              </p>
-            </div>
+            <Typography sx={{ color: theme.palette.text.secondary, fontSize: '0.875rem' }}>
+              You can resend the email in {formatTime(remainingSeconds)}
+            </Typography>
           )}
 
           {emailSent && canResend && (
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={submitting}
-                className="w-full py-2 px-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
-              >
-                {submitting ? 'Sending...' : 'Resend Password Reset Email'}
-              </button>
-            </div>
+            <Button
+              variant="contained"
+              onClick={handleResend}
+              disabled={submitting}
+              sx={{
+                py: 1.5,
+                background: theme.palette.warning.main,
+                color: '#fff',
+                fontWeight: 600,
+                borderRadius: 2,
+                textTransform: 'none',
+                '&:hover': { background: theme.palette.warning.dark },
+              }}
+            >
+              {submitting ? 'Sending...' : 'Resend Password Reset Email'}
+            </Button>
           )}
 
           {(!emailSent || canResend) && (
-            <div className="mt-10">
+            <Box sx={{ mt: 4 }}>
               <LandingButton type="submit" disabled={!canResend && emailSent}>
                 {emailSent ? 'Resend Email' : 'Send Reset Link'}
               </LandingButton>
-            </div>
+            </Box>
           )}
 
-          <div className="text-gray-600 text-base mt-4">
+          <Typography sx={{ color: theme.palette.text.secondary, mt: 2 }}>
             Remember your password?{' '}
-            <Link to="/login" className="text-lime-400 font-semibold hover:underline">
+            <Link to="/login" style={{ color: theme.palette.primary.main, fontWeight: 600, textDecoration: 'none' }}>
               Log In
             </Link>
-          </div>
+          </Typography>
 
-          <div className="text-gray-600 text-base">
+          <Typography sx={{ color: theme.palette.text.secondary }}>
             Don't have an account?{' '}
-            <Link to="/register" className="text-lime-400 font-semibold hover:underline">
+            <Link to="/register" style={{ color: theme.palette.primary.main, fontWeight: 600, textDecoration: 'none' }}>
               Sign Up
             </Link>
-          </div>
-        </form>
-      </div>
+          </Typography>
+        </Box>
+      </Box>
     </PageFade>
   );
 }

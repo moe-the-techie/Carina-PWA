@@ -33,6 +33,9 @@ import FormGroup from '@mui/material/FormGroup';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { spacing, borderRadius, transitions, shadows } from '../styles';
+import { glassCard, glassInput } from '../styles/glassmorphism';
+import { pageVariants, itemVariants } from '../styles/animations';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 const MAX_GOALS = 5;

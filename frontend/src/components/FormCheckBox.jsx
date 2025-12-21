@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormControlLabel, Checkbox, Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { spacing, borderRadius, transitions } from '../styles';
 
 export default function FormCheckBox({ label, name, checked, onChange }) {
     const theme = useTheme();
@@ -11,11 +12,12 @@ export default function FormCheckBox({ label, name, checked, onChange }) {
                 backgroundColor: checked
                 ? theme.palette.primary.main
                 : theme.palette.background.darker,
-                borderRadius: 20,
-                py: 1,
-                px: 2,
-                mb: 2,
+                borderRadius: borderRadius.xl,
+                py: spacing.sm,
+                px: spacing.md,
+                mb: spacing.md,
                 width: '100%',
+                transition: transitions.default,
             }}
         >
 

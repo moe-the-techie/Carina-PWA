@@ -9,6 +9,9 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
+import { spacing, borderRadius, shadows } from '../styles';
+import { glassCard } from '../styles/glassmorphism';
+import { pageTitle } from '../styles/typography';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -87,13 +90,18 @@ export default function HomePage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-start',
-          pb: 2,
-          pt: 2,
-          px: 1,
+          pb: spacing.md,
+          pt: spacing.md,
+          px: spacing.sm,
           mx: 'auto',
         }}
       >
-        <Typography variant="h4" align="start" sx={{ color: theme.palette.contrastText.main }} gutterBottom>
+        <Typography 
+          variant="h4" 
+          align="start" 
+          gutterBottom
+          sx={pageTitle(theme, { align: 'left' })}
+        >
           My Forms
         </Typography>
 
@@ -101,20 +109,35 @@ export default function HomePage() {
           // Skeleton loading state
           <>
             {[1, 2, 3].map((item) => (
-              <Card key={item} sx={{ width: '100%', mb: 2 }}>
+              <Card 
+                key={item} 
+                sx={{ 
+                  ...glassCard(theme),
+                  width: '100%', 
+                  mb: spacing.md,
+                }}
+              >
                 <CardContent>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ display: 'flex', gap: spacing.md }}>
                     <Skeleton variant="circular" width={56} height={56} />
                     <Box sx={{ flex: 1 }}>
                       <Skeleton variant="text" width="60%" height={28} />
-                      <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                      <Skeleton variant="text" width="40%" height={20} sx={{ mt: spacing.sm }} />
                       <Skeleton variant="text" width="80%" height={20} />
                     </Box>
                   </Box>
                 </CardContent>
               </Card>
             ))}
-            <Skeleton variant="rectangular" width="100%" height={42} sx={{ mt: 4, borderRadius: 1 }} />
+            <Skeleton 
+              variant="rectangular" 
+              width="100%" 
+              height={42} 
+              sx={{ 
+                mt: spacing.lg, 
+                borderRadius: borderRadius.sm,
+              }} 
+            />
           </>
         ) : (
           <>
@@ -134,14 +157,16 @@ export default function HomePage() {
               color="primary"
               sx={{
                 width: { xs: '100%', md: '30%' },
-                mt: 4,
+                mt: spacing.lg,
+                borderRadius: borderRadius.md,
+                boxShadow: shadows.button,
               }}
             >
               Submit New Form
             </Button>
 
             {backendError && (
-              <Typography align="center" color="error" sx={{ mt: 2 }}>
+              <Typography align="center" color="error" sx={{ mt: spacing.md }}>
                 {backendError}
               </Typography>
             )}

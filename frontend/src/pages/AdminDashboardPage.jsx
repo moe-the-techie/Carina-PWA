@@ -27,31 +27,16 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import PageFade from '../components/PageFade';
+import { 
+    glassCard, 
+    containerVariants, 
+    itemVariants, 
+    gradientText, 
+    accentColors,
+    pageWrapper 
+} from '../styles';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-// Animation variants
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.4,
-            ease: [0.16, 1, 0.3, 1]
-        }
-    }
-};
 
 export default function AdminDashboardPage() {
     const theme = useTheme();
@@ -64,6 +49,9 @@ export default function AdminDashboardPage() {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Use shared glass card style
+    const glassCardStyle = glassCard(theme);
 
     useEffect(() => {
         fetchDashboardData();
@@ -98,22 +86,6 @@ export default function AdminDashboardPage() {
             return;
         }
         navigate('/admin/chats', { state: { userId } });
-    };
-
-    // Glassmorphism card style
-    const glassCardStyle = {
-        background: theme.palette.mode === 'dark'
-            ? 'rgba(255, 255, 255, 0.03)'
-            : 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: 3,
-        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-        boxShadow: theme.palette.mode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-            : '0 8px 32px rgba(0, 0, 0, 0.06)',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        overflow: 'hidden',
     };
 
     if (loading) {
@@ -179,28 +151,25 @@ export default function AdminDashboardPage() {
             label: 'Pending Forms',
             value: dashboardData.pendingForms || 0,
             icon: PendingActionsIcon,
-            color: '#F59E0B',
-            gradient: 'linear-gradient(135deg, #F59E0B, #D97706)'
+            color: accentColors.amber.main,
+            gradient: `linear-gradient(135deg, ${accentColors.amber.main}, ${accentColors.amber.dark})`
         },
         {
             label: 'Active Plans',
             value: dashboardData.activePlans || 0,
             icon: AssignmentTurnedInIcon,
-            color: '#10B981',
-            gradient: 'linear-gradient(135deg, #10B981, #059669)'
+            color: accentColors.emerald.main,
+            gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`
         }
     ];
 
     return (
         <PageFade>
             <Box sx={{ 
+                ...pageWrapper(theme),
                 p: { xs: 1.5, sm: 3, md: 4 },
-                minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                background: theme.palette.mode === 'dark'
-                    ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
-                    : `linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)`,
             }}>
                 {/* Header Section */}
                 <motion.div
@@ -212,11 +181,7 @@ export default function AdminDashboardPage() {
                         <Typography 
                             variant="h4" 
                             sx={{ 
-                                fontWeight: 700,
-                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                backgroundClip: 'text',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
+                                ...gradientText(theme),
                                 mb: 0.5
                             }}
                         >

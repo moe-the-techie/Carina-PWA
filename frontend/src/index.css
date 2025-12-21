@@ -3,6 +3,7 @@
 @layer base {
   body {
     @apply font-sans;
+    font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   }
   
   /* Smooth scrolling for the entire app */
@@ -10,14 +11,16 @@
     scroll-behavior: smooth;
   }
   
-  /* Custom selection color */
+  /* Custom selection color - using primary green */
   ::selection {
     background: rgba(145, 235, 78, 0.3);
     color: inherit;
   }
 }
 
-/* Existing pulse animation */
+/* ===== ANIMATION KEYFRAMES ===== */
+
+/* Pulse animation */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -29,74 +32,45 @@
   }
 }
 
-/* Floating animation for elements */
+/* Float animation */
 @keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
-/* Subtle glow pulse */
+/* Glow pulse */
 @keyframes glowPulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(145, 235, 78, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(145, 235, 78, 0.5);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(145, 235, 78, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(145, 235, 78, 0.5); }
 }
 
-/* Gradient animation for backgrounds */
+/* Gradient shift */
 @keyframes gradientShift {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Shimmer effect for loading states */
+/* Shimmer effect */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-/* Slide up fade in animation */
+/* Slide up fade in */
 @keyframes slideUpFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Scale in animation */
+/* Scale in */
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* Utility classes for animations */
+/* ===== UTILITY CLASSES ===== */
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -129,7 +103,8 @@
   animation: scaleIn 0.4s ease-out forwards;
 }
 
-/* Glassmorphism utility classes */
+/* ===== GLASSMORPHISM UTILITIES ===== */
+
 .glass {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -153,22 +128,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Neumorphism utility classes */
-.neu-raised {
-  background: linear-gradient(145deg, #ffffff, #e6e6e6);
-  box-shadow: 
-    8px 8px 16px rgba(0, 0, 0, 0.1),
-    -8px -8px 16px rgba(255, 255, 255, 0.8);
-}
+/* ===== MODERN TEXT EFFECTS ===== */
 
-.neu-pressed {
-  background: linear-gradient(145deg, #e6e6e6, #ffffff);
-  box-shadow: 
-    inset 4px 4px 8px rgba(0, 0, 0, 0.1),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.8);
-}
-
-/* Modern gradient text */
 .gradient-text {
   background: linear-gradient(135deg, #91EB4E 0%, #6E14B1 100%);
   -webkit-background-clip: text;
@@ -176,12 +137,14 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Smooth transitions for interactive elements */
+/* ===== TRANSITIONS ===== */
+
 .transition-smooth {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Card hover effect */
+/* ===== CARD EFFECTS ===== */
+
 .card-hover {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }

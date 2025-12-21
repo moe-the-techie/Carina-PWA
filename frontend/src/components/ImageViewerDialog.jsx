@@ -7,6 +7,7 @@ import {
     Slide
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { transitions, zIndex } from '../styles';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -35,10 +36,11 @@ export default function ImageViewerDialog({ open, imageUrl, onClose }) {
                     top: 8,
                     color: 'white',
                     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    transition: transitions.fast,
                     '&:hover': {
                         backgroundColor: 'rgba(255, 255, 255, 0.2)'
                     },
-                    zIndex: 1
+                    zIndex: zIndex.tooltip
                 }}
             >
                 <CloseIcon />

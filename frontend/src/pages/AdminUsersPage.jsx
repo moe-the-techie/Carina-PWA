@@ -54,6 +54,9 @@ import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import UserActionsDialog from '../components/UserActionsDialog';
+import { spacing, borderRadius, transitions, accentColors } from '../styles';
+import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
+import { containerVariants, itemVariants } from '../styles/animations';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 

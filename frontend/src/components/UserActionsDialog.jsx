@@ -24,6 +24,8 @@ import {
     Delete as DeleteIcon,
     Category as CategoryIcon
 } from '@mui/icons-material';
+import { spacing, transitions } from '../styles';
+import { glassDialog } from '../styles/glassmorphism';
 
 export default function UserActionsDialog({ 
     open, 

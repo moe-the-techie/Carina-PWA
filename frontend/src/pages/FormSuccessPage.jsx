@@ -7,6 +7,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import HomeIcon from '@mui/icons-material/Home';
 import PageFade from '../components/PageFade';
+import { spacing, borderRadius, transitions, gradients } from '../styles';
+import { fadeVariants, scaleVariants } from '../styles/animations';
 
 // Keyframes for pulse animation
 const pulse = keyframes`

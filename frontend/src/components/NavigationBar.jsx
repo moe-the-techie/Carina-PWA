@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography';
 import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
+import { spacing, transitions, zIndex } from '../styles';
 
 export default function NavigationBar() {
   const location = useLocation();
@@ -34,17 +35,22 @@ export default function NavigationBar() {
   return (
     <Box
       component="nav"
-      className="fixed bottom-0 md:top-0 md:bottom-auto w-full shadow-md z-50"
       sx={{
+        position: 'fixed',
+        bottom: { xs: 0, md: 'auto' },
+        top: { xs: 'auto', md: 0 },
+        width: '100%',
+        boxShadow: 3,
+        zIndex: zIndex.navigation,
         backgroundColor: theme.palette.background.paper,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        pt: { xs: 0.5, md: 1 },
-        pb: { xs: 'calc(0.5rem + env(safe-area-inset-bottom))', md: 1 },
+        pt: { xs: spacing.xs, md: spacing.sm },
+        pb: { xs: `calc(${spacing.xs * 8}px + env(safe-area-inset-bottom))`, md: spacing.sm },
         height: { xs: 'auto', md: '10vh' },
         minHeight: '60px',
-        px: { xs: 1, md: 2 }
+        px: { xs: spacing.sm, md: spacing.md }
       }}
     >
       <Box
@@ -86,9 +92,10 @@ export default function NavigationBar() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: isActive ? theme.palette.primary.main : '#666',
+                      transition: transitions.fast,
+                      color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
                       '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                        backgroundColor: theme.palette.action.hover
                       }
                     }}
                   >
@@ -117,9 +124,10 @@ export default function NavigationBar() {
                     variant="caption" 
                     sx={{ 
                       fontSize: { xs: '10px', md: '12px' },
-                      color: isActive ? theme.palette.primary.main : '#666',
+                      color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
                       mt: { xs: 0.25, md: 0.5 },
-                      fontWeight: isActive ? 'bold' : 'normal'
+                      fontWeight: isActive ? 600 : 400,
+                      transition: transitions.fast,
                     }}
                   >
                     {label}

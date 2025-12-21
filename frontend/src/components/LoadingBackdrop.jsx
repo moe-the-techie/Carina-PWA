@@ -2,9 +2,10 @@ import React from 'react';
 import Backdrop from '@mui/material/Backdrop';
 import { styled } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
+import { zIndex } from '../styles';
 
 const StyledBackdrop = styled(Backdrop)(({ theme }) => ({
-    zIndex: theme.zIndex.drawer + 1,
+    zIndex: zIndex.modal,
     color: '#fff',
 }));
 

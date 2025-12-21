@@ -43,35 +43,15 @@ import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import { spacing, borderRadius, transitions, accentColors } from '../styles';
+import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { containerVariants, itemVariants } from '../styles/animations';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-// Animation variants
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        transition: {
-            duration: 0.5,
-            ease: [0.16, 1, 0.3, 1]
-        }
-    }
-};
 
 export default function ViewPlanPage () {
     const theme = useTheme();

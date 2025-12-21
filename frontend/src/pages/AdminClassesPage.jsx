@@ -27,6 +27,9 @@ import {
     Circle as CircleIcon
 } from '@mui/icons-material';
 import PageFade from '../components/PageFade';
+import { spacing, borderRadius, transitions, accentColors } from '../styles';
+import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { containerVariants, itemVariants } from '../styles/animations';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
