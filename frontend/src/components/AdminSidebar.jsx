@@ -55,7 +55,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             {isMobile && (
                 <Box sx={{ 
                     p: spacing.md, 
-                    pt: `calc(${spacing.md * 8}px + env(safe-area-inset-top))`,
+                    pt: `calc(64px + ${spacing.md * 8}px + env(safe-area-inset-top))`,
                     bgcolor: theme.palette.primary.main, 
                     color: 'white',
                     display: 'flex',
