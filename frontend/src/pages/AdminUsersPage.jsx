@@ -91,6 +91,7 @@ export default function AdminUsersPage() {
     const [availableClasses, setAvailableClasses] = useState([]);
     const [selectedClassId, setSelectedClassId] = useState('');
     const [includeUnverified, setIncludeUnverified] = useState(false);
+    const [userDetailsLoading, setUserDetailsLoading] = useState(false);
 
     // Debounce search input
     useEffect(() => {
@@ -153,6 +154,9 @@ export default function AdminUsersPage() {
 
     const fetchUserDetails = async (userId) => {
         try {
+            setUserDetailsLoading(true);
+            setUserDetailsOpen(true);
+            setSelectedUser(null);
             const response = await fetch(`${apiBaseUrl}/api/admin/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -165,10 +169,12 @@ export default function AdminUsersPage() {
 
             const data = await response.json();
             setSelectedUser(data);
-            setUserDetailsOpen(true);
         } catch (error) {
             console.error('Error fetching user details:', error);
             setError(error.message);
+            setUserDetailsOpen(false);
+        } finally {
+            setUserDetailsLoading(false);
         }
     };
 
@@ -797,7 +803,63 @@ export default function AdminUsersPage() {
                         <Typography variant="h5" fontWeight={700}>User Details</Typography>
                     </DialogTitle>
                     <DialogContent sx={{ py: 3 }}>
-                        {selectedUser && (
+                        {userDetailsLoading ? (
+                            <Grid container spacing={3}>
+                                <Grid item xs={12} md={6}>
+                                    <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, height: '100%' }}>
+                                        <CardContent>
+                                            <Skeleton variant="text" width="60%" height={32} sx={{ mb: 2 }} />
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2, mt: 2 }}>
+                                                <Skeleton variant="circular" width={80} height={80} />
+                                                <Box sx={{ flex: 1 }}>
+                                                    <Skeleton variant="text" width="70%" height={28} />
+                                                    <Skeleton variant="text" width="90%" height={20} />
+                                                </Box>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                                {[1, 2, 3, 4].map((i) => (
+                                                    <Box key={i}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                            <Skeleton variant="text" width="30%" />
+                                                            <Skeleton variant="text" width="40%" />
+                                                        </Box>
+                                                        {i < 4 && <Divider />}
+                                                    </Box>
+                                                ))}
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
+                                        <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3 }}>
+                                            <CardContent>
+                                                <Skeleton variant="text" width="50%" height={32} sx={{ mb: 2 }} />
+                                                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                                                    <Skeleton variant="rounded" sx={{ flex: 1, height: 100, borderRadius: 2 }} />
+                                                    <Skeleton variant="rounded" sx={{ flex: 1, height: 100, borderRadius: 2 }} />
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                        <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, flex: 1 }}>
+                                            <CardContent>
+                                                <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
+                                                {[1, 2, 3].map((i) => (
+                                                    <Box key={i} sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.background.default, 0.5) }}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                            <Skeleton variant="text" width="25%" />
+                                                            <Skeleton variant="rounded" width={60} height={20} />
+                                                        </Box>
+                                                        <Skeleton variant="text" width="80%" />
+                                                        <Skeleton variant="text" width="30%" />
+                                                    </Box>
+                                                ))}
+                                            </CardContent>
+                                        </Card>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        ) : selectedUser && (
                             <Grid container spacing={3}>
                                 <Grid item xs={12} md={6}>
                                     <Card elevation={0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 3, height: '100%' }}>
@@ -925,39 +987,49 @@ export default function AdminUsersPage() {
                     </DialogContent>
                     <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
                         <Button onClick={() => setUserDetailsOpen(false)} sx={{ borderRadius: 2 }}>Close</Button>
-                        <Button 
-                            variant="contained" 
-                            color="primary"
-                            onClick={() => {
-                                setUserDetailsOpen(false);
-                                handleMessageUser(selectedUser?.user?._id);
-                            }}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            Message User
-                        </Button>
-                        <Button 
-                            variant="outlined"
-                            color="warning"
-                            onClick={() => {
-                                setUserDetailsOpen(false);
-                                handleBanClick(selectedUser?.user);
-                            }}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            Ban User
-                        </Button>
-                        <Button 
-                            variant="outlined"
-                            color="error"
-                            onClick={() => {
-                                setUserDetailsOpen(false);
-                                handleDeleteClick(selectedUser?.user);
-                            }}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            Delete User
-                        </Button>
+                        {userDetailsLoading ? (
+                            <>
+                                <Skeleton variant="rounded" width={120} height={36} sx={{ borderRadius: 2 }} />
+                                <Skeleton variant="rounded" width={100} height={36} sx={{ borderRadius: 2 }} />
+                                <Skeleton variant="rounded" width={110} height={36} sx={{ borderRadius: 2 }} />
+                            </>
+                        ) : (
+                            <>
+                                <Button 
+                                    variant="contained" 
+                                    color="primary"
+                                    onClick={() => {
+                                        setUserDetailsOpen(false);
+                                        handleMessageUser(selectedUser?.user?._id);
+                                    }}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    Message User
+                                </Button>
+                                <Button 
+                                    variant="outlined"
+                                    color="warning"
+                                    onClick={() => {
+                                        setUserDetailsOpen(false);
+                                        handleBanClick(selectedUser?.user);
+                                    }}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    Ban User
+                                </Button>
+                                <Button 
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => {
+                                        setUserDetailsOpen(false);
+                                        handleDeleteClick(selectedUser?.user);
+                                    }}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    Delete User
+                                </Button>
+                            </>
+                        )}
                     </DialogActions>
                 </Dialog>
 
