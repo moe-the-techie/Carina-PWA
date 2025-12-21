@@ -68,6 +68,7 @@ export default function ChatPage() {
     const [audioProgress, setAudioProgress] = useState({});
     const [isDragging, setIsDragging] = useState(null);
     const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const hasSubscribed = useRef(false);
     const fileInputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
@@ -76,12 +77,16 @@ export default function ChatPage() {
     const audioRefs = useRef({});
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+            if (messagesContainerRef.current) {
+                messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+        }, 100);
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, loading]);
+    }, [messages]);
 
     const loadChat = async () => {
         try {
@@ -94,6 +99,8 @@ export default function ChatPage() {
                 await markMessagesAsRead(chatResponse.chatId);
                 setCurrentlyViewingChat(chatResponse.chatId);
                 resetUnreadCount();
+                // Scroll to bottom after loading messages
+                setTimeout(() => scrollToBottom(), 200);
             }
         } catch (error) {
             console.error('Error loading chat:', error);
@@ -385,6 +392,8 @@ export default function ChatPage() {
             setNewMessage('');
             handleRemoveImage();
             cancelVoiceRecording();
+            // Scroll to bottom after sending message
+            setTimeout(() => scrollToBottom(), 100);
         } catch (error) {
             console.error('Error sending message:', error);
             setSnackbar({ open: true, message: 'Failed to send message', severity: 'error' });
@@ -599,17 +608,18 @@ export default function ChatPage() {
                             </Box>
                         </Box>
                     </Box>
-                    <Box sx={{ 
-                        flexGrow: 1, 
-                        overflow: 'auto', 
-                        overflowX: 'hidden',
-                        p: 3, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: 2,
-                        WebkitOverflowScrolling: 'touch',
-                        scrollBehavior: 'smooth'
-                    }}>
+                    <Box 
+                        ref={messagesContainerRef}
+                        sx={{ 
+                            flexGrow: 1, 
+                            overflow: 'auto', 
+                            overflowX: 'hidden',
+                            p: 3, 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: 2,
+                            WebkitOverflowScrolling: 'touch'
+                        }}>
                         {messages.length === 0 ? (
                             <Box sx={{ 
                                 flexGrow: 1, 

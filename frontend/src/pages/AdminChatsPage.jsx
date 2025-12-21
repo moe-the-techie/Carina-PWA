@@ -102,6 +102,7 @@ export default function AdminChatsPage() {
     const [audioProgress, setAudioProgress] = useState({});
     const [isDragging, setIsDragging] = useState(null);
     const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     const hasInitializedChat = useRef(false);
     const hasSubscribed = useRef(false);
     const fileInputRef = useRef(null);
@@ -111,12 +112,16 @@ export default function AdminChatsPage() {
     const audioRefs = useRef({});
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+            if (messagesContainerRef.current) {
+                messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+        }, 100);
     };
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, loadingMessages]);
+    }, [messages]);
 
     const loadChats = async (resetPagination = false) => {
         try {
@@ -164,6 +169,8 @@ export default function AdminChatsPage() {
             );
             // Refresh the global unread count
             fetchUnreadCount();
+            // Scroll to bottom after loading messages
+            setTimeout(() => scrollToBottom(), 200);
         } catch (error) {
             console.error('Error loading messages:', error);
         } finally {
@@ -527,6 +534,8 @@ export default function AdminChatsPage() {
             setNewMessage('');
             handleRemoveImage();
             cancelVoiceRecording();
+            // Scroll to bottom after sending message
+            setTimeout(() => scrollToBottom(), 100);
             
             // Update chats list
             setChats(prevChats => {
@@ -1037,18 +1046,19 @@ export default function AdminChatsPage() {
                         </IconButton>
                     </Box>
                     
-                    <Box sx={{ 
-                        flexGrow: 1,
-                        minHeight: 0,
-                        overflow: 'auto',
-                        overflowX: 'hidden', 
-                        p: 3, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        gap: 2,
-                        WebkitOverflowScrolling: 'touch',
-                        scrollBehavior: 'smooth'
-                    }}>
+                    <Box 
+                        ref={messagesContainerRef}
+                        sx={{ 
+                            flexGrow: 1,
+                            minHeight: 0,
+                            overflow: 'auto',
+                            overflowX: 'hidden', 
+                            p: 3, 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: 2,
+                            WebkitOverflowScrolling: 'touch'
+                        }}>
                         {loadingMessages ? (
                             // Skeleton loader for messages
                             <>
