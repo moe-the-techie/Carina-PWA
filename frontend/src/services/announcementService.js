@@ -1,81 +1,59 @@
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { createCachedApiClient } from '../utils/cachedFetch';
+
+// Create cached API client
+const api = createCachedApiClient(API_URL + '/api');
 
 // Helper function to get auth token
 const getAuthToken = () => {
     return localStorage.getItem('token');
 };
 
-// Helper function to make API requests
-const apiRequest = async (endpoint, options = {}) => {
-    const token = getAuthToken();
-    
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-    };
-
-    const response = await fetch(`${API_URL}/api${endpoint}`, {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...options.headers,
-        },
-    });
-
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Request failed');
-    }
-
-    return response.json();
-};
-
 // User API calls
 export const getUserAnnouncements = async () => {
-    return apiRequest('/announcements');
+    return api.get('/announcements', {
+        cacheKey: 'user_announcements',
+        cacheTTL: 5 * 60 * 1000,
+    });
 };
 
 export const markAnnouncementAsRead = async (announcementId) => {
-    return apiRequest(`/announcements/${announcementId}/read`, {
-        method: 'PUT',
-    });
+    return api.put(`/announcements/${announcementId}/read`);
 };
 
 export const getUnreadAnnouncementsCount = async () => {
-    return apiRequest('/announcements/unread/count');
+    return api.get('/announcements/unread/count', {
+        cacheKey: 'unread_announcements_count',
+        cacheTTL: 1 * 60 * 1000,
+    });
 };
 
 // Admin API calls
 export const getAllAnnouncements = async (page = 1, limit = 10, status = 'all') => {
     const params = new URLSearchParams({ page, limit, status });
-    return apiRequest(`/admin/announcements?${params}`);
+    return api.get(`/admin/announcements?${params}`, {
+        cacheKey: `admin_announcements_${page}_${limit}_${status}`,
+        cacheTTL: 5 * 60 * 1000,
+    });
 };
 
 export const createAnnouncement = async (announcementData) => {
-    return apiRequest('/admin/announcements', {
-        method: 'POST',
-        body: JSON.stringify(announcementData),
-    });
+    return api.post('/admin/announcements', announcementData);
 };
 
 export const updateAnnouncement = async (announcementId, announcementData) => {
-    return apiRequest(`/admin/announcements/${announcementId}`, {
-        method: 'PUT',
-        body: JSON.stringify(announcementData),
-    });
+    return api.put(`/admin/announcements/${announcementId}`, announcementData);
 };
 
 export const deleteAnnouncement = async (announcementId) => {
-    return apiRequest(`/admin/announcements/${announcementId}`, {
-        method: 'DELETE',
-    });
+    return api.delete(`/admin/announcements/${announcementId}`);
 };
 
 export const getAnnouncementStats = async (announcementId) => {
-    return apiRequest(`/admin/announcements/${announcementId}/stats`);
+    return api.get(`/admin/announcements/${announcementId}/stats`, {
+        cacheKey: `announcement_stats_${announcementId}`,
+        cacheTTL: 5 * 60 * 1000,
+    });
 };
 
 export default {

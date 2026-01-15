@@ -1,26 +1,169 @@
-// Service Worker for PWA with Ably support and notifications.
+// Service Worker for PWA with Ably support, notifications, and offline caching.
 
-const CACHE_NAME = 'carina-pwa-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
+const API_CACHE = `api-cache-${CACHE_VERSION}`;
+const IMAGE_CACHE = `image-cache-${CACHE_VERSION}`;
 
-self.addEventListener('install', () => {
-  console.log('[SW] Installed');
-  self.skipWaiting(); // Activate immediately
+// Assets to cache immediately on install
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/offline.html',
+  '/manifest.webmanifest',
+  '/icons/manifest-icon-192.maskable.png',
+  '/icons/manifest-icon-512.maskable.png',
+];
+
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
+  console.log('[SW] Installing service worker...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('[SW] Caching static assets');
+        return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'reload' })));
+      })
+      .then(() => {
+        console.log('[SW] Service worker installed');
+        return self.skipWaiting(); // Activate immediately
+      })
+      .catch(err => {
+        console.error('[SW] Installation failed:', err);
+      })
+  );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activated');
-  event.waitUntil(self.clients.claim());
+  console.log('[SW] Activating service worker...');
+  const currentCaches = [CACHE_NAME, RUNTIME_CACHE, API_CACHE, IMAGE_CACHE];
+  
+  event.waitUntil(
+    caches.keys()
+      .then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            if (!currentCaches.includes(cacheName)) {
+              console.log('[SW] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => {
+        console.log('[SW] Service worker activated');
+        return self.clients.claim();
+      })
+  );
 });
 
-// Intercept fetch requests
+// Fetch event - implement caching strategies
 self.addEventListener('fetch', event => {
   const { request } = event;
+  const url = new URL(request.url);
 
-  // Only handle POST requests to /api (example)
-  if (request.method === 'POST' && request.url.includes('/api')) {
-    event.respondWith(handleRequest(request));
+  // Skip non-GET requests for caching (but handle POST for other features)
+  if (request.method !== 'GET') {
+    if (request.method === 'POST' && url.pathname.includes('/api')) {
+      event.respondWith(handleRequest(request));
+    }
+    return;
+  }
+
+  // Handle different types of requests with different strategies
+  if (url.pathname.startsWith('/api/')) {
+    // Network-first strategy for API calls
+    event.respondWith(networkFirstStrategy(request, API_CACHE));
+  } else if (request.destination === 'image') {
+    // Cache-first strategy for images
+    event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
+  } else {
+    // Stale-while-revalidate for other assets
+    event.respondWith(staleWhileRevalidateStrategy(request, RUNTIME_CACHE));
   }
 });
+
+// Network-first strategy: Try network, fall back to cache
+async function networkFirstStrategy(request, cacheName) {
+  try {
+    const networkResponse = await fetch(request);
+    
+    // Only cache successful responses
+    if (networkResponse && networkResponse.status === 200) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Network request failed, trying cache:', request.url);
+    const cachedResponse = await caches.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
+    // Return offline page or error response for API calls
+    return new Response(
+      JSON.stringify({ 
+        error: 'Offline', 
+        message: 'You are currently offline. Please check your connection.' 
+      }),
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        })
+      }
+    );
+  }
+}
+
+// Cache-first strategy: Check cache, fall back to network
+async function cacheFirstStrategy(request, cacheName) {
+  const cachedResponse = await caches.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse && networkResponse.status === 200) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, networkResponse.clone());
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Failed to fetch:', request.url);
+    // Return a placeholder image or error response
+    return new Response('', { status: 404, statusText: 'Not Found' });
+  }
+}
+
+// Stale-while-revalidate: Return cache immediately, update cache in background
+async function staleWhileRevalidateStrategy(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await caches.match(request);
+  
+  const fetchPromise = fetch(request).then(networkResponse => {
+    if (networkResponse && networkResponse.status === 200) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  }).catch(() => {
+    console.log('[SW] Background update failed for:', request.url);
+    return cachedResponse;
+  });
+  
+  // Return cached response immediately if available, otherwise wait for network
+  return cachedResponse || fetchPromise;
+}
 
 async function handleRequest(request) {
   try {

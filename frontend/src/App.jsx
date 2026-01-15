@@ -22,6 +22,7 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
+import OfflineIndicator from './components/OfflineIndicator';
 import { disconnectAbly } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
@@ -97,6 +98,7 @@ function App() {
         <Router>
             <UnreadCountProvider user={user}>
                 <AnnouncementNotificationProvider user={user}>
+                    <OfflineIndicator />
                     <ScrollToTop />
                     <Routes>
                 <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
