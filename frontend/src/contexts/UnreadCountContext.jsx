@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { getUnreadCount, getAdminUnreadCount } from '../services/chatService';
 import { 
     subscribeToChat, 
-    subscribeToAdminChats, 
+    subscribeToAdminChats,
+    subscribeToPlans,
     removeMessageHandler,
     requestNotificationPermission,
     getCurrentlyViewingChat
@@ -95,6 +96,11 @@ export const UnreadCountProvider = ({ children, user }) => {
 
             subscribeToChat(user._id, messageHandler).catch(error => {
                 console.error('Error subscribing to chat:', error);
+            });
+
+            // Subscribe to plan notifications
+            subscribeToPlans(user._id).catch(error => {
+                console.error('Error subscribing to plans:', error);
             });
 
             return () => {

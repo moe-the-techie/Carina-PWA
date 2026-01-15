@@ -52,6 +52,7 @@ export const generateAblyToken = async (userId) => {
                 [`chat:${userId}`]: ['subscribe', 'presence'],
                 [`chat:${userId}:messages`]: ['subscribe'],
                 [`user:${userId}:announcements`]: ['subscribe'],
+                [`plans:${userId}`]: ['subscribe'],
                 'announcements': ['subscribe'],
             },
             ttl: 3600000, // 1 hour

@@ -382,6 +382,80 @@ export const reconnect = async () => {
     }
 };
 
+// Subscribe to user plans channel
+export const subscribeToPlans = async (userId, onPlanUpdate) => {
+    try {
+        const client = await initializeAbly();
+        const channelName = `plans:${userId}`;
+
+        // Initialize handlers array for this channel if not exists
+        if (!messageHandlers.has(channelName)) {
+            messageHandlers.set(channelName, []);
+        }
+
+        // Add the handler to the list (if provided)
+        if (onPlanUpdate && !messageHandlers.get(channelName).includes(onPlanUpdate)) {
+            messageHandlers.get(channelName).push(onPlanUpdate);
+        }
+
+        // If already subscribed, just add the handler and return
+        if (activeSubscriptions.has(channelName)) {
+            console.log(`Already subscribed to ${channelName}, added new handler`);
+            return activeSubscriptions.get(channelName);
+        }
+
+        const channel = client.channels.get(channelName);
+
+        const handlePlanNotification = async (message) => {
+            console.log('Received plan update:', message.data);
+            
+            const planData = message.data;
+            const notificationTitle = planData.isUpdate 
+                ? 'Plan Updated Successfully' 
+                : 'New Plan Created';
+            
+            const notificationOptions = {
+                body: `Your plan "${planData.title}" is ready for view.`,
+                icon: '/icons/manifest-icon-192.maskable.png',
+                badge: '/icons/manifest-icon-192.maskable.png',
+                tag: `plan-${planData.planId}`,
+                renotify: true,
+                requireInteraction: false,
+                vibrate: [200, 100, 200],
+                data: {
+                    url: `/view-plan/${planData.planId}`,
+                    planData: planData,
+                    planId: planData.planId
+                }
+            };
+
+            await showNotification(notificationTitle, notificationOptions);
+
+            // Call all registered handlers for this channel
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(message.data);
+                } catch (error) {
+                    console.error('Error in plan handler:', error);
+                }
+            });
+        };
+
+        // Subscribe to plan events
+        channel.subscribe('plan-created', handlePlanNotification);
+        channel.subscribe('plan-updated', handlePlanNotification);
+
+        activeSubscriptions.set(channelName, channel);
+        console.log(`Subscribed to ${channelName}`);
+
+        return channel;
+    } catch (error) {
+        console.error('Error subscribing to plans:', error);
+        throw error;
+    }
+};
+
 // Subscribe to announcements for a user
 export const subscribeToAnnouncements = async (userId, onAnnouncement) => {
     try {
@@ -528,6 +602,7 @@ export const subscribeToGeneralAnnouncements = async (onAnnouncement) => {
 export default {
     subscribeToChat,
     subscribeToAdminChats,
+    subscribeToPlans,
     subscribeToAnnouncements,
     subscribeToGeneralAnnouncements,
     unsubscribeFromChannel,

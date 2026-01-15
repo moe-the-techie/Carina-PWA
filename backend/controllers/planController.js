@@ -1,6 +1,7 @@
 import Plan from '../models/Plan.js';
 import Form from '../models/Form.js';
 import User from '../models/User.js';
+import { publishMessage } from '../config/ably.js';
 
 // Create a new plan
 export async function createPlan(req, res) {
@@ -53,6 +54,14 @@ export async function createPlan(req, res) {
                 planSent: true 
             });
 
+            // Publish notification to Ably
+            await publishMessage(`plans:${userId}`, 'plan-updated', {
+                planId: existingPlan._id,
+                title: title || existingPlan.title,
+                userId: userId,
+                isUpdate: true
+            });
+
             return res.status(200).json({ 
                 message: 'Plan updated successfully', 
                 plan: updatedPlan,
@@ -91,6 +100,14 @@ export async function createPlan(req, res) {
             .populate('user', 'name email')
             .populate('form')
             .populate('createdBy', 'name');
+
+         // Publish notification to Ably
+         await publishMessage(`plans:${userId}`, 'plan-created', {
+            planId: newPlan._id,
+            title: title,
+            userId: userId,
+            isUpdate: false
+        });
 
         res.status(201).json({ 
             message: 'Plan created successfully', 
@@ -175,6 +192,14 @@ export async function updatePlan(req, res) {
             return res.status(404).json({ error: 'Plan not found' });
         }
 
+        // Publish notification to Ably
+        await publishMessage(`plans:${plan.user._id}`, 'plan-updated', {
+            planId: plan._id,
+            title: plan.title,
+            userId: plan.user._id,
+            isUpdate: true
+        });
+
         res.status(200).json({ 
             message: 'Plan updated successfully', 
             plan 
@@ -203,6 +228,14 @@ export async function activatePlan(req, res) {
         if (!plan) {
             return res.status(404).json({ error: 'Plan not found' });
         }
+
+        // Publish notification to Ably
+        await publishMessage(`plans:${plan.user._id}`, 'plan-updated', {
+            planId: plan._id,
+            title: plan.title,
+            userId: plan.user._id,
+            isUpdate: true
+        });
 
         res.status(200).json({ 
             message: 'Plan activated successfully', 
