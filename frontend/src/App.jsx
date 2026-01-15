@@ -8,6 +8,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import AddFormPage from './pages/NewFormPage';
 import ViewPlanPage from './pages/ViewPlanPage';
 import FormSuccessPage from './pages/FormSuccessPage';
+import PaymentPage from './pages/PaymentPage';
+import PaymentResultPage from './pages/PaymentResultPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminLayout from './components/AdminLayout';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -112,6 +114,10 @@ function App() {
                 <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
                 <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
                 <Route path="/view-plan/:id" element={isLoggedIn ? <ViewPlanPage /> : <Navigate to="/" replace/>} />
+                <Route path="/payment" element={isLoggedIn ? <PaymentPage /> : <Navigate to="/" replace/>} />
+                <Route path="/payment/success" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
+                <Route path="/payment/failed" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
+                <Route path="/payment/pending" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
                 
                 {/* Admin*/}
                 <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />

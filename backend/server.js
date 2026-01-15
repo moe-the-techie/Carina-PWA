@@ -13,6 +13,7 @@ import planRoutes from './routes/plan.js';
 import templateRoutes from './routes/templates.js';
 import chatRoutes from './routes/chat.js';
 import announcementRoutes from './routes/announcements.js';
+import paymentRoutes from './routes/payments.js';
 
 dotenv.config();
 connectDB();
@@ -58,6 +59,7 @@ app.use('/api', planRoutes);
 app.use('/api', templateRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', announcementRoutes);
+app.use('/api', paymentRoutes);
 // Start the server
 const PORT = process.env.PORT || 5000;
 

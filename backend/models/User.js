@@ -71,6 +71,10 @@ const userSchema = new Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    formCredits: {
+        type: Number,
+        default: 0  // Number of form submissions the user can make
+    },
     userClass: {
         type: Schema.Types.ObjectId,
         ref: 'UserClass',

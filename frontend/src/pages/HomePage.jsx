@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PageFade from '../components/PageFade';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
+import PaymentIcon from '@mui/icons-material/Payment';
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
@@ -9,6 +10,8 @@ import Skeleton from '@mui/material/Skeleton';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Pagination from '@mui/material/Pagination';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
 import { spacing, borderRadius, shadows, zIndex, gradients } from '../styles';
@@ -24,11 +27,29 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [formCredits, setFormCredits] = useState(null);
   const theme = useTheme();
 
   useEffect(() => {
     fetchData();
+    fetchCredits();
   }, [page]);
+
+  async function fetchCredits() {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFormCredits(data.formCredits);
+      }
+    } catch (error) {
+      console.error('Error fetching credits:', error);
+    }
+  }
 
   async function fetchData() {
     try {
@@ -109,6 +130,46 @@ export default function HomePage() {
         >
           My Forms
         </Typography>
+
+        {/* Credits Banner */}
+        <Box
+          sx={{
+            width: '100%',
+            mb: spacing.md,
+            p: 2,
+            borderRadius: borderRadius.md,
+            background: theme.palette.mode === 'dark'
+              ? 'rgba(255, 255, 255, 0.05)'
+              : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1" fontWeight={500}>
+              Form Credits:
+            </Typography>
+            <Chip
+              label={formCredits !== null ? `${formCredits} forms` : 'Loading...'}
+              color={formCredits > 0 ? 'success' : 'warning'}
+              size="small"
+            />
+          </Box>
+          <Button
+            variant={formCredits === 0 ? 'contained' : 'outlined'}
+            size="small"
+            startIcon={<PaymentIcon />}
+            onClick={() => navigate('/payment')}
+            sx={{ borderRadius: 2 }}
+          >
+            {formCredits === 0 ? 'Buy Credits' : 'Buy More'}
+          </Button>
+        </Box>
 
         {loading ? (
           // Skeleton loading state

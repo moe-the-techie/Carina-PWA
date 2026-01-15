@@ -1,4 +1,5 @@
 import Form from '../models/Form.js';
+import User from '../models/User.js';
 
 // TODO: Add route for admin to get all forms that were not reviewed
 
@@ -100,12 +101,39 @@ export async function getUserForms (req, res) {
 
 export async function newForm(req, res) {
     try {
-        const formData = { ...req.body, user: req.user._id };
+        const userId = req.user._id;
+        
+        // Check if user has form credits
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check for form credits (admins have unlimited credits)
+        if (user.role !== 'admin' && (!user.formCredits || user.formCredits <= 0)) {
+            return res.status(403).json({ 
+                error: 'No form credits available',
+                code: 'NO_CREDITS',
+                message: 'You need to purchase form credits to submit a new form.'
+            });
+        }
+
+        const formData = { ...req.body, user: userId };
 
         const newForm = new Form(formData);
         await newForm.save();
 
-        res.status(201).json({ message: 'Form created successfully', form: newForm });
+        // Deduct one form credit (only for non-admin users)
+        if (user.role !== 'admin') {
+            user.formCredits -= 1;
+            await user.save();
+        }
+
+        res.status(201).json({ 
+            message: 'Form created successfully', 
+            form: newForm,
+            remainingCredits: user.formCredits
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

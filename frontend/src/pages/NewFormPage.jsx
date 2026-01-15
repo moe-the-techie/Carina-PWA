@@ -88,6 +88,43 @@ export default function NewFormPage () {
     const [formErrors, setFormErrors] = useState({});
     const [backendError, setBackendError] = useState('');
     const [scrolledDown, setScrolledDown] = useState(false);
+    const [formCredits, setFormCredits] = useState(null);
+    const [checkingCredits, setCheckingCredits] = useState(true);
+
+    // Check form credits on mount
+    useEffect(() => {
+        const checkFormCredits = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
+
+                const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setFormCredits(data.formCredits);
+                    
+                    // Redirect to payment if no credits
+                    if (data.formCredits <= 0) {
+                        navigate('/payment', { 
+                            state: { message: 'You need to purchase form credits to submit a new form.' }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking credits:', error);
+            } finally {
+                setCheckingCredits(false);
+            }
+        };
+
+        checkFormCredits();
+    }, [navigate]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -208,6 +245,14 @@ export default function NewFormPage () {
             const data = await response.json();
 
             if (!response.ok) {
+                // Handle no credits error - redirect to payment
+                if (data.code === 'NO_CREDITS') {
+                    navigate('/payment', { 
+                        state: { message: data.message || 'You need to purchase form credits to submit a new form.' }
+                    });
+                    return;
+                }
+                
                 if (data && data.error) {
                     setBackendError(data.error);
                 } else {
@@ -272,12 +317,44 @@ export default function NewFormPage () {
         mb: 2,
     };
 
+    // Show loading while checking credits
+    if (checkingCredits) {
+        return <LoadingBackdrop open={true} />;
+    }
+
     return (
         <PageFade>
+            {/* Credits Banner */}
+            {formCredits !== null && formCredits > 0 && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 1100,
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                        color: 'white',
+                        py: 1,
+                        px: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1,
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                    }}
+                >
+                    <Typography variant="body2" fontWeight={500}>
+                        💳 Form Credits: {formCredits} remaining
+                    </Typography>
+                </Box>
+            )}
+
             {/* Background with gradient */}
             <Box
                 sx={{
                     minHeight: '100vh',
+                    paddingTop: formCredits !== null && formCredits > 0 ? '40px' : 0,
                     background: theme.palette.mode === 'dark'
                         ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
                         : `linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 50%, #f5f7fa 100%)`,
