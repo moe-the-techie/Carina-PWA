@@ -24,10 +24,12 @@ import {
 import { 
   Edit as EditIcon,
   Storage as StorageIcon,
-  Delete as DeleteIcon 
+  Delete as DeleteIcon,
+  HelpOutline as HelpOutlineIcon
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import LandingButton from '../components/LandingButton.jsx';
+import OnboardingOverlay from '../components/OnboardingOverlay';
 import PageFade from '../components/PageFade';
 import EditAccountDialog from '../components/EditAccountDialog.jsx';
 import ImageViewerDialog from '../components/ImageViewerDialog';
@@ -54,6 +56,7 @@ export default function SettingsPage({ onLogout }) {
   const [cacheStats, setCacheStats] = useState({ count: 0, size: 0, maxSize: 0, expiry: 0 });
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
   const [success, setSuccess] = useState('');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -253,6 +256,30 @@ export default function SettingsPage({ onLogout }) {
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
+              
+              <Divider sx={{ my: spacing.md }} />
+              
+              {/* App Guide Section */}
+              <ListItem>
+                <ListItemText 
+                  primary="App Guide" 
+                  secondary="View the app introduction and PWA installation guide"
+                />
+                <ListItemSecondaryAction>
+                  <IconButton 
+                    edge="end" 
+                    onClick={() => setShowOnboarding(true)}
+                    color="primary"
+                    sx={{ 
+                      width: { xs: '40px', md: '48px' },
+                      height: { xs: '40px', md: '48px' },
+                      transition: transitions.fast,
+                    }}
+                  >
+                    <HelpOutlineIcon sx={{ fontSize: { xs: '20px', md: '24px' } }} />
+                  </IconButton>
+                </ListItemSecondaryAction>
+              </ListItem>
             </List>
             
             <Box sx={{ mt: spacing.lg, display: 'flex', justifyContent: 'center' }}>
@@ -310,6 +337,14 @@ export default function SettingsPage({ onLogout }) {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Onboarding Overlay */}
+        {showOnboarding && (
+          <OnboardingOverlay 
+            forceShow={true} 
+            onClose={() => setShowOnboarding(false)} 
+          />
+        )}
       </Box>
     </PageFade>
   );

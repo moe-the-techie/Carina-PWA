@@ -1,6 +1,7 @@
 import React from 'react';
 import { useMediaQuery, useTheme, Box } from '@mui/material';
 import NavigationBar from './NavigationBar';
+import OnboardingOverlay from './OnboardingOverlay';
 
 export default function AuthenticatedLayout({ children }) {
   const theme = useTheme();
@@ -16,6 +17,7 @@ export default function AuthenticatedLayout({ children }) {
         flexDirection: 'column'
       }}
     >
+      <OnboardingOverlay />
       <NavigationBar />
       <Box
         component="main"
