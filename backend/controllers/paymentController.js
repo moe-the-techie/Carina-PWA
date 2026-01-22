@@ -345,11 +345,14 @@ export async function getFormCredits(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
+
         res.json({
             formCredits: user.formCredits || 0,
             pricePerPackage: paymobConfig.formPackagePrice / 100,
             formsPerPackage: paymobConfig.formsPerPackage,
-            currency: paymobConfig.currency
+            currency: paymobConfig.currency,
+            paymentsEnabled: paymentsEnabled
         });
 
     } catch (error) {

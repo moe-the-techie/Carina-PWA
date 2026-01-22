@@ -37,6 +37,7 @@ export default function PaymentPage() {
     const [paymentData, setPaymentData] = useState(null);
     const [creditsInfo, setCreditsInfo] = useState(null);
     const [pixelLoaded, setPixelLoaded] = useState(false);
+    const [paymentsEnabled, setPaymentsEnabled] = useState(true);
 
     // Fetch credits info on mount
     useEffect(() => {
@@ -61,6 +62,15 @@ export default function PaymentPage() {
 
             const data = await response.json();
             setCreditsInfo(data);
+            
+            // Check if payments are enabled
+            const enabled = data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false';
+            setPaymentsEnabled(enabled);
+            
+            if (!enabled) {
+                setError('Payments are currently disabled');
+                setTimeout(() => navigate('/home'), 2000);
+            }
         } catch (err) {
             console.error('Error fetching credits:', err);
             setError('Failed to load payment information');

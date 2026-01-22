@@ -28,6 +28,7 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [formCredits, setFormCredits] = useState(null);
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const theme = useTheme();
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         setFormCredits(data.formCredits);
+        setPaymentsEnabled(data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
       }
     } catch (error) {
       console.error('Error fetching credits:', error);
@@ -132,44 +134,46 @@ export default function HomePage() {
         </Typography>
 
         {/* Credits Banner */}
-        <Box
-          sx={{
-            width: '100%',
-            mb: spacing.md,
-            p: 2,
-            borderRadius: borderRadius.md,
-            background: theme.palette.mode === 'dark'
-              ? 'rgba(255, 255, 255, 0.05)'
-              : 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 1,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body1" fontWeight={500}>
-              Form Credits:
-            </Typography>
-            <Chip
-              label={formCredits !== null ? `${formCredits} forms` : 'Loading...'}
-              color={formCredits > 0 ? 'success' : 'warning'}
-              size="small"
-            />
-          </Box>
-          <Button
-            variant={formCredits === 0 ? 'contained' : 'outlined'}
-            size="small"
-            startIcon={<PaymentIcon />}
-            onClick={() => navigate('/payment')}
-            sx={{ borderRadius: 2 }}
+        {paymentsEnabled && (
+          <Box
+            sx={{
+              width: '100%',
+              mb: spacing.md,
+              p: 2,
+              borderRadius: borderRadius.md,
+              background: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 1,
+            }}
           >
-            {formCredits === 0 ? 'Buy Credits' : 'Buy More'}
-          </Button>
-        </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body1" fontWeight={500}>
+                Form Credits:
+              </Typography>
+              <Chip
+                label={formCredits !== null ? `${formCredits} forms` : 'Loading...'}
+                color={formCredits > 0 ? 'success' : 'warning'}
+                size="small"
+              />
+            </Box>
+            <Button
+              variant={formCredits === 0 ? 'contained' : 'outlined'}
+              size="small"
+              startIcon={<PaymentIcon />}
+              onClick={() => navigate('/payment')}
+              sx={{ borderRadius: 2 }}
+            >
+              {formCredits === 0 ? 'Buy Credits' : 'Buy More'}
+            </Button>
+          </Box>
+        )}
 
         {loading ? (
           // Skeleton loading state

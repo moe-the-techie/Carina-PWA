@@ -90,6 +90,7 @@ export default function NewFormPage () {
     const [scrolledDown, setScrolledDown] = useState(false);
     const [formCredits, setFormCredits] = useState(null);
     const [checkingCredits, setCheckingCredits] = useState(true);
+    const [paymentsEnabled, setPaymentsEnabled] = useState(false);
 
     // Check form credits on mount
     useEffect(() => {
@@ -108,9 +109,10 @@ export default function NewFormPage () {
                 if (response.ok) {
                     const data = await response.json();
                     setFormCredits(data.formCredits);
+                    setPaymentsEnabled(data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
                     
-                    // Redirect to payment if no credits
-                    if (data.formCredits <= 0) {
+                    // Redirect to payment if no credits and payments are enabled
+                    if (data.formCredits <= 0 && data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false') {
                         navigate('/payment', { 
                             state: { 
                                 message: 'You need to purchase form credits to submit a new form.',
@@ -248,14 +250,18 @@ export default function NewFormPage () {
             const data = await response.json();
 
             if (!response.ok) {
-                // Handle no credits error - redirect to payment
+                // Handle no credits error - redirect to payment only if payments are enabled
                 if (data.code === 'NO_CREDITS') {
-                    navigate('/payment', { 
-                        state: { 
-                            message: data.message || 'You need to purchase form credits to submit a new form.',
-                            fromNewForm: true
-                        }
-                    });
+                    if (paymentsEnabled) {
+                        navigate('/payment', { 
+                            state: { 
+                                message: data.message || 'You need to purchase form credits to submit a new form.',
+                                fromNewForm: true
+                            }
+                        });
+                    } else {
+                        setBackendError('You have no form credits available. Please contact support.');
+                    }
                     return;
                 }
                 
