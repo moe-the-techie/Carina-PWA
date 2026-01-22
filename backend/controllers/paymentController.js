@@ -41,7 +41,7 @@ export async function createPaymentIntention(req, res) {
         const intentionBody = {
             amount: amountCents,
             currency: paymobConfig.currency,
-            payment_methods: [parseInt(paymobConfig.integrationId), 'card'],
+            payment_methods: [parseInt(paymobConfig.integrationId)],
             items: [
                 {
                     name: 'Form Credits Package',

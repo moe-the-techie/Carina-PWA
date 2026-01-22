@@ -109,8 +109,11 @@ export async function newForm(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Check for form credits (admins have unlimited credits)
-        if (user.role !== 'admin' && (!user.formCredits || user.formCredits <= 0)) {
+        // Check if payments are enabled
+        const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
+
+        // Check for form credits (admins have unlimited credits, skip if payments disabled)
+        if (paymentsEnabled && user.role !== 'admin' && (!user.formCredits || user.formCredits <= 0)) {
             return res.status(403).json({ 
                 error: 'No form credits available',
                 code: 'NO_CREDITS',
@@ -123,8 +126,8 @@ export async function newForm(req, res) {
         const newForm = new Form(formData);
         await newForm.save();
 
-        // Deduct one form credit (only for non-admin users)
-        if (user.role !== 'admin') {
+        // Deduct one form credit (only for non-admin users when payments are enabled)
+        if (paymentsEnabled && user.role !== 'admin') {
             user.formCredits -= 1;
             await user.save();
         }
