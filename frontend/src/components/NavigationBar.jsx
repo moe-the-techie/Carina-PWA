@@ -14,7 +14,6 @@ import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
 import { spacing, transitions, zIndex } from '../styles';
@@ -137,14 +136,6 @@ export default function NavigationBar() {
             </li>
           );
         })}
-      </Box>
-      <Box sx={{ 
-        position: 'absolute', 
-        right: { xs: 8, md: 16 },
-        display: 'flex',
-        alignItems: 'center'
-      }}>
-        <ThemeToggle />
       </Box>
       <Divider sx={{ 
         position: 'absolute', 
