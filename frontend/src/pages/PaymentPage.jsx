@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import {
     Box,
@@ -26,6 +26,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 export default function PaymentPage() {
     const theme = useTheme();
     const navigate = useNavigate();
+    const location = useLocation();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const pixelContainerRef = useRef(null);
     const pixelInitializedRef = useRef(false);
@@ -238,7 +239,13 @@ export default function PaymentPage() {
                     >
                         <Button
                             startIcon={<ArrowBackIcon />}
-                            onClick={() => navigate(-1)}
+                            onClick={() => {
+                                if (location.state?.fromNewForm) {
+                                    navigate('/');
+                                } else {
+                                    navigate(-1);
+                                }
+                            }}
                             sx={{ mb: 2 }}
                         >
                             Back

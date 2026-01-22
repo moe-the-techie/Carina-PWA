@@ -112,7 +112,10 @@ export default function NewFormPage () {
                     // Redirect to payment if no credits
                     if (data.formCredits <= 0) {
                         navigate('/payment', { 
-                            state: { message: 'You need to purchase form credits to submit a new form.' }
+                            state: { 
+                                message: 'You need to purchase form credits to submit a new form.',
+                                fromNewForm: true
+                            }
                         });
                     }
                 }
@@ -248,7 +251,10 @@ export default function NewFormPage () {
                 // Handle no credits error - redirect to payment
                 if (data.code === 'NO_CREDITS') {
                     navigate('/payment', { 
-                        state: { message: data.message || 'You need to purchase form credits to submit a new form.' }
+                        state: { 
+                            message: data.message || 'You need to purchase form credits to submit a new form.',
+                            fromNewForm: true
+                        }
                     });
                     return;
                 }
