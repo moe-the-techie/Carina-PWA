@@ -10,7 +10,7 @@ import App from './App.jsx'
 import { ThemeContextProvider } from './contexts/ThemeContext.jsx';
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
+  navigator.serviceWorker.register('/sw.js', { type: import.meta.env.DEV ? 'module' : 'classic' })
     .then(reg => {
       console.log('[PWA] Service worker registered:', reg.scope);
       

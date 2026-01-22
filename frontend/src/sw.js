@@ -1,4 +1,8 @@
 // Service Worker for PWA with Ably support, notifications, and offline caching.
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+
+cleanupOutdatedCaches();
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
