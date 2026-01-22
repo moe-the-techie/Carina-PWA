@@ -22,7 +22,7 @@ if ('serviceWorker' in navigator) {
     })
     .catch(err => console.error('[PWA] SW registration failed:', err));
 
-  // Listen for SW messages to write to localStorage
+  // Listen for SW messages to write to localStorage (incomplete implementation)
   navigator.serviceWorker.addEventListener('message', event => {
     const { type, key, value } = event.data;
     if (type === 'SET_LOCALSTORAGE') {
