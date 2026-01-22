@@ -27,9 +27,11 @@ const paymobConfig = {
     // Default currency
     currency: 'EGP',
     
-    // Price per 4 forms package in cents (e.g., 20000 = 200 EGP)
+    // Price per package in cents (e.g., 20000 = 200 EGP) - configurable via env
     formPackagePrice: parseInt(process.env.PAYMOB_FORM_PACKAGE_PRICE) || 20000,
-    formsPerPackage: 4,
+    
+    // Number of forms per package - configurable via env
+    formsPerPackage: parseInt(process.env.PAYMOB_FORMS_PER_PACKAGE) || 4,
 };
 
 export default paymobConfig;

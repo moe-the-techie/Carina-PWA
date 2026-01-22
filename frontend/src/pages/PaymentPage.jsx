@@ -320,14 +320,14 @@ export default function PaymentPage() {
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography>Form Submissions</Typography>
                                     <Typography fontWeight={600}>
-                                        {creditsInfo?.formsPerPackage || 4} forms
+                                        {creditsInfo?.formsPerPackage || import.meta.env.VITE_PAYMENT_FORMS_PER_PACKAGE || 4} forms
                                     </Typography>
                                 </Box>
 
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography>Price</Typography>
                                     <Typography variant="h5" fontWeight={700} color="primary">
-                                        {creditsInfo?.pricePerPackage || 200} {creditsInfo?.currency || 'EGP'}
+                                        {creditsInfo?.pricePerPackage || import.meta.env.VITE_PAYMENT_PACKAGE_PRICE || 200} {creditsInfo?.currency || import.meta.env.VITE_PAYMENT_CURRENCY || 'EGP'}
                                     </Typography>
                                 </Box>
                             </Box>
