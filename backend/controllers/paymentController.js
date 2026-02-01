@@ -149,7 +149,7 @@ export async function handlePaymentCallback(req, res) {
         // Fawaterk may send status in different field names depending on the callback type
         const invoiceId = callbackData.invoice_id || callbackData.invoiceId;
         const invoiceKey = callbackData.invoice_key || callbackData.invoiceKey;
-        const paymentStatus = callbackData.payment_status || callbackData.paymentStatus || 
+        const paymentStatus = callbackData.invoice_status || callbackData.paymentStatus || 
                               callbackData.status || callbackData.status_text;
         const transactionId = callbackData.transaction_id || callbackData.transactionId;
 
