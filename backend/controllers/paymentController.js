@@ -116,6 +116,7 @@ export async function createPaymentIntention(req, res) {
  */
 export async function handlePaymentCallback(req, res) {
     try {
+        console.log('--- FW Webhook Triggered ---');
         const callbackData = req.body;
         
         console.log('Fawaterk callback received:', JSON.stringify(callbackData, null, 2));
@@ -195,8 +196,17 @@ export async function handlePaymentCallback(req, res) {
         if (statusLower === 'pending' || statusLower === 'processing') {
             payment.status = 'pending';
         } else if (statusLower === 'refunded') {
+            // Check if we need to deduct credits (if was previously paid)
+            if (payment.status === 'paid') {
+                const user = await User.findById(payment.user);
+                if (user) {
+                    user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
+                    await user.save();
+                    console.log(`Refunded ${payment.formCredits} credits from user ${user._id}. New total: ${user.formCredits}`);
+                }
+            }
             payment.status = 'refunded';
-        } else if (statusLower === 'failed' || statusLower === 'declined' || statusLower === 'expired') {
+        } else if (statusLower === 'failed' || statusLower === 'declined' || statusLower === 'expired' || statusLower === 'canceled') {
             payment.status = 'failed';
             payment.errorMessage = callbackData.message || callbackData.error || 'Payment failed';
         } else {
