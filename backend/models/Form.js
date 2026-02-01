@@ -80,10 +80,9 @@ const formSchema = new Schema ({
         enum: ['Before Lunch', 'After Lunch'],
         required: true
     },
-    bodyImage: {
-        type: String,
-        default: null
-    },
+    inbodyImages: [{
+        type: String
+    }],
     reviewed: {
         type: Boolean,
         default: false

@@ -919,12 +919,14 @@ export default function AdminFormsPage() {
                                 </Grid>
 
                                 {/* Inbody Images Card */}
-                                {selectedForm.inbodyImages && selectedForm.inbodyImages.length > 0 && (
+                                {(selectedForm.bodyImage || (selectedForm.inbodyImages && selectedForm.inbodyImages.length > 0)) && (
                                     <Grid item xs={12}>
                                         <Card>
                                             <CardContent>
                                                 <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    📸 Inbody Images ({selectedForm.inbodyImages.length})
+                                                    📸 Inbody Images ({
+                                                        (selectedForm.inbodyImages?.length || 0) + (selectedForm.bodyImage ? 1 : 0)
+                                                    })
                                                 </Typography>
                                                 <Box sx={{ 
                                                     display: 'grid', 
@@ -936,7 +938,62 @@ export default function AdminFormsPage() {
                                                     gap: 2,
                                                     mt: 2
                                                 }}>
-                                                    {selectedForm.inbodyImages.map((imageUrl, index) => (
+                                                    {/* Legacy bodyImage */}
+                                                    {selectedForm.bodyImage && (
+                                                        <Paper
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 2,
+                                                                overflow: 'hidden',
+                                                                border: `2px solid ${theme.palette.divider}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.02)',
+                                                                    boxShadow: theme.shadows[8],
+                                                                    borderColor: theme.palette.primary.main,
+                                                                }
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(selectedForm.bodyImage);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={selectedForm.bodyImage}
+                                                                alt="Inbody Legacy"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 200,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                }}
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.parentElement.innerHTML = '<div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #999;">Image failed to load</div>';
+                                                                }}
+                                                            />
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    bottom: 0,
+                                                                    left: 0,
+                                                                    right: 0,
+                                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                                                                    color: 'white',
+                                                                    p: 1,
+                                                                    textAlign: 'center',
+                                                                }}
+                                                            >
+                                                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                                    Legacy Image
+                                                                </Typography>
+                                                            </Box>
+                                                        </Paper>
+                                                    )}
+
+                                                    {/* Array inbodyImages */}
+                                                    {selectedForm.inbodyImages && selectedForm.inbodyImages.map((imageUrl, index) => (
                                                         <Paper
                                                             key={index}
                                                             sx={{

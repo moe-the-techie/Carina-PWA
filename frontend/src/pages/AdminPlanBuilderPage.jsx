@@ -32,6 +32,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PageFade from '../components/PageFade';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -66,6 +67,9 @@ export default function AdminPlanBuilderPage() {
         category: 'General',
         tags: []
     });
+
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
     
     // Plan data
     const [planData, setPlanData] = useState({
@@ -1106,6 +1110,61 @@ export default function AdminPlanBuilderPage() {
                                         <Typography variant="body2" paragraph>
                                             {currentFormData.currentSmoker ? 'Yes' : 'No'}
                                         </Typography>
+
+                                        {(currentFormData.bodyImage || (currentFormData.inbodyImages && currentFormData.inbodyImages.length > 0)) && (
+                                            <>
+                                                <Typography variant="subtitle2" color="primary">Inbody Images</Typography>
+                                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1, mb: 1 }}>
+                                                    {currentFormData.bodyImage && (
+                                                        <Box 
+                                                            onClick={() => {
+                                                                setSelectedImage(currentFormData.bodyImage);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                            sx={{ 
+                                                                width: 60, 
+                                                                height: 60, 
+                                                                borderRadius: 1, 
+                                                                overflow: 'hidden', 
+                                                                cursor: 'pointer',
+                                                                border: '1px solid #ddd',
+                                                                '&:hover': { opacity: 0.8 }
+                                                            }}
+                                                        >
+                                                            <img 
+                                                                src={currentFormData.bodyImage} 
+                                                                alt="Inbody" 
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        </Box>
+                                                    )}
+                                                    {currentFormData.inbodyImages && currentFormData.inbodyImages.map((img, idx) => (
+                                                        <Box 
+                                                            key={idx}
+                                                            onClick={() => {
+                                                                setSelectedImage(img);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                            sx={{ 
+                                                                width: 60, 
+                                                                height: 60, 
+                                                                borderRadius: 1, 
+                                                                overflow: 'hidden', 
+                                                                cursor: 'pointer',
+                                                                border: '1px solid #ddd',
+                                                                '&:hover': { opacity: 0.8 }
+                                                            }}
+                                                        >
+                                                            <img 
+                                                                src={img} 
+                                                                alt={`Inbody ${idx}`} 
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            </>
+                                        )}
                                     </Box>
                                 </CardContent>
                             </Card>
@@ -1964,6 +2023,12 @@ export default function AdminPlanBuilderPage() {
                         </Button>
                     </DialogActions>
                 </Dialog>
+
+                <ImageViewerDialog
+                    open={imageDialogOpen}
+                    onClose={() => setImageDialogOpen(false)}
+                    imageUrl={selectedImage}
+                />
             </Box>
         </PageFade>
     );
