@@ -26,8 +26,9 @@ import FlagIcon from '@mui/icons-material/Flag';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import ChecklistIcon from '@mui/icons-material/Checklist';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import LoadingBackdrop from '../components/LoadingBackdrop.jsx';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';import LoadingBackdrop from '../components/LoadingBackdrop.jsx';
 import FormCheckBox from '../components/FormCheckBox.jsx';
 import FormGroup from '@mui/material/FormGroup';
 import { useTheme } from '@mui/material/styles';
@@ -83,7 +84,11 @@ export default function NewFormPage () {
         coffee: false,
         sugar: '',
         snackTime: '',
+        inbodyImages: [],
     });
+    const [inbodyImagePreviews, setInbodyImagePreviews] = useState([]);
+    const [inbodyImageFiles, setInbodyImageFiles] = useState([]);
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [formErrors, setFormErrors] = useState({});
     const [backendError, setBackendError] = useState('');
@@ -176,6 +181,55 @@ export default function NewFormPage () {
         }));
     };
 
+    const handleImageUpload = async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        // Check if we can add more images
+        if (inbodyImageFiles.length + files.length > 3) {
+            setBackendError('Maximum 3 images allowed');
+            return;
+        }
+
+        // Validate each file
+        for (const file of files) {
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                setBackendError('Each image must be less than 5MB');
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                setBackendError('Only JPEG, PNG, GIF, and WebP images are allowed');
+                return;
+            }
+        }
+
+        setBackendError('');
+
+        // Create previews for new files
+        const newPreviews = [];
+        for (const file of files) {
+            const reader = new FileReader();
+            const previewPromise = new Promise((resolve) => {
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+            newPreviews.push(previewPromise);
+        }
+
+        const resolvedPreviews = await Promise.all(newPreviews);
+        setInbodyImagePreviews(prev => [...prev, ...resolvedPreviews]);
+        setInbodyImageFiles(prev => [...prev, ...files]);
+    };
+
+    const handleRemoveImage = (index) => {
+        setInbodyImagePreviews(prev => prev.filter((_, i) => i !== index));
+        setInbodyImageFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
     const isValidTextEntry = (text) => /^[a-zA-Z0-9\s]+$/.test(text);
 
     const validateForm = () => {
@@ -241,6 +295,34 @@ export default function NewFormPage () {
         try {
             setSubmitting(true);
 
+            // Upload images first if any
+            const uploadedImageUrls = [];
+            if (inbodyImageFiles.length > 0) {
+                setUploadingImage(true);
+                for (const file of inbodyImageFiles) {
+                    const imageFormData = new FormData();
+                    imageFormData.append('image', file);
+
+                    const imageResponse = await fetch(`${apiBaseUrl}/api/forms/upload-body-image`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` },
+                        body: imageFormData,
+                    });
+
+                    const imageData = await imageResponse.json();
+
+                    if (!imageResponse.ok) {
+                        throw new Error(imageData.error || 'Failed to upload image');
+                    }
+
+                    uploadedImageUrls.push(imageData.imageUrl);
+                }
+                setUploadingImage(false);
+            }
+
+            // Add uploaded image URLs to sanitized data
+            sanitizedData.inbodyImages = uploadedImageUrls;
+
             const response = await fetch(`${apiBaseUrl}/api/forms`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -273,12 +355,13 @@ export default function NewFormPage () {
                 return;
             }
 
+            navigate('/form-success');
         } catch (error) {
             console.error('Network error:', error);
             setBackendError('Network error: ' + error.message);
         } finally {
             setSubmitting(false);
-            navigate('/form-success');
+            setUploadingImage(false);
         }
     }
 
@@ -743,6 +826,104 @@ export default function NewFormPage () {
                                             variant="filled" 
                                             sx={inputStyle} 
                                         />
+                                    </Box>
+                                    
+                                    {/* Inbody Images Upload */}
+                                    <Box sx={{ mt: 3 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 2, color: theme.palette.text.secondary, fontWeight: 500 }}>
+                                            📸 Inbody Images (Optional - Max 3)
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary, fontSize: '0.9rem' }}>
+                                            Upload up to 3 photos of your body to help us better understand your fitness goals.
+                                        </Typography>
+                                        
+                                        {/* Image Previews */}
+                                        {inbodyImagePreviews.length > 0 && (
+                                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
+                                                {inbodyImagePreviews.map((preview, index) => (
+                                                    <Paper
+                                                        key={index}
+                                                        sx={{
+                                                            position: 'relative',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            border: `2px solid ${theme.palette.primary.main}`,
+                                                            width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 11px)' },
+                                                            maxWidth: 250,
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={preview}
+                                                            alt={`Inbody preview ${index + 1}`}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 'auto',
+                                                                display: 'block',
+                                                            }}
+                                                        />
+                                                        <IconButton
+                                                            onClick={() => handleRemoveImage(index)}
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                top: 8,
+                                                                right: 8,
+                                                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                                                color: 'white',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                                }
+                                                            }}
+                                                        >
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        )}
+                                        
+                                        {/* Upload Button */}
+                                        {inbodyImagePreviews.length < 3 && (
+                                            <Box>
+                                                <Button
+                                                    component="label"
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    startIcon={<PhotoCameraIcon />}
+                                                    sx={{
+                                                        borderStyle: 'dashed',
+                                                        borderWidth: 2,
+                                                        borderRadius: 2,
+                                                        py: 2,
+                                                        textTransform: 'none',
+                                                        fontWeight: 500,
+                                                        transition: 'all 0.3s ease',
+                                                        '&:hover': {
+                                                            borderStyle: 'dashed',
+                                                            borderWidth: 2,
+                                                            transform: 'translateY(-2px)',
+                                                        }
+                                                    }}
+                                                >
+                                                    {inbodyImagePreviews.length === 0 ? 'Upload Inbody Images' : `Add More Images (${inbodyImagePreviews.length}/3)`}
+                                                    <input
+                                                        type="file"
+                                                        hidden
+                                                        multiple
+                                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                                        onChange={handleImageUpload}
+                                                    />
+                                                </Button>
+                                                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: theme.palette.text.secondary, textAlign: 'center' }}>
+                                                    Maximum file size: 5MB each • Formats: JPEG, PNG, GIF, WebP • Images will be uploaded when you submit
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                        
+                                        {inbodyImagePreviews.length === 3 && (
+                                            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: theme.palette.success.main, textAlign: 'center', fontWeight: 500 }}>
+                                                ✓ Maximum images selected (3/3) • Images will be uploaded when you submit
+                                            </Typography>
+                                        )}
                                     </Box>
                                 </Paper>
                             </motion.div>

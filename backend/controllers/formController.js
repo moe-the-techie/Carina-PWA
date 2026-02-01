@@ -1,5 +1,6 @@
 import Form from '../models/Form.js';
 import User from '../models/User.js';
+import { uploadBodyImageToCloudinary } from '../config/cloudinary.js';
 
 // TODO: Add route for admin to get all forms that were not reviewed
 
@@ -139,6 +140,30 @@ export async function newForm(req, res) {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+}
+
+// Upload body image to Cloudinary
+export async function uploadBodyImage(req, res) {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image file provided' });
+        }
+
+        const imageName = `body-image-${req.user._id}-${Date.now()}`;
+        const uploadResult = await uploadBodyImageToCloudinary(req.file.buffer, imageName);
+
+        res.status(200).json({
+            imageUrl: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            format: uploadResult.format,
+            size: uploadResult.bytes
+        });
+    } catch (error) {
+        console.error('Error in uploadBodyImage:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload body image' });
     }
 }
 

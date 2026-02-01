@@ -54,6 +54,33 @@ const uploadToCloudinary = async (buffer, filename) => {
   });
 };
 
+// Function to upload body image to Cloudinary
+const uploadBodyImageToCloudinary = async (buffer, filename) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      {
+        folder: 'carina-pwa/body-images',
+        public_id: filename,
+        transformation: [
+          {
+            width: 1200,
+            height: 1600,
+            crop: 'limit',
+            quality: 'auto:good'
+          }
+        ]
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    ).end(buffer);
+  });
+};
+
 // Function to delete an image from Cloudinary
 const deleteImage = async (publicId) => {
   try {
@@ -65,4 +92,4 @@ const deleteImage = async (publicId) => {
   }
 };
 
-export { cloudinary, upload, uploadToCloudinary, deleteImage };
+export { cloudinary, upload, uploadToCloudinary, uploadBodyImageToCloudinary, deleteImage };
