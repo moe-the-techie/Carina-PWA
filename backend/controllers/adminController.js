@@ -590,6 +590,15 @@ export async function updatePaymentStatusAdmin(req, res) {
                 await user.save();
             }
             payment.paidAt = new Date();
+        } else if (status === 'refunded' && oldStatus === 'paid') {
+            // If changing from paid to refunded, deduct credits
+             const user = await User.findById(payment.user);
+            if (user) {
+                // Ensure we don't go below zero (though theoretically they should have them)
+                user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
+                await user.save();
+                console.log(`Admin refund: Deducted ${payment.formCredits} credits from user ${user._id}`);
+            }
         }
 
         payment.status = status;
