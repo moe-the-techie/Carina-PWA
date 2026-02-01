@@ -2,6 +2,7 @@ import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import fawaterkConfig from '../config/fawaterk.js';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 /**
  * Create a payment invoice using Fawaterk's API
@@ -149,26 +150,49 @@ export async function handlePaymentCallback(req, res) {
             return res.status(404).json({ error: 'Payment not found' });
         }
 
-        // Update payment record
+        // Map Fawaterk status to our status
+        const statusLower = paymentStatus?.toLowerCase();
+        
+        if (statusLower === 'paid' || statusLower === 'success' || statusLower === 'successful') {
+            // Use findOneAndUpdate to atomically update and check if it was already paid
+            // This prevents race conditions with the frontend status check
+            const updatedPayment = await Payment.findOneAndUpdate(
+                { _id: payment._id, status: { $ne: 'paid' } },
+                {
+                    status: 'paid',
+                    paidAt: new Date(),
+                    paymentMethod: callbackData.payment_method || 'card',
+                    fawaterkTransactionId: transactionId,
+                    callbackData: callbackData,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+
+            if (updatedPayment) {
+                // Only add credits if we successfully transitioned status
+                const user = await User.findById(payment.user);
+                if (user) {
+                    user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                    await user.save();
+                    console.log(`Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
+                }
+                
+                // Return success with updated status
+                return res.status(200).json({ success: true, status: 'paid' });
+            } else {
+                // Payment was already paid (concurrent update)
+                return res.status(200).json({ success: true, status: 'paid', message: 'Already processed' });
+            }
+        } 
+        
+        // For other statuses, we can update normally as they don't add credits
+        // Update general fields first
         payment.fawaterkTransactionId = transactionId;
         payment.callbackData = callbackData;
         payment.updatedAt = new Date();
 
-        // Map Fawaterk status to our status
-        const statusLower = paymentStatus?.toLowerCase();
-        if (statusLower === 'paid' || statusLower === 'success' || statusLower === 'successful') {
-            payment.status = 'paid';
-            payment.paidAt = new Date();
-            payment.paymentMethod = callbackData.payment_method || 'card';
-
-            // Add form credits to user
-            const user = await User.findById(payment.user);
-            if (user) {
-                user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                await user.save();
-                console.log(`Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
-            }
-        } else if (statusLower === 'pending' || statusLower === 'processing') {
+        if (statusLower === 'pending' || statusLower === 'processing') {
             payment.status = 'pending';
         } else if (statusLower === 'refunded') {
             payment.status = 'refunded';
@@ -241,7 +265,11 @@ export async function getPaymentStatus(req, res) {
         const userId = req.user._id;
 
         // Try to find payment by _id or by invoice_id
-        let payment = await Payment.findOne({ _id: paymentId, user: userId });
+        let payment = null;
+        
+        if (mongoose.isValidObjectId(paymentId)) {
+            payment = await Payment.findOne({ _id: paymentId, user: userId });
+        }
         
         if (!payment) {
             // Try finding by invoice_id if the paymentId looks like an invoice_id
@@ -254,6 +282,7 @@ export async function getPaymentStatus(req, res) {
 
         // Optionally verify with Fawaterk API for pending payments
         if (payment.status === 'pending' && payment.fawaterkInvoiceId) {
+            console.log(`Verifying pending payment ${payment._id} (Invoice: ${payment.fawaterkInvoiceId}) with Fawaterk...`);
             try {
                 const response = await fetch(
                     `${fawaterkConfig.baseUrl}${fawaterkConfig.paymentStatusEndpoint}${payment.fawaterkInvoiceId}`,
@@ -265,20 +294,49 @@ export async function getPaymentStatus(req, res) {
                     }
                 );
 
+                const statusData = await response.json();
+                console.log('Fawaterk status response:', JSON.stringify(statusData, null, 2));
+
                 if (response.ok) {
-                    const statusData = await response.json();
-                    const fawaterkStatus = statusData.data?.payment_status?.toLowerCase();
+                    const fawaterkStatus = statusData.data?.status_text?.toLowerCase() || statusData.data?.payment_status?.toLowerCase();
+                    console.log(`Fawaterk status: ${fawaterkStatus}`);
                     
                     if (fawaterkStatus === 'paid' || fawaterkStatus === 'success' || fawaterkStatus === 'successful') {
-                        payment.status = 'paid';
-                        payment.paidAt = new Date();
-                        await payment.save();
+                        console.log('Payment verified as paid. Updating DB...');
+                        
+                        // Use atomic update to prevent race conditions with webhook
+                        const updatedPayment = await Payment.findOneAndUpdate(
+                            { _id: payment._id, status: 'pending' },
+                            { 
+                                status: 'paid', 
+                                paidAt: new Date() 
+                            },
+                            { new: true }
+                        );
 
-                        // Add form credits to user if not already added
-                        const user = await User.findById(payment.user);
-                        if (user) {
-                            user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                            await user.save();
+                        if (updatedPayment) {
+                            console.log('Payment status updated to paid.');
+                            payment.status = 'paid';
+                            payment.paidAt = updatedPayment.paidAt;
+
+                            // Add form credits to user if not already added
+                            const user = await User.findById(payment.user);
+                            if (user) {
+                                // Double check (although unlikely race here if status just changed)
+                                user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                                await user.save();
+                                console.log(`Credited user ${user._id} with ${payment.formCredits} forms. New balance: ${user.formCredits}`);
+                            } else {
+                                console.error(`User ${payment.user} not found for credit addition.`);
+                            }
+                        } else {
+                            // Payment status was changed concurrently (e.g. by webhook)
+                            console.log('Payment status update skipped (concurrently modified). Fetching fresh.');
+                            const freshPayment = await Payment.findById(payment._id);
+                            if (freshPayment) {
+                                payment.status = freshPayment.status;
+                                payment.paidAt = freshPayment.paidAt;
+                            }
                         }
                     } else if (fawaterkStatus === 'failed' || fawaterkStatus === 'declined' || fawaterkStatus === 'expired') {
                         payment.status = 'failed';
