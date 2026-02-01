@@ -6,7 +6,7 @@ const fawaterkConfig = {
     apiKey: process.env.FAWATERK_API_KEY,
     
     // API Endpoints
-    baseUrl: 'https://app.fawaterk.com/api/v2',
+    baseUrl: process.env.FAWATERK_BASE_URL || 'https://app.fawaterk.com/api/v2',
     
     // Endpoints
     invoiceEndpoint: '/invoiceInitPay',

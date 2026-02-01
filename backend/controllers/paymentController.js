@@ -240,7 +240,13 @@ export async function getPaymentStatus(req, res) {
         const { paymentId } = req.params;
         const userId = req.user._id;
 
-        const payment = await Payment.findOne({ _id: paymentId, user: userId });
+        // Try to find payment by _id or by invoice_id
+        let payment = await Payment.findOne({ _id: paymentId, user: userId });
+        
+        if (!payment) {
+            // Try finding by invoice_id if the paymentId looks like an invoice_id
+            payment = await Payment.findOne({ fawaterkInvoiceId: paymentId.toString(), user: userId });
+        }
 
         if (!payment) {
             return res.status(404).json({ error: 'Payment not found' });
