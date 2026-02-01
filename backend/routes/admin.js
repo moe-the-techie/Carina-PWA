@@ -14,7 +14,10 @@ import {
     createUserClass,
     updateUserClass,
     deleteUserClass,
-    assignUserClass
+    assignUserClass,
+    getAllPaymentsAdmin,
+    verifyPaymentAdmin,
+    updatePaymentStatusAdmin
 } from '../controllers/adminController.js';
 
 router.get('/admin/dashboard', adminOnly, getDashboardStats);
@@ -33,3 +36,6 @@ router.put('/admin/classes/:classId', adminOnly, checkFeatureEnabled('ENABLE_USE
 router.delete('/admin/classes/:classId', adminOnly, checkFeatureEnabled('ENABLE_USER_CLASSES'), deleteUserClass);
 
 export default router;
+router.get('/admin/payments', adminOnly, getAllPaymentsAdmin);
+router.post('/admin/payments/:paymentId/verify', adminOnly, verifyPaymentAdmin);
+router.put('/admin/payments/:paymentId/status', adminOnly, updatePaymentStatusAdmin);

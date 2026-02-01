@@ -4,6 +4,8 @@ import Plan from '../models/Plan.js';
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import UserClass from '../models/UserClass.js';
+import Payment from '../models/Payment.js';
+import fawaterkConfig from '../config/fawaterk.js';
 import { deleteImage } from '../config/cloudinary.js';
 import { adminAuth } from '../config/firebase.js';
 export async function getDashboardStats(req, res) {
@@ -435,5 +437,168 @@ export async function assignUserClass(req, res) {
     } catch (error) {
         console.error('Error assigning user class:', error);
         res.status(500).json({ error: error.message });
+    }
+}
+
+export async function getAllPaymentsAdmin(req, res) {
+    try {
+        const { page = 1, limit = 10, status, search } = req.query;
+        const query = {};
+
+        if (status) {
+            query.status = status;
+        }
+
+        if (search) {
+            // Find users matching search first
+            const users = await User.find({
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ]
+            }).select('_id');
+            
+            if (users.length > 0) {
+                 query.$or = [
+                    { user: { $in: users.map(u => u._id) } },
+                    { fawaterkInvoiceId: { $regex: search, $options: 'i' } },
+                    { fawaterkInvoiceKey: { $regex: search, $options: 'i' } }
+                 ];
+            } else {
+                 query.$or = [
+                     { fawaterkInvoiceId: { $regex: search, $options: 'i' } },
+                     { fawaterkInvoiceKey: { $regex: search, $options: 'i' } }
+                 ];
+            }
+        }
+
+        const payments = await Payment.find(query)
+            .populate('user', 'name email')
+            .sort({ createdAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit));
+
+        const total = await Payment.countDocuments(query);
+
+        res.json({
+            payments,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page),
+            totalPayments: total
+        });
+    } catch (error) {
+        console.error('Error fetching all payments:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function verifyPaymentAdmin(req, res) {
+    try {
+        const { paymentId } = req.params;
+        const payment = await Payment.findById(paymentId);
+
+        if (!payment) {
+            return res.status(404).json({ message: 'Payment not found' });
+        }
+
+        if (!payment.fawaterkInvoiceId) {
+             return res.status(400).json({ message: 'Payment has no invoice ID to verify' });
+        }
+        
+        // Call Fawaterk API
+        const response = await fetch(
+            `${fawaterkConfig.baseUrl}${fawaterkConfig.paymentStatusEndpoint}${payment.fawaterkInvoiceId}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${fawaterkConfig.apiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const statusData = await response.json();
+        
+        if (!response.ok) {
+            return res.status(response.status).json({ 
+                message: 'Failed to fetch status from Fawaterk', 
+                details: statusData 
+            });
+        }
+
+        const fawaterkStatus = statusData.data?.status_text?.toLowerCase() || statusData.data?.payment_status?.toLowerCase();
+        let updated = false;
+        let message = 'Payment status matches (or no change needed)';
+
+        // Logic to update status if different
+        if ((fawaterkStatus === 'paid' || fawaterkStatus === 'success' || fawaterkStatus === 'successful') && payment.status !== 'paid') {
+            payment.status = 'paid';
+            payment.paidAt = new Date();
+            payment.fawaterkTransactionId = statusData.data?.transaction_id || payment.fawaterkTransactionId;
+
+            // Credit user logic
+             const user = await User.findById(payment.user);
+            if (user) {
+                user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                await user.save();
+            }
+            updated = true;
+            message = 'Payment updated to PAID and credits added';
+        } else if ((fawaterkStatus === 'failed' || fawaterkStatus === 'declined' || fawaterkStatus === 'expired') && payment.status !== 'failed') {
+            payment.status = 'failed';
+            updated = true;
+            message = 'Payment updated to FAILED';
+        }
+
+        if (updated) {
+            await payment.save();
+        }
+
+        res.json({
+            message,
+            localStatus: payment.status,
+            fawaterkStatus: fawaterkStatus,
+            fawaterkData: statusData.data,
+            updated
+        });
+
+    } catch (error) {
+        console.error('Error verifying payment:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+}
+
+export async function updatePaymentStatusAdmin(req, res) {
+    try {
+        const { paymentId } = req.params;
+        const { status } = req.body;
+
+        if (!['pending', 'paid', 'failed', 'refunded'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        const payment = await Payment.findById(paymentId);
+         if (!payment) {
+            return res.status(404).json({ message: 'Payment not found' });
+        }
+        
+        const oldStatus = payment.status;
+        
+        if (status === 'paid' && oldStatus !== 'paid') {
+             const user = await User.findById(payment.user);
+            if (user) {
+                user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                await user.save();
+            }
+            payment.paidAt = new Date();
+        }
+
+        payment.status = status;
+        await payment.save();
+
+        res.json({ message: `Payment status updated from ${oldStatus} to ${status}`, payment });
+
+    } catch (error) {
+        console.error('Error updating payment status:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 }

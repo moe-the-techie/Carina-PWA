@@ -24,6 +24,7 @@ import TemplateIcon from '@mui/icons-material/FileCopy';
 import ChatIcon from '@mui/icons-material/Chat';
 import CategoryIcon from '@mui/icons-material/Category';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import PaymentIcon from '@mui/icons-material/Payment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -44,6 +45,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
         { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
         { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes', feature: 'VITE_ENABLE_USER_CLASSES' },
         { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
+        { to: '/admin/payments', icon: <PaymentIcon />, label: 'Payments' },
         { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
         { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
         { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates', feature: 'VITE_ENABLE_PLAN_TEMPLATES' },
