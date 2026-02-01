@@ -529,28 +529,39 @@ export async function verifyPaymentAdmin(req, res) {
         let updated = false;
         let message = 'Payment status matches (or no change needed)';
 
-        // Logic to update status if different
+        // Logic to update status if different - use atomic updates to prevent race conditions
         if ((fawaterkStatus === 'paid' || fawaterkStatus === 'success' || fawaterkStatus === 'successful') && payment.status !== 'paid') {
-            payment.status = 'paid';
-            payment.paidAt = new Date();
-            payment.fawaterkTransactionId = statusData.data?.transaction_id || payment.fawaterkTransactionId;
+            // Use atomic update to prevent race conditions and duplicate credit additions
+            const updatedPayment = await Payment.findOneAndUpdate(
+                { _id: payment._id, status: { $ne: 'paid' } },
+                {
+                    status: 'paid',
+                    paidAt: new Date(),
+                    fawaterkTransactionId: statusData.data?.transaction_id || payment.fawaterkTransactionId
+                },
+                { new: true }
+            );
 
-            // Credit user logic
-             const user = await User.findById(payment.user);
-            if (user) {
-                user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                await user.save();
+            if (updatedPayment) {
+                // Only add credits if we successfully transitioned status
+                const user = await User.findOneAndUpdate(
+                    { _id: payment.user },
+                    { $inc: { formCredits: payment.formCredits } },
+                    { new: true }
+                );
+                if (user) {
+                    console.log(`Admin verify: Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
+                }
+                updated = true;
+                message = 'Payment updated to PAID and credits added';
+            } else {
+                // Payment was already paid (possibly by webhook or another process)
+                message = 'Payment was already marked as paid (no duplicate credits added)';
             }
-            updated = true;
-            message = 'Payment updated to PAID and credits added';
         } else if ((fawaterkStatus === 'failed' || fawaterkStatus === 'declined' || fawaterkStatus === 'expired') && payment.status !== 'failed') {
-            payment.status = 'failed';
+            await Payment.findByIdAndUpdate(payment._id, { status: 'failed' });
             updated = true;
             message = 'Payment updated to FAILED';
-        }
-
-        if (updated) {
-            await payment.save();
         }
 
         res.json({
@@ -577,34 +588,74 @@ export async function updatePaymentStatusAdmin(req, res) {
         }
 
         const payment = await Payment.findById(paymentId);
-         if (!payment) {
+        if (!payment) {
             return res.status(404).json({ message: 'Payment not found' });
         }
         
         const oldStatus = payment.status;
         
-        if (status === 'paid' && oldStatus !== 'paid') {
-             const user = await User.findById(payment.user);
-            if (user) {
-                user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                await user.save();
-            }
-            payment.paidAt = new Date();
-        } else if (status === 'refunded' && oldStatus === 'paid') {
-            // If changing from paid to refunded, deduct credits
-             const user = await User.findById(payment.user);
-            if (user) {
-                // Ensure we don't go below zero (though theoretically they should have them)
-                user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
-                await user.save();
-                console.log(`Admin refund: Deducted ${payment.formCredits} credits from user ${user._id}`);
-            }
+        // If trying to set same status, no need to update
+        if (oldStatus === status) {
+            return res.json({ message: `Payment is already ${status}`, payment });
         }
-
-        payment.status = status;
-        await payment.save();
-
-        res.json({ message: `Payment status updated from ${oldStatus} to ${status}`, payment });
+        
+        if (status === 'paid' && oldStatus !== 'paid') {
+            // Use atomic update to prevent race conditions and duplicate credit additions
+            const updatedPayment = await Payment.findOneAndUpdate(
+                { _id: paymentId, status: { $ne: 'paid' } },
+                { status: 'paid', paidAt: new Date() },
+                { new: true }
+            );
+            
+            if (updatedPayment) {
+                // Only add credits if we successfully transitioned status
+                const user = await User.findOneAndUpdate(
+                    { _id: payment.user },
+                    { $inc: { formCredits: payment.formCredits } },
+                    { new: true }
+                );
+                if (user) {
+                    console.log(`Admin update: Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
+                }
+                return res.json({ message: `Payment status updated from ${oldStatus} to ${status}`, payment: updatedPayment });
+            } else {
+                // Payment status was changed by another process
+                const freshPayment = await Payment.findById(paymentId);
+                return res.json({ message: `Payment was already marked as ${freshPayment?.status || 'paid'} (no duplicate credits added)`, payment: freshPayment });
+            }
+        } else if (status === 'refunded' && oldStatus === 'paid') {
+            // Use atomic update for refund
+            const updatedPayment = await Payment.findOneAndUpdate(
+                { _id: paymentId, status: 'paid' },
+                { status: 'refunded' },
+                { new: true }
+            );
+            
+            if (updatedPayment) {
+                // Only deduct credits if we successfully transitioned from paid to refunded
+                const user = await User.findOneAndUpdate(
+                    { _id: payment.user },
+                    { $inc: { formCredits: -payment.formCredits } },
+                    { new: true }
+                );
+                if (user) {
+                    // Ensure credits don't go negative (fix if needed)
+                    if (user.formCredits < 0) {
+                        await User.findByIdAndUpdate(user._id, { formCredits: 0 });
+                    }
+                    console.log(`Admin refund: Deducted ${payment.formCredits} credits from user ${user._id}. New total: ${Math.max(0, user.formCredits)}`);
+                }
+                return res.json({ message: `Payment status updated from ${oldStatus} to ${status}`, payment: updatedPayment });
+            } else {
+                const freshPayment = await Payment.findById(paymentId);
+                return res.json({ message: `Payment status changed concurrently, current status: ${freshPayment?.status}`, payment: freshPayment });
+            }
+        } else {
+            // For other status transitions (pending, failed), just update
+            payment.status = status;
+            await payment.save();
+            return res.json({ message: `Payment status updated from ${oldStatus} to ${status}`, payment });
+        }
 
     } catch (error) {
         console.error('Error updating payment status:', error);

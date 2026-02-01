@@ -146,10 +146,14 @@ export async function handlePaymentCallback(req, res) {
         }
 
         // Extract transaction details from Fawaterk callback
+        // Fawaterk may send status in different field names depending on the callback type
         const invoiceId = callbackData.invoice_id || callbackData.invoiceId;
         const invoiceKey = callbackData.invoice_key || callbackData.invoiceKey;
-        const paymentStatus = callbackData.payment_status || callbackData.paymentStatus;
+        const paymentStatus = callbackData.payment_status || callbackData.paymentStatus || 
+                              callbackData.status || callbackData.status_text;
         const transactionId = callbackData.transaction_id || callbackData.transactionId;
+
+        console.log(`Webhook received for invoice ${invoiceId}: status=${paymentStatus}, transactionId=${transactionId}`);
 
         // Find the payment by invoice ID
         let payment = await Payment.findOne({ fawaterkInvoiceId: invoiceId?.toString() });
@@ -212,26 +216,58 @@ export async function handlePaymentCallback(req, res) {
         if (statusLower === 'pending' || statusLower === 'processing') {
             payment.status = 'pending';
         } else if (statusLower === 'refunded') {
-            // Check if we need to deduct credits (if was previously paid)
-            if (payment.status === 'paid') {
+            // Use atomic update to prevent race conditions on refund
+            const wasRefunded = await Payment.findOneAndUpdate(
+                { _id: payment._id, status: 'paid' },
+                { 
+                    status: 'refunded',
+                    fawaterkTransactionId: transactionId,
+                    callbackData: callbackData,
+                    updatedAt: new Date()
+                },
+                { new: true }
+            );
+            
+            if (wasRefunded) {
+                // Only deduct credits if we successfully transitioned from paid to refunded
                 const user = await User.findOneAndUpdate(
-                            { _id: payment.user },
-                            { $inc: { formCredits: -payment.formCredits } },
-                            { new: true }
-                        );
+                    { _id: payment.user },
+                    { $inc: { formCredits: -payment.formCredits } },
+                    { new: true }
+                );
                 if (user) {
-                    //user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
-                    //await user.save();
                     console.log(`Refunded ${payment.formCredits} credits from user ${user._id}. New total: ${user.formCredits}`);
+                    // Ensure credits don't go negative
+                    if (user.formCredits < 0) {
+                        await User.findByIdAndUpdate(user._id, { formCredits: 0 });
+                        console.log(`Corrected negative credits for user ${user._id}`);
+                    }
                 }
+                return res.status(200).json({ success: true, status: 'refunded' });
+            } else if (payment.status === 'refunded') {
+                // Already refunded
+                return res.status(200).json({ success: true, status: 'refunded', message: 'Already refunded' });
             }
+            // If wasn't paid, just update to refunded without credit adjustment
             payment.status = 'refunded';
-        } else if (statusLower === 'failed' || statusLower === 'declined' || statusLower === 'expired' || statusLower === 'canceled') {
+        } else if (statusLower === 'failed' || statusLower === 'declined' || statusLower === 'expired' || statusLower === 'canceled' || statusLower === 'cancelled') {
             payment.status = 'failed';
             payment.errorMessage = callbackData.message || callbackData.error || 'Payment failed';
+            console.log(`Payment ${payment._id} marked as failed. Reason: ${payment.errorMessage}`);
+        } else if (!statusLower) {
+            // No status provided - log and keep current status
+            console.warn(`Webhook received for payment ${payment._id} without status. Keeping current: ${payment.status}`);
+            console.warn('Callback data:', JSON.stringify(callbackData, null, 2));
+            return res.status(200).json({ success: true, status: payment.status, message: 'No status in callback' });
         } else {
-            payment.status = 'failed';
-            payment.errorMessage = `Unknown status: ${paymentStatus}`;
+            // Unknown status - log warning but don't auto-fail
+            console.warn(`Unknown payment status received: "${paymentStatus}" for payment ${payment._id}`);
+            console.warn('Full callback data:', JSON.stringify(callbackData, null, 2));
+            // Store the callback data for manual review but don't change status
+            payment.callbackData = callbackData;
+            payment.updatedAt = new Date();
+            await payment.save();
+            return res.status(200).json({ success: true, status: payment.status, message: `Unknown status: ${paymentStatus}` });
         }
 
         await payment.save();
