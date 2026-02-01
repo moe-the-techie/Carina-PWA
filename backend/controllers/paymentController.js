@@ -117,9 +117,21 @@ export async function createPaymentIntention(req, res) {
 export async function handlePaymentCallback(req, res) {
     try {
         console.log('--- FW Webhook Triggered ---');
-        const callbackData = req.body;
+        console.log('Headers:', JSON.stringify(req.headers, null, 2));
         
-        console.log('Fawaterk callback received:', JSON.stringify(callbackData, null, 2));
+        // Check body and fallback to query if necessary
+        let callbackData = req.body;
+        if (!callbackData || Object.keys(callbackData).length === 0) {
+            console.log('req.body is empty. Checking req.query...');
+            callbackData = req.query;
+        }
+
+        console.log('Fawaterk callback data:', JSON.stringify(callbackData, null, 2));
+
+        if (!callbackData || Object.keys(callbackData).length === 0) {
+            console.error('No data received in webhook');
+            return res.status(400).json({ error: 'No data received' });
+        }
 
         // Verify webhook signature if secret is configured
         if (fawaterkConfig.webhookSecret) {
@@ -172,10 +184,14 @@ export async function handlePaymentCallback(req, res) {
 
             if (updatedPayment) {
                 // Only add credits if we successfully transitioned status
-                const user = await User.findById(payment.user);
+                const user = await User.findOneAndUpdate(
+                            { _id: payment.user },
+                            { $inc: { formCredits: payment.formCredits } },
+                            { new: true }
+                        );
                 if (user) {
-                    user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                    await user.save();
+                    //user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                    //await user.save();
                     console.log(`Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
                 }
                 
@@ -198,10 +214,14 @@ export async function handlePaymentCallback(req, res) {
         } else if (statusLower === 'refunded') {
             // Check if we need to deduct credits (if was previously paid)
             if (payment.status === 'paid') {
-                const user = await User.findById(payment.user);
+                const user = await User.findOneAndUpdate(
+                            { _id: payment.user },
+                            { $inc: { formCredits: -payment.formCredits } },
+                            { new: true }
+                        );
                 if (user) {
-                    user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
-                    await user.save();
+                    //user.formCredits = Math.max(0, (user.formCredits || 0) - payment.formCredits);
+                    //await user.save();
                     console.log(`Refunded ${payment.formCredits} credits from user ${user._id}. New total: ${user.formCredits}`);
                 }
             }
@@ -330,11 +350,15 @@ export async function getPaymentStatus(req, res) {
                             payment.paidAt = updatedPayment.paidAt;
 
                             // Add form credits to user if not already added
-                            const user = await User.findById(payment.user);
+                            const user = await User.findOneAndUpdate(
+                                        { _id: payment.user },
+                                        { $inc: { formCredits: payment.formCredits } },
+                                        { new: true }
+                                    );
                             if (user) {
                                 // Double check (although unlikely race here if status just changed)
-                                user.formCredits = (user.formCredits || 0) + payment.formCredits;
-                                await user.save();
+                                //user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                                //await user.save();
                                 console.log(`Credited user ${user._id} with ${payment.formCredits} forms. New balance: ${user.formCredits}`);
                             } else {
                                 console.error(`User ${payment.user} not found for credit addition.`);
