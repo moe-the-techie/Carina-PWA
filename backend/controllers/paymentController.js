@@ -1,10 +1,10 @@
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
-import paymobConfig from '../config/paymob.js';
+import fawaterkConfig from '../config/fawaterk.js';
 import crypto from 'crypto';
 
 /**
- * Create a payment intention using Paymob's Intention API
+ * Create a payment invoice using Fawaterk's API
  * POST /api/payments/create-intention
  */
 export async function createPaymentIntention(req, res) {
@@ -17,180 +17,149 @@ export async function createPaymentIntention(req, res) {
         }
 
         // Generate unique reference for this payment
-        const specialReference = `CARINA-${userId}-${Date.now()}`;
+        const cartId = `CARINA-${userId}-${Date.now()}`;
         
-        // Calculate amount in cents (Paymob expects amount in cents)
-        const amountCents = paymobConfig.formPackagePrice;
+        // Get amount (Fawaterk expects amount in main currency unit, not cents)
+        const amount = fawaterkConfig.formPackagePrice;
 
-        // Prepare billing data
-        const billingData = {
+        // Prepare customer data
+        const customerData = {
             first_name: user.name.split(' ')[0] || 'User',
             last_name: user.name.split(' ').slice(1).join(' ') || 'Name',
             email: user.email,
-            phone_number: '+201000000000', // Default phone, can be updated if user has phone
-            apartment: 'NA',
-            floor: 'NA',
-            street: 'NA',
-            building: 'NA',
-            city: 'Cairo',
-            state: 'Cairo',
-            country: 'EGY'
+            phone: user.phone || '01000000000',
+            address: 'Cairo, Egypt'
         };
 
-        // Prepare the intention request body
-        const intentionBody = {
-            amount: amountCents,
-            currency: paymobConfig.currency,
-            payment_methods: [parseInt(paymobConfig.integrationId)],
-            items: [
-                {
-                    name: 'Form Credits Package',
-                    amount: amountCents,
-                    description: `${paymobConfig.formsPerPackage} Form Submissions`,
-                    quantity: 1
-                }
-            ],
-            billing_data: billingData,
-            customer: {
-                first_name: billingData.first_name,
-                last_name: billingData.last_name,
-                email: billingData.email,
-                extras: {
-                    userId: userId.toString()
-                }
+        // Prepare cart items
+        const cartItems = [
+            {
+                name: 'Form Credits Package',
+                price: amount,
+                quantity: 1
+            }
+        ];
+
+        // Prepare the invoice request body
+        const invoiceBody = {
+            payment_method_id: 2, // Card payments
+            cartTotal: amount.toString(),
+            currency: fawaterkConfig.currency,
+            customer: customerData,
+            cartItems: cartItems,
+            redirectionUrls: {
+                successUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/success`,
+                failUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/failed`,
+                pendingUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/pending`
             },
-            extras: {
-                userId: userId.toString(),
-                formsCount: paymobConfig.formsPerPackage
-            },
-            special_reference: specialReference,
-            expiration: 3600, // 1 hour expiration
-            notification_url: `${process.env.BACKEND_URL || process.env.FRONTEND_URL?.replace(':5173', ':5000') || 'http://localhost:5000'}/api/payments/callback`,
-            redirection_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/success`
+            webhookUrl: `${process.env.BACKEND_URL || process.env.FRONTEND_URL?.replace(':5173', ':5000') || 'http://localhost:5000'}/api/payments/callback`,
+            cartId: cartId
         };
 
-        // Make request to Paymob Intention API
-        const response = await fetch(`${paymobConfig.baseUrl}${paymobConfig.intentionEndpoint}`, {
+        // Make request to Fawaterk API
+        const response = await fetch(`${fawaterkConfig.baseUrl}${fawaterkConfig.invoiceEndpoint}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Token ${paymobConfig.secretKey}`,
+                'Authorization': `Bearer ${fawaterkConfig.apiKey}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(intentionBody)
+            body: JSON.stringify(invoiceBody)
         });
 
-        const intentionData = await response.json();
+        const invoiceData = await response.json();
 
-        if (!response.ok) {
-            console.error('Paymob intention error:', intentionData);
+        if (!response.ok || invoiceData.status !== 'success') {
+            console.error('Fawaterk invoice error:', invoiceData);
             return res.status(response.status).json({ 
-                error: 'Failed to create payment intention',
-                details: intentionData
+                error: 'Failed to create payment invoice',
+                details: invoiceData
             });
         }
 
         // Create payment record in database
         const payment = new Payment({
             user: userId,
-            paymobIntentionId: intentionData.id,
-            paymobOrderId: intentionData.intention_order_id,
-            amount: amountCents,
-            currency: paymobConfig.currency,
-            formCredits: paymobConfig.formsPerPackage,
+            fawaterkInvoiceId: invoiceData.data.invoice_id.toString(),
+            fawaterkInvoiceKey: invoiceData.data.invoice_key,
+            amount: amount * 100, // Store in cents for consistency
+            currency: fawaterkConfig.currency,
+            formCredits: fawaterkConfig.formsPerPackage,
             status: 'pending'
         });
 
         await payment.save();
 
-        // Return the necessary data for frontend to display checkout
+        // Return the necessary data for frontend
         res.status(201).json({
             success: true,
             payment: {
                 id: payment._id,
-                intentionId: intentionData.id,
-                clientSecret: intentionData.client_secret,
-                publicKey: paymobConfig.publicKey,
-                amount: amountCents / 100, // Return in main currency unit for display
-                currency: paymobConfig.currency,
-                formsCount: paymobConfig.formsPerPackage
+                invoiceId: invoiceData.data.invoice_id,
+                amount: amount,
+                currency: fawaterkConfig.currency,
+                formsCount: fawaterkConfig.formsPerPackage
             },
-            // For the unified checkout URL (alternative to Pixel)
-            checkoutUrl: `${paymobConfig.checkoutUrl}?publicKey=${paymobConfig.publicKey}&clientSecret=${intentionData.client_secret}`
+            // Fawaterk payment URL for redirecting users
+            checkoutUrl: invoiceData.data.payment_data.redirectTo
         });
 
     } catch (error) {
-        console.error('Payment intention error:', error);
+        console.error('Payment invoice error:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 }
 
 /**
- * Paymob callback/webhook handler
+ * Fawaterk callback/webhook handler
  * POST /api/payments/callback
  */
 export async function handlePaymentCallback(req, res) {
     try {
         const callbackData = req.body;
         
-        console.log('Paymob callback received:', JSON.stringify(callbackData, null, 2));
+        console.log('Fawaterk callback received:', JSON.stringify(callbackData, null, 2));
 
-        // Verify HMAC if present (for security)
-        const receivedHmac = req.query.hmac || callbackData.hmac;
-        if (receivedHmac && paymobConfig.hmacSecret) {
-            const isValid = verifyHmac(callbackData, receivedHmac);
-            if (!isValid) {
-                console.error('Invalid HMAC signature');
-                return res.status(400).json({ error: 'Invalid HMAC signature' });
+        // Verify webhook signature if secret is configured
+        if (fawaterkConfig.webhookSecret) {
+            const receivedSignature = req.headers['x-fawaterk-signature'];
+            if (receivedSignature) {
+                const isValid = verifyWebhookSignature(callbackData, receivedSignature);
+                if (!isValid) {
+                    console.error('Invalid webhook signature');
+                    return res.status(400).json({ error: 'Invalid webhook signature' });
+                }
             }
         }
 
-        // Extract transaction details
-        const obj = callbackData.obj || callbackData;
-        const transactionId = obj.id;
-        const orderId = obj.order?.id || obj.order_id;
-        const success = obj.success === true || obj.success === 'true';
-        const pending = obj.pending === true || obj.pending === 'true';
-        const isVoided = obj.is_voided === true;
-        const isRefunded = obj.is_refunded === true;
-        const amountCents = obj.amount_cents;
-        const errorOccured = obj.error_occured;
-        const dataMessage = obj.data?.message;
+        // Extract transaction details from Fawaterk callback
+        const invoiceId = callbackData.invoice_id || callbackData.invoiceId;
+        const invoiceKey = callbackData.invoice_key || callbackData.invoiceKey;
+        const paymentStatus = callbackData.payment_status || callbackData.paymentStatus;
+        const transactionId = callbackData.transaction_id || callbackData.transactionId;
 
-        // Find the payment by order ID
-        let payment = await Payment.findOne({ paymobOrderId: orderId });
+        // Find the payment by invoice ID
+        let payment = await Payment.findOne({ fawaterkInvoiceId: invoiceId?.toString() });
         
-        if (!payment) {
-            // Try to find by special_reference in the merchant_order_id
-            const merchantOrderId = obj.order?.merchant_order_id || obj.merchant_order_id;
-            if (merchantOrderId) {
-                const userId = merchantOrderId.split('-')[1];
-                payment = await Payment.findOne({ 
-                    user: userId,
-                    status: 'pending',
-                    amount: amountCents
-                }).sort({ createdAt: -1 });
-            }
+        if (!payment && invoiceKey) {
+            payment = await Payment.findOne({ fawaterkInvoiceKey: invoiceKey });
         }
 
         if (!payment) {
-            console.error('Payment not found for order:', orderId);
+            console.error('Payment not found for invoice:', invoiceId);
             return res.status(404).json({ error: 'Payment not found' });
         }
 
         // Update payment record
-        payment.paymobTransactionId = transactionId;
+        payment.fawaterkTransactionId = transactionId;
         payment.callbackData = callbackData;
         payment.updatedAt = new Date();
 
-        if (isRefunded) {
-            payment.status = 'refunded';
-        } else if (isVoided) {
-            payment.status = 'failed';
-            payment.errorMessage = 'Transaction voided';
-        } else if (success && !pending) {
+        // Map Fawaterk status to our status
+        const statusLower = paymentStatus?.toLowerCase();
+        if (statusLower === 'paid' || statusLower === 'success' || statusLower === 'successful') {
             payment.status = 'paid';
             payment.paidAt = new Date();
-            payment.paymentMethod = obj.source_data?.type || 'card';
+            payment.paymentMethod = callbackData.payment_method || 'card';
 
             // Add form credits to user
             const user = await User.findById(payment.user);
@@ -199,16 +168,21 @@ export async function handlePaymentCallback(req, res) {
                 await user.save();
                 console.log(`Added ${payment.formCredits} form credits to user ${user._id}. New total: ${user.formCredits}`);
             }
-        } else if (pending) {
+        } else if (statusLower === 'pending' || statusLower === 'processing') {
             payment.status = 'pending';
+        } else if (statusLower === 'refunded') {
+            payment.status = 'refunded';
+        } else if (statusLower === 'failed' || statusLower === 'declined' || statusLower === 'expired') {
+            payment.status = 'failed';
+            payment.errorMessage = callbackData.message || callbackData.error || 'Payment failed';
         } else {
             payment.status = 'failed';
-            payment.errorMessage = dataMessage || 'Payment failed';
+            payment.errorMessage = `Unknown status: ${paymentStatus}`;
         }
 
         await payment.save();
 
-        // Return success to Paymob
+        // Return success to Fawaterk
         res.status(200).json({ success: true, status: payment.status });
 
     } catch (error) {
@@ -224,30 +198,25 @@ export async function handlePaymentCallback(req, res) {
 export async function handleRedirectCallback(req, res) {
     try {
         const { 
-            id: transactionId, 
-            success, 
-            order: orderId,
-            pending,
-            amount_cents: amountCents,
-            hmac 
+            invoice_id: invoiceId,
+            invoice_key: invoiceKey,
+            payment_status: paymentStatus,
         } = req.query;
 
-        // Verify HMAC if present
-        if (hmac && paymobConfig.hmacSecret) {
-            // For redirect callbacks, verify using query parameters
-            const isValid = verifyRedirectHmac(req.query, hmac);
-            if (!isValid) {
-                return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/failed?error=invalid_signature`);
-            }
+        const statusLower = paymentStatus?.toLowerCase();
+        const isSuccess = statusLower === 'paid' || statusLower === 'success' || statusLower === 'successful';
+        const isPending = statusLower === 'pending' || statusLower === 'processing';
+
+        // Find the payment
+        let payment = null;
+        if (invoiceId) {
+            payment = await Payment.findOne({ fawaterkInvoiceId: invoiceId.toString() });
+        }
+        if (!payment && invoiceKey) {
+            payment = await Payment.findOne({ fawaterkInvoiceKey: invoiceKey });
         }
 
-        const isSuccess = success === 'true';
-        const isPending = pending === 'true';
-
-        // Find and update payment
-        const payment = await Payment.findOne({ paymobOrderId: parseInt(orderId) });
-
-        if (payment && isSuccess && !isPending) {
+        if (payment && isSuccess) {
             // Payment successful - redirect to success page
             return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/success?payment_id=${payment._id}`);
         } else if (payment && isPending) {
@@ -263,7 +232,7 @@ export async function handleRedirectCallback(req, res) {
 }
 
 /**
- * Get payment status
+ * Get payment status - also verifies with Fawaterk API
  * GET /api/payments/:paymentId/status
  */
 export async function getPaymentStatus(req, res) {
@@ -275,6 +244,45 @@ export async function getPaymentStatus(req, res) {
 
         if (!payment) {
             return res.status(404).json({ error: 'Payment not found' });
+        }
+
+        // Optionally verify with Fawaterk API for pending payments
+        if (payment.status === 'pending' && payment.fawaterkInvoiceId) {
+            try {
+                const response = await fetch(
+                    `${fawaterkConfig.baseUrl}${fawaterkConfig.paymentStatusEndpoint}${payment.fawaterkInvoiceId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${fawaterkConfig.apiKey}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    const statusData = await response.json();
+                    const fawaterkStatus = statusData.data?.payment_status?.toLowerCase();
+                    
+                    if (fawaterkStatus === 'paid' || fawaterkStatus === 'success' || fawaterkStatus === 'successful') {
+                        payment.status = 'paid';
+                        payment.paidAt = new Date();
+                        await payment.save();
+
+                        // Add form credits to user if not already added
+                        const user = await User.findById(payment.user);
+                        if (user) {
+                            user.formCredits = (user.formCredits || 0) + payment.formCredits;
+                            await user.save();
+                        }
+                    } else if (fawaterkStatus === 'failed' || fawaterkStatus === 'declined' || fawaterkStatus === 'expired') {
+                        payment.status = 'failed';
+                        await payment.save();
+                    }
+                }
+            } catch (verifyError) {
+                console.error('Error verifying payment with Fawaterk:', verifyError);
+                // Continue with local status if verification fails
+            }
         }
 
         res.json({
@@ -349,9 +357,9 @@ export async function getFormCredits(req, res) {
 
         res.json({
             formCredits: user.formCredits || 0,
-            pricePerPackage: paymobConfig.formPackagePrice / 100,
-            formsPerPackage: paymobConfig.formsPerPackage,
-            currency: paymobConfig.currency,
+            pricePerPackage: fawaterkConfig.formPackagePrice,
+            formsPerPackage: fawaterkConfig.formsPerPackage,
+            currency: fawaterkConfig.currency,
             paymentsEnabled: paymentsEnabled
         });
 
@@ -362,85 +370,19 @@ export async function getFormCredits(req, res) {
 }
 
 /**
- * Verify HMAC signature for callback (POST request body)
+ * Verify webhook signature from Fawaterk
  */
-function verifyHmac(data, receivedHmac) {
+function verifyWebhookSignature(data, receivedSignature) {
     try {
-        const obj = data.obj || data;
-        
-        // Paymob HMAC calculation fields (in alphabetical order)
-        const hmacString = [
-            obj.amount_cents,
-            obj.created_at,
-            obj.currency,
-            obj.error_occured,
-            obj.has_parent_transaction,
-            obj.id,
-            obj.integration_id,
-            obj.is_3d_secure,
-            obj.is_auth,
-            obj.is_capture,
-            obj.is_refunded,
-            obj.is_standalone_payment,
-            obj.is_voided,
-            obj.order?.id || obj.order_id,
-            obj.owner,
-            obj.pending,
-            obj.source_data?.pan,
-            obj.source_data?.sub_type,
-            obj.source_data?.type,
-            obj.success
-        ].join('');
-
-        const calculatedHmac = crypto
-            .createHmac('sha512', paymobConfig.hmacSecret)
-            .update(hmacString)
+        const payload = JSON.stringify(data);
+        const calculatedSignature = crypto
+            .createHmac('sha256', fawaterkConfig.webhookSecret)
+            .update(payload)
             .digest('hex');
 
-        return calculatedHmac === receivedHmac;
+        return calculatedSignature === receivedSignature;
     } catch (error) {
-        console.error('HMAC verification error:', error);
-        return false;
-    }
-}
-
-/**
- * Verify HMAC for redirect callback (query parameters)
- */
-function verifyRedirectHmac(params, receivedHmac) {
-    try {
-        // Sorted alphabetically (excluding hmac parameter itself)
-        const hmacString = [
-            params.amount_cents,
-            params.created_at,
-            params.currency,
-            params.error_occured,
-            params.has_parent_transaction,
-            params.id,
-            params.integration_id,
-            params.is_3d_secure,
-            params.is_auth,
-            params.is_capture,
-            params.is_refunded,
-            params.is_standalone_payment,
-            params.is_voided,
-            params.order,
-            params.owner,
-            params.pending,
-            params.source_data_pan,
-            params.source_data_sub_type,
-            params.source_data_type,
-            params.success
-        ].join('');
-
-        const calculatedHmac = crypto
-            .createHmac('sha512', paymobConfig.hmacSecret)
-            .update(hmacString)
-            .digest('hex');
-
-        return calculatedHmac === receivedHmac;
-    } catch (error) {
-        console.error('Redirect HMAC verification error:', error);
+        console.error('Webhook signature verification error:', error);
         return false;
     }
 }

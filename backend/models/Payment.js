@@ -7,18 +7,18 @@ const paymentSchema = new Schema({
         ref: 'User',
         required: true
     },
-    // Paymob specific fields
-    paymobIntentionId: {
+    // Fawaterk specific fields
+    fawaterkInvoiceId: {
         type: String,
         required: true,
         unique: true
     },
-    paymobOrderId: {
-        type: Number,
+    fawaterkInvoiceKey: {
+        type: String,
         default: null
     },
-    paymobTransactionId: {
-        type: Number,
+    fawaterkTransactionId: {
+        type: String,
         default: null
     },
     // Payment details
@@ -45,7 +45,7 @@ const paymentSchema = new Schema({
         type: String,
         default: null  // card, wallet, etc.
     },
-    // Additional metadata from Paymob callback
+    // Additional metadata from Fawaterk callback
     callbackData: {
         type: Schema.Types.Mixed,
         default: null

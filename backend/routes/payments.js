@@ -29,7 +29,7 @@ router.get('/payments/credits', protect, getFormCredits);
 router.get('/payments/history', protect, checkPaymentsEnabled, getPaymentHistory);
 router.get('/payments/:paymentId/status', protect, checkPaymentsEnabled, getPaymentStatus);
 
-// Public routes (Paymob callbacks - no auth required)
+// Public routes (Fawaterk callbacks - no auth required)
 router.post('/payments/callback', checkPaymentsEnabled, handlePaymentCallback);
 router.get('/payments/redirect-callback', checkPaymentsEnabled, handleRedirectCallback);
 

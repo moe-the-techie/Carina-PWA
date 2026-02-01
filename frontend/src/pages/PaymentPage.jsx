@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import {
@@ -28,15 +28,11 @@ export default function PaymentPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const pixelContainerRef = useRef(null);
-    const pixelInitializedRef = useRef(false);
 
     const [loading, setLoading] = useState(true);
-    const [creatingIntention, setCreatingIntention] = useState(false);
+    const [creatingPayment, setCreatingPayment] = useState(false);
     const [error, setError] = useState('');
-    const [paymentData, setPaymentData] = useState(null);
     const [creditsInfo, setCreditsInfo] = useState(null);
-    const [pixelLoaded, setPixelLoaded] = useState(false);
     const [paymentsEnabled, setPaymentsEnabled] = useState(true);
 
     // Fetch credits info on mount
@@ -79,9 +75,9 @@ export default function PaymentPage() {
         }
     };
 
-    const createPaymentIntention = async () => {
+    const createPayment = async () => {
         try {
-            setCreatingIntention(true);
+            setCreatingPayment(true);
             setError('');
 
             const token = localStorage.getItem('token');
@@ -104,110 +100,18 @@ export default function PaymentPage() {
                 throw new Error(data.error || 'Failed to create payment');
             }
 
-            setPaymentData(data.payment);
-            
-            // Load Paymob Pixel SDK
-            await loadPixelSDK(data.payment);
+            // Redirect to Fawaterk checkout page
+            if (data.checkoutUrl) {
+                window.location.href = data.checkoutUrl;
+            } else {
+                throw new Error('No checkout URL received');
+            }
 
         } catch (err) {
             console.error('Payment creation error:', err);
             setError(err.message || 'Failed to initialize payment');
-        } finally {
-            setCreatingIntention(false);
+            setCreatingPayment(false);
         }
-    };
-
-    const loadPixelSDK = async (payment) => {
-        if (pixelInitializedRef.current) return;
-
-        try {
-            // Load Pixel CSS
-            if (!document.querySelector('link[href*="paymob-pixel"]')) {
-                const styleLink = document.createElement('link');
-                styleLink.rel = 'stylesheet';
-                styleLink.href = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/styles.css';
-                document.head.appendChild(styleLink);
-
-                const mainCss = document.createElement('link');
-                mainCss.rel = 'stylesheet';
-                mainCss.href = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.css';
-                document.head.appendChild(mainCss);
-            }
-
-            // Load Pixel JS
-            if (!document.querySelector('script[src*="paymob-pixel"]')) {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.js';
-                script.type = 'module';
-                script.onload = () => initializePixel(payment);
-                document.body.appendChild(script);
-            } else {
-                initializePixel(payment);
-            }
-
-        } catch (err) {
-            console.error('Error loading Pixel SDK:', err);
-            setError('Failed to load payment form');
-        }
-    };
-
-    const initializePixel = (payment) => {
-        if (pixelInitializedRef.current) return;
-        
-        // Wait for Pixel to be available
-        const checkPixel = setInterval(() => {
-            if (window.Pixel) {
-                clearInterval(checkPixel);
-                
-                try {
-                    new window.Pixel({
-                        publicKey: payment.publicKey,
-                        clientSecret: payment.clientSecret,
-                        elementId: 'paymob-checkout',
-                        paymentMethods: ['card'],
-                        showSaveCard: false,
-                        customStyle: {
-                            Font_Family: theme.typography.fontFamily,
-                            Color_Container: theme.palette.mode === 'dark' ? '#1e1e2d' : '#ffffff',
-                            Color_Primary: theme.palette.primary.main,
-                            Color_Border_Input_Fields: theme.palette.mode === 'dark' ? '#3d3d5c' : '#e0e0e0',
-                            Color_Input_Fields: theme.palette.mode === 'dark' ? '#2d2d3d' : '#ffffff',
-                            Text_Color_For_Label: theme.palette.text.primary,
-                            Text_Color_For_Input_Fields: theme.palette.text.primary,
-                            Text_Color_For_Payment_Button: '#ffffff',
-                            Radius_Border: '12',
-                            Width_of_Container: '100%'
-                        },
-                        beforePaymentComplete: async (paymentMethod) => {
-                            console.log('Before payment complete:', paymentMethod);
-                            return true;
-                        },
-                        afterPaymentComplete: async (response) => {
-                            console.log('Payment response:', response);
-                            if (response.success) {
-                                navigate('/payment/success?payment_id=' + payment.id);
-                            } else {
-                                setError('Payment failed. Please try again.');
-                            }
-                        }
-                    });
-                    
-                    pixelInitializedRef.current = true;
-                    setPixelLoaded(true);
-                } catch (err) {
-                    console.error('Pixel initialization error:', err);
-                    setError('Failed to initialize payment form');
-                }
-            }
-        }, 100);
-
-        // Timeout after 10 seconds
-        setTimeout(() => {
-            clearInterval(checkPixel);
-            if (!pixelInitializedRef.current) {
-                setError('Payment form loading timeout. Please refresh the page.');
-            }
-        }, 10000);
     };
 
     // Glassmorphism card style
@@ -366,73 +270,35 @@ export default function PaymentPage() {
                     )}
 
                     {/* Payment Section */}
-                    {!paymentData ? (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.3 }}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                        <Button
+                            variant="contained"
+                            size="large"
+                            fullWidth
+                            onClick={createPayment}
+                            disabled={creatingPayment}
+                            startIcon={creatingPayment ? <CircularProgress size={20} color="inherit" /> : <PaymentIcon />}
+                            sx={{
+                                py: 2,
+                                borderRadius: 3,
+                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                                boxShadow: `0 10px 30px ${theme.palette.primary.main}40`,
+                                textTransform: 'none',
+                                fontSize: '1.1rem',
+                                fontWeight: 600,
+                                '&:hover': {
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: `0 15px 40px ${theme.palette.primary.main}50`,
+                                }
+                            }}
                         >
-                            <Button
-                                variant="contained"
-                                size="large"
-                                fullWidth
-                                onClick={createPaymentIntention}
-                                disabled={creatingIntention}
-                                startIcon={creatingIntention ? <CircularProgress size={20} color="inherit" /> : <PaymentIcon />}
-                                sx={{
-                                    py: 2,
-                                    borderRadius: 3,
-                                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                                    boxShadow: `0 10px 30px ${theme.palette.primary.main}40`,
-                                    textTransform: 'none',
-                                    fontSize: '1.1rem',
-                                    fontWeight: 600,
-                                    '&:hover': {
-                                        transform: 'translateY(-2px)',
-                                        boxShadow: `0 15px 40px ${theme.palette.primary.main}50`,
-                                    }
-                                }}
-                            >
-                                {creatingIntention ? 'Preparing Payment...' : 'Proceed to Payment'}
-                            </Button>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Paper sx={{ ...glassCardStyle, p: 3 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                                    <PaymentIcon color="primary" sx={{ mr: 1 }} />
-                                    <Typography variant="h6" fontWeight={600}>
-                                        Enter Payment Details
-                                    </Typography>
-                                </Box>
-
-                                {/* Paymob Pixel Container */}
-                                <Box
-                                    id="paymob-checkout"
-                                    ref={pixelContainerRef}
-                                    sx={{
-                                        minHeight: 300,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                >
-                                    {!pixelLoaded && (
-                                        <Box sx={{ textAlign: 'center' }}>
-                                            <CircularProgress size={40} />
-                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                                                Loading payment form...
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </Box>
-                            </Paper>
-                        </motion.div>
-                    )}
+                            {creatingPayment ? 'Redirecting to Payment...' : 'Proceed to Payment'}
+                        </Button>
+                    </motion.div>
 
                     {/* Security Note */}
                     <motion.div
@@ -443,7 +309,7 @@ export default function PaymentPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 3, gap: 1 }}>
                             <SecurityIcon fontSize="small" color="action" />
                             <Typography variant="body2" color="text.secondary">
-                                Secured by Paymob. Your payment information is encrypted.
+                                Secured by Fawaterk. Your payment information is encrypted.
                             </Typography>
                         </Box>
                     </motion.div>
