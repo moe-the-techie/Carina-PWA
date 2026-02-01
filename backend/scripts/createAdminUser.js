@@ -55,7 +55,7 @@ async function createAdminUser() {
         const adminUser = new User({
             email: ADMIN_EMAIL.toLowerCase().trim(),
             password: hashedPassword,
-            name: ADMIN_NAME,
+            name: "carina_admin" || ADMIN_NAME,
             role: 'admin',
             isFirebaseUser: false,
             firebaseUid: null,
