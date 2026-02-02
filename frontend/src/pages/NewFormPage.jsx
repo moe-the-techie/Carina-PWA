@@ -16,7 +16,13 @@ import {
     Chip,
     Paper,
     useMediaQuery,
-    keyframes
+    keyframes,
+    Radio,
+    RadioGroup,
+    FormControlLabel,
+    FormControl,
+    FormLabel,
+    Checkbox
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -53,13 +59,17 @@ const float = keyframes`
     50% { transform: translateY(-5px); }
 `;
 
+const HEALTH_CONDITIONS = [
+    'HTA', 'Diabetes', 'Heart Problem', 'Reflux', 
+    'Cholesterol', 'Triglycerides', 'Anemia', 'Others'
+];
+
 // Step configuration
 const steps = [
-    { label: 'Medical History', icon: MedicalServicesIcon },
-    { label: 'Your Goals', icon: FlagIcon },
-    { label: 'Weight Data', icon: MonitorWeightIcon },
-    { label: 'Meal Habits', icon: RestaurantIcon },
-    { label: 'Lifestyle', icon: ChecklistIcon },
+    { label: 'Personal Info', icon: ChecklistIcon },
+    { label: 'Health', icon: MedicalServicesIcon },
+    { label: 'Diet History', icon: MonitorWeightIcon },
+    { label: 'Daily & Goals', icon: RestaurantIcon },
 ];
 
 export default function NewFormPage () {
@@ -68,22 +78,56 @@ export default function NewFormPage () {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({
+        // Personal Information
+        phoneNumber: '',
+        dateOfBirth: '',
+        profession: '',
         currentWeight: '',
+        height: '',
+        isMother: false,
         allergies: [''],
+        menstrualCycle: '',
+        bowelMovement: '',
+        physicalActivity: '',
+        whoCooks: '',
         currentSmoker: false,
-        healthConditions: [''],
+
+        // Health History
+        operations: '',
+        healthConditions: [],
+        familyHistory: '',
+        takeMedication: false,
         medications: [''],
-        goals: [''],
+        followedDietAdvice: false,
+
+        // Blood Test
+        bloodTest: {
+            urea: '', creatinine: '', glucose: '', ldl: '', hdl: '', prolactin: '', triglyceride: '', tsh: ''
+        },
+
+        // Diet History
         minWeight: '',
         maxWeight: '',
         desiredWeight: '',
-        obesityHistory: false,
-        hydrated: false,
+        triedDietBefore: false,
+        weightLossMedication: false,
+        weightChangeSinceBirth: '',
+        alwaysOverweight: false,
+
+        // Daily & Goals
         breakfast: '',
+        lunch: '',
+        dinner: '',
+        dislikedFood: '',
+        dietGiven: '',
+        goals: [''],
+        
+        // Missing required fields
         nightEater: false,
         coffee: false,
-        sugar: '',
-        snackTime: '',
+        sugar: 0,
+        snackTime: 'After Lunch',
+
         inbodyImages: [],
     });
     const [inbodyImagePreviews, setInbodyImagePreviews] = useState([]);
@@ -147,15 +191,14 @@ export default function NewFormPage () {
     // Calculate form progress
     const calculateProgress = () => {
         let filled = 0;
-        let total = 7; // Required fields count
+        const requiredFields = ['currentWeight', 'height', 'minWeight', 'maxWeight', 'desiredWeight', 'breakfast'];
+        const total = requiredFields.length + 1; // +1 for at least one goal
         
-        if (formData.currentWeight) filled++;
-        if (formData.minWeight) filled++;
-        if (formData.maxWeight) filled++;
-        if (formData.desiredWeight) filled++;
-        if (formData.breakfast) filled++;
-        if (formData.snackTime) filled++;
-        if (formData.sugar !== '') filled++;
+        requiredFields.forEach(field => {
+            if (formData[field]) filled++;
+        });
+
+        if (formData.goals && formData.goals.length > 0 && formData.goals[0].trim()) filled++;
         
         return (filled / total) * 100;
     };
@@ -167,6 +210,25 @@ export default function NewFormPage () {
             [name]: type === 'checkbox' ? checked : value
         }));
     };
+
+    const handleNestedChange = (parent, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [parent]: { ...prev[parent], [field]: value }
+        }));
+    };
+
+    const handleHealthConditionChange = (condition) => {
+        setFormData(prev => {
+            const current = prev.healthConditions;
+            if (current.includes(condition)) {
+                return { ...prev, healthConditions: current.filter(c => c !== condition) };
+            } else {
+                return { ...prev, healthConditions: [...current, condition] };
+            }
+        });
+    };
+
 
     const handleListChange = (field, index, value) => {
         const updatedList = [...formData[field]];
@@ -235,45 +297,17 @@ export default function NewFormPage () {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!formData.currentWeight) {
-            newErrors.currentWeight = 'Please enter your current weight.';
-        }
-
-        if (!formData.minWeight) {
-            newErrors.minWeight = 'Please enter your minimum weight.';
-        }
-
-        if (!formData.maxWeight) {
-            newErrors.maxWeight = 'Please enter your maximum weight.';
-        }
-
-        if (!formData.desiredWeight) {
-            newErrors.desiredWeight = 'Please enter your desired weight.';
-        }
-
-        if (!['Always', 'Sometimes', 'Never'].includes(formData.breakfast)) {
-            newErrors.breakfast = 'Breakfast field must be Always, Sometimes, or Never.';
-        }
-
-        if (!['Before Lunch', 'After Lunch'].includes(formData.snackTime)) {
-            newErrors.snackTime = 'Snack time must be Before Lunch or After Lunch.';
-        }
-
-        if (formData.sugar === '' || formData.sugar < 0) {
-            newErrors.sugar = 'Please enter a valid sugar amount.';
-        }
-
-        ['allergies', 'healthConditions', 'medications', 'goals'].forEach(field => {
-            formData[field].forEach((item, index) => {
-                if (item.trim() !== '' && !isValidTextEntry(item)) {
-                    newErrors[`${field}_${index}`] = 'Only letters, numbers, and spaces are allowed.';
-                }
-            });
-        });
+        if (!formData.currentWeight) newErrors.currentWeight = 'Please enter your current weight.';
+        if (!formData.height) newErrors.height = 'Please enter your height.';
+        if (!formData.minWeight) newErrors.minWeight = 'Please enter your minimum weight.';
+        if (!formData.maxWeight) newErrors.maxWeight = 'Please enter your maximum weight.';
+        if (!formData.desiredWeight) newErrors.desiredWeight = 'Please enter your desired weight.';
+        if (!formData.breakfast) newErrors.breakfast = 'Please enter breakfast details.';
 
         setFormErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -288,8 +322,10 @@ export default function NewFormPage () {
         if (!validateForm()) return;
 
         const sanitizedData = { ...formData };
-        ['allergies', 'healthConditions', 'medications', 'goals'].forEach(field => {
-            sanitizedData[field] = sanitizedData[field].filter(item => item.trim() !== '');
+        ['allergies', 'medications', 'goals'].forEach(field => {
+            if (Array.isArray(sanitizedData[field])) {
+                sanitizedData[field] = sanitizedData[field].filter(item => item && item.trim() !== '');
+            }
         });
 
         try {
@@ -601,7 +637,7 @@ export default function NewFormPage () {
                     <form onSubmit={handleSubmit} style={{ width: '100%' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-                            {/* Section 1 - Medical History */}
+                            {/* Section 1 - Personal Information */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -610,149 +646,104 @@ export default function NewFormPage () {
                                 <Paper sx={glassCardStyle}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                                         <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
+                                            width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
                                             boxShadow: `0 4px 12px ${theme.palette.primary.main}40`,
                                         }}>
-                                            <MedicalServicesIcon sx={{ color: 'white', fontSize: 22 }} />
+                                            <ChecklistIcon sx={{ color: 'white', fontSize: 22 }} />
                                         </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Medical History
-                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Personal Information</Typography>
+                                    </Box>
+
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                        <TextField fullWidth name="phoneNumber" label="Phone Number" value={formData.phoneNumber} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="date" name="dateOfBirth" label="Date of Birth" InputLabelProps={{ shrink: true }} value={formData.dateOfBirth} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth name="profession" label="Profession" value={formData.profession} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        
+                                        <FormControl component="fieldset" sx={{ mb: 2 }}>
+                                            <FormLabel component="legend">If mother?</FormLabel>
+                                            <RadioGroup row name="isMother" value={formData.isMother} onChange={(e) => setFormData(p => ({...p, isMother: e.target.value === 'true'}))}>
+                                                <FormControlLabel value={true} control={<Radio />} label="Yes" />
+                                                <FormControlLabel value={false} control={<Radio />} label="No" />
+                                            </RadioGroup>
+                                        </FormControl>
+
+                                        <TextField fullWidth type="number" name="currentWeight" label="Current Weight (kg)" value={formData.currentWeight} onChange={handleChange} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="number" name="height" label="Height (cm)" value={formData.height} onChange={handleChange} error={!!formErrors.height} helperText={formErrors.height} variant="filled" sx={inputStyle} />
+                                        
+                                        <TextField fullWidth name="menstrualCycle" label="Period Cycle" value={formData.menstrualCycle} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth name="bowelMovement" label="Bowel Movement" value={formData.bowelMovement} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth name="physicalActivity" label="Physical Activity" value={formData.physicalActivity} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth name="whoCooks" label="Who Cooks?" value={formData.whoCooks} onChange={handleChange} variant="filled" sx={inputStyle} />
                                     </Box>
                                     
-                                    {['allergies', 'healthConditions', 'medications'].map((field) => (
-                                        <Box key={field} sx={{ mb: 3 }}>
-                                            <Typography variant="subtitle2" sx={{ mb: 1.5, color: theme.palette.text.secondary, fontWeight: 500 }}>
-                                                {field === 'allergies' ? '🍽️ Allergies' : field === 'healthConditions' ? '❤️ Health Conditions' : '💊 Medications'}
-                                            </Typography>
-                                            {formData[field].map((item, index) => (
-                                                <TextField
-                                                    key={index}
-                                                    fullWidth
-                                                    variant="filled"
-                                                    label={`${field === 'allergies' ? 'Allergy' : field === 'healthConditions' ? 'Health Condition' : 'Medication'} ${index + 1} (Leave blank if none)`}
-                                                    value={item}
-                                                    onChange={(e) => handleListChange(field, index, e.target.value)}
-                                                    error={!!formErrors[`${field}_${index}`]}
-                                                    helperText={formErrors[`${field}_${index}`] || ''}
-                                                    sx={inputStyle}
-                                                />
-                                            ))}
-                                            <Button 
-                                                onClick={() => addListItem(field)} 
-                                                variant="outlined" 
-                                                fullWidth
-                                                startIcon={<AddCircleOutlineIcon />}
-                                                sx={{
-                                                    borderStyle: 'dashed',
-                                                    borderWidth: 2,
-                                                    borderRadius: 2,
-                                                    py: 1.5,
-                                                    textTransform: 'none',
-                                                    fontWeight: 500,
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        borderStyle: 'dashed',
-                                                        borderWidth: 2,
-                                                        transform: 'translateY(-2px)',
-                                                    }
-                                                }}
-                                            >
-                                                Add {field === 'allergies' ? 'Allergy' : field === 'healthConditions' ? 'Health Condition' : 'Medication'}
-                                            </Button>
-                                        </Box>
-                                    ))}
+                                    <Box sx={{ mt: 2 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1.5, color: theme.palette.text.secondary }}>Allergies</Typography>
+                                        {formData.allergies.map((item, index) => (
+                                            <TextField key={index} fullWidth variant="filled" label={`Allergy ${index + 1}`} value={item} onChange={(e) => handleListChange('allergies', index, e.target.value)} sx={inputStyle} />
+                                        ))}
+                                        <Button onClick={() => addListItem('allergies')} variant="outlined" startIcon={<AddCircleOutlineIcon />} sx={{ mt: 1 }}>Add Allergy</Button>
+                                    </Box>
+
+                                    <FormCheckBox checked={formData.currentSmoker} onChange={handleChange} name="currentSmoker" label="Do you smoke?" />
                                 </Paper>
                             </motion.div>
 
-                            {/* Section 2 - Goals */}
+                            {/* Section 2 - Health History */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
                             >
                                 <Paper sx={glassCardStyle}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                                         <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
-                                            boxShadow: `0 4px 12px ${theme.palette.secondary.main}40`,
+                                            width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            background: `linear-gradient(135deg, #FF6B6B, #EE5A5A)`,
+                                            boxShadow: `0 4px 12px rgba(255, 107, 107, 0.4)`,
                                         }}>
-                                            <FlagIcon sx={{ color: 'white', fontSize: 22 }} />
+                                            <MedicalServicesIcon sx={{ color: 'white', fontSize: 22 }} />
                                         </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Your Goals
-                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Health History</Typography>
                                     </Box>
+
+                                    <TextField fullWidth multiline rows={2} name="operations" label="Operations" value={formData.operations} onChange={handleChange} variant="filled" sx={inputStyle} />
                                     
-                                    <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary, lineHeight: 1.6 }}>
-                                        🎯 What are your health and fitness goals? (e.g., lose weight, build muscle, improve energy)
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
-                                        <Chip 
-                                            label={`${formData.goals.filter(g => g.trim()).length}/${MAX_GOALS} goals`} 
-                                            size="small"
-                                            color="primary"
-                                            variant="outlined"
-                                        />
-                                        <Chip 
-                                            label={`Max ${MAX_GOAL_LENGTH} chars each`} 
-                                            size="small"
-                                            variant="outlined"
-                                        />
-                                    </Box>
-                                    
-                                    {formData.goals.map((goal, index) => (
-                                        <TextField
-                                            key={index}
-                                            fullWidth
-                                            variant="filled"
-                                            label={`Goal ${index + 1}`}
-                                            placeholder="Enter your goal here..."
-                                            value={goal}
-                                            onChange={(e) => handleListChange('goals', index, e.target.value)}
-                                            error={!!formErrors[`goals_${index}`]}
-                                            helperText={formErrors[`goals_${index}`] || `${goal.length}/${MAX_GOAL_LENGTH} characters`}
-                                            inputProps={{ maxLength: MAX_GOAL_LENGTH }}
-                                            sx={inputStyle}
-                                            multiline
-                                            rows={2}
-                                        />
-                                    ))}
-                                    {formData.goals[formData.goals.length - 1]?.trim() !== '' && formData.goals.length < MAX_GOALS && (
-                                        <Button 
-                                            onClick={() => addListItem('goals')} 
-                                            variant="outlined" 
-                                            fullWidth
-                                            startIcon={<AddCircleOutlineIcon />}
-                                            sx={{
-                                                borderStyle: 'dashed',
-                                                borderWidth: 2,
-                                                borderRadius: 2,
-                                                py: 1.5,
-                                                textTransform: 'none',
-                                                fontWeight: 500,
-                                                mt: 1,
-                                            }}
-                                        >
-                                            Add Goal ({formData.goals.length}/{MAX_GOALS})
-                                        </Button>
+                                    <Typography variant="subtitle2" sx={{ mb: 1, mt: 2 }}>Health Problems</Typography>
+                                    <FormGroup row sx={{ gap: 2, mb: 2 }}>
+                                        {HEALTH_CONDITIONS.map((condition) => (
+                                            <FormControlLabel
+                                                key={condition}
+                                                control={<Checkbox checked={formData.healthConditions.includes(condition)} onChange={() => handleHealthConditionChange(condition)} />}
+                                                label={condition}
+                                            />
+                                        ))}
+                                    </FormGroup>
+
+                                    <TextField fullWidth multiline rows={2} name="familyHistory" label="Family History Details" value={formData.familyHistory} onChange={handleChange} variant="filled" sx={inputStyle} />
+
+                                    <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Medications & Guidance</Typography>
+                                    <FormControlLabel control={<Checkbox checked={formData.takeMedication} onChange={handleChange} name="takeMedication" />} label="Do you take any medications?" />
+                                    {formData.takeMedication && (
+                                        <Box sx={{ pl: 3, mb: 2 }}>
+                                            {formData.medications.map((item, index) => (
+                                                <TextField key={index} fullWidth variant="filled" label={`Medication ${index + 1}`} value={item} onChange={(e) => handleListChange('medications', index, e.target.value)} sx={inputStyle} />
+                                            ))}
+                                            <Button onClick={() => addListItem('medications')} variant="outlined" size="small">Add Medication</Button>
+                                        </Box>
                                     )}
+                                    <FormControlLabel control={<Checkbox checked={formData.followedDietAdvice} onChange={handleChange} name="followedDietAdvice" />} label="Did someone tell you how to deal with your health problem?" />
+
+                                    <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Blood Test Results</Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                        {Object.keys(formData.bloodTest).map((key) => (
+                                            <TextField key={key} fullWidth label={key.charAt(0).toUpperCase() + key.slice(1)} value={formData.bloodTest[key]} onChange={(e) => handleNestedChange('bloodTest', key, e.target.value)} variant="filled" sx={inputStyle} />
+                                        ))}
+                                    </Box>
                                 </Paper>
                             </motion.div>
 
-                            {/* Section 3 - Weight Data */}
+                            {/* Section 3 - Diet History */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -761,83 +752,101 @@ export default function NewFormPage () {
                                 <Paper sx={glassCardStyle}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
                                         <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
+                                            width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             background: `linear-gradient(135deg, #4ECDC4, #44A08D)`,
                                             boxShadow: `0 4px 12px rgba(78, 205, 196, 0.4)`,
                                         }}>
                                             <MonitorWeightIcon sx={{ color: 'white', fontSize: 22 }} />
                                         </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Weight Data
-                                        </Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Diet History</Typography>
                                     </Box>
-                                    
+
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                        <TextField 
-                                            fullWidth 
-                                            type="number" 
-                                            name="currentWeight" 
-                                            label="⚖️ Current Weight (kg)" 
-                                            value={formData.currentWeight} 
-                                            onChange={handleChange} 
-                                            error={!!formErrors.currentWeight} 
-                                            helperText={formErrors.currentWeight} 
-                                            variant="filled" 
-                                            sx={inputStyle} 
-                                        />
-                                        <TextField 
-                                            fullWidth 
-                                            type="number" 
-                                            name="desiredWeight" 
-                                            label="🎯 Desired Weight (kg)" 
-                                            value={formData.desiredWeight} 
-                                            onChange={handleChange} 
-                                            error={!!formErrors.desiredWeight} 
-                                            helperText={formErrors.desiredWeight} 
-                                            variant="filled" 
-                                            sx={inputStyle} 
-                                        />
-                                        <TextField 
-                                            fullWidth 
-                                            type="number" 
-                                            name="minWeight" 
-                                            label="📉 Minimum Weight (kg)" 
-                                            value={formData.minWeight} 
-                                            onChange={handleChange} 
-                                            error={!!formErrors.minWeight} 
-                                            helperText={formErrors.minWeight} 
-                                            variant="filled" 
-                                            sx={inputStyle} 
-                                        />
-                                        <TextField 
-                                            fullWidth 
-                                            type="number" 
-                                            name="maxWeight" 
-                                            label="📈 Maximum Weight (kg)" 
-                                            value={formData.maxWeight} 
-                                            onChange={handleChange} 
-                                            error={!!formErrors.maxWeight} 
-                                            helperText={formErrors.maxWeight} 
-                                            variant="filled" 
-                                            sx={inputStyle} 
-                                        />
+                                        <TextField fullWidth type="number" name="minWeight" label="Minimum Weight (kg)" value={formData.minWeight} onChange={handleChange} error={!!formErrors.minWeight} helperText={formErrors.minWeight} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="number" name="maxWeight" label="Maximum Weight (kg)" value={formData.maxWeight} onChange={handleChange} error={!!formErrors.maxWeight} helperText={formErrors.maxWeight} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="number" name="desiredWeight" label="Desired Weight (kg)" value={formData.desiredWeight} onChange={handleChange} error={!!formErrors.desiredWeight} helperText={formErrors.desiredWeight} variant="filled" sx={inputStyle} />
                                     </Box>
-                                    
-                                    {/* Inbody Images Upload */}
+
+                                    <Box sx={{ mt: 2 }}>
+                                        <FormControlLabel control={<Checkbox checked={formData.triedDietBefore} onChange={handleChange} name="triedDietBefore" />} label="Have you been on a diet before?" />
+                                        <FormControlLabel control={<Checkbox checked={formData.weightLossMedication} onChange={handleChange} name="weightLossMedication" />} label="Did you take any medication to lose weight?" />
+                                        <FormControlLabel control={<Checkbox checked={formData.alwaysOverweight} onChange={handleChange} name="alwaysOverweight" />} label="Were you always high in weight?" />
+                                        
+                                        <TextField fullWidth multiline rows={2} name="weightChangeSinceBirth" label="Did your weight change since you were born?" value={formData.weightChangeSinceBirth} onChange={handleChange} variant="filled" sx={{ ...inputStyle, mt: 2 }} />
+                                    </Box>
+                                </Paper>
+                            </motion.div>
+
+                            {/* Section 4 - Daily Intake & Goals */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.4 }}
+                            >
+                                <Paper sx={glassCardStyle}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                                        <Box sx={{
+                                            width: 40, height: 40, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            background: `linear-gradient(135deg, #A78BFA, #8B5CF6)`,
+                                            boxShadow: `0 4px 12px rgba(167, 139, 250, 0.4)`,
+                                        }}>
+                                            <RestaurantIcon sx={{ color: 'white', fontSize: 22 }} />
+                                        </Box>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Daily Intake & Goals</Typography>
+                                    </Box>
+
+                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>24 Hour Recall</Typography>
+                                    <TextField fullWidth multiline rows={2} name="breakfast" label="Breakfast" value={formData.breakfast} onChange={handleChange} error={!!formErrors.breakfast} helperText={formErrors.breakfast} variant="filled" sx={inputStyle} />
+                                    <TextField fullWidth multiline rows={2} name="lunch" label="Lunch" value={formData.lunch} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                    <TextField fullWidth multiline rows={2} name="dinner" label="Dinner" value={formData.dinner} onChange={handleChange} variant="filled" sx={inputStyle} />
+
+                                    <Typography variant="subtitle2" sx={{ mb: 1, mt: 3 }}>Diet & Goals</Typography>
+                                    <TextField fullWidth multiline rows={2} name="dislikedFood" label="What you don't eat?" value={formData.dislikedFood} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                    <TextField fullWidth multiline rows={2} name="dietGiven" label="Diet Given" value={formData.dietGiven} onChange={handleChange} variant="filled" sx={inputStyle} />
+
+                                    <Box sx={{ mt: 2, mb: 3 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Habits</Typography>
+                                        <FormControlLabel control={<Checkbox checked={formData.nightEater} onChange={handleChange} name="nightEater" />} label="Are you a night eater?" />
+                                        <FormControlLabel control={<Checkbox checked={formData.coffee} onChange={handleChange} name="coffee" />} label="Do you drink coffee?" />
+                                        
+                                        <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                            <TextField 
+                                                fullWidth 
+                                                type="number" 
+                                                name="sugar" 
+                                                label="Sugar Spoons per day" 
+                                                value={formData.sugar} 
+                                                onChange={handleChange} 
+                                                variant="filled" 
+                                                sx={inputStyle} 
+                                                inputProps={{ min: 0 }}
+                                            />
+                                            <FormControl component="fieldset" variant="filled" sx={{ ...inputStyle, p: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
+                                                <FormLabel component="legend" sx={{ fontSize: '0.75rem' }}>Snack Time</FormLabel>
+                                                <RadioGroup row name="snackTime" value={formData.snackTime} onChange={handleChange}>
+                                                    <FormControlLabel value="Before Lunch" control={<Radio size="small" />} label="Before Lunch" />
+                                                    <FormControlLabel value="After Lunch" control={<Radio size="small" />} label="After Lunch" />
+                                                </RadioGroup>
+                                            </FormControl>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ mt: 2 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>What is your goal?</Typography>
+                                        {formData.goals.map((item, index) => (
+                                            <TextField key={index} fullWidth variant="filled" label={`Goal ${index + 1}`} value={item} onChange={(e) => handleListChange('goals', index, e.target.value)} sx={inputStyle} />
+                                        ))}
+                                        {formData.goals.length < MAX_GOALS && (
+                                            <Button onClick={() => addListItem('goals')} variant="outlined" size="small" startIcon={<AddCircleOutlineIcon />}>Add Goal</Button>
+                                        )}
+                                    </Box>
+
+                                    {/* Inbody Images Upload (Keep existing) */}
                                     <Box sx={{ mt: 3 }}>
                                         <Typography variant="subtitle2" sx={{ mb: 2, color: theme.palette.text.secondary, fontWeight: 500 }}>
                                             📸 Inbody Images (Optional - Max 3)
                                         </Typography>
-                                        <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary, fontSize: '0.9rem' }}>
-                                            Upload up to 3 photos of your body to help us better understand your fitness goals.
-                                        </Typography>
-                                        
-                                        {/* Image Previews */}
+                                        {/* Inbody Images Upload */}
                                         {inbodyImagePreviews.length > 0 && (
                                             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 2 }}>
                                                 {inbodyImagePreviews.map((preview, index) => (
@@ -852,220 +861,25 @@ export default function NewFormPage () {
                                                             maxWidth: 250,
                                                         }}
                                                     >
-                                                        <img
-                                                            src={preview}
-                                                            alt={`Inbody preview ${index + 1}`}
-                                                            style={{
-                                                                width: '100%',
-                                                                height: 'auto',
-                                                                display: 'block',
-                                                            }}
-                                                        />
-                                                        <IconButton
-                                                            onClick={() => handleRemoveImage(index)}
-                                                            sx={{
-                                                                position: 'absolute',
-                                                                top: 8,
-                                                                right: 8,
-                                                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                                                                color: 'white',
-                                                                '&:hover': {
-                                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                                }
-                                                            }}
-                                                        >
-                                                            <DeleteIcon />
-                                                        </IconButton>
+                                                        <img src={preview} alt={`Inbody preview ${index + 1}`} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                                                        <IconButton onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0, 0, 0, 0.6)', color: 'white', '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.8)' } }}><DeleteIcon /></IconButton>
                                                     </Paper>
                                                 ))}
                                             </Box>
                                         )}
-                                        
-                                        {/* Upload Button */}
                                         {inbodyImagePreviews.length < 3 && (
                                             <Box>
-                                                <Button
-                                                    component="label"
-                                                    variant="outlined"
-                                                    fullWidth
-                                                    startIcon={<PhotoCameraIcon />}
-                                                    sx={{
-                                                        borderStyle: 'dashed',
-                                                        borderWidth: 2,
-                                                        borderRadius: 2,
-                                                        py: 2,
-                                                        textTransform: 'none',
-                                                        fontWeight: 500,
-                                                        transition: 'all 0.3s ease',
-                                                        '&:hover': {
-                                                            borderStyle: 'dashed',
-                                                            borderWidth: 2,
-                                                            transform: 'translateY(-2px)',
-                                                        }
-                                                    }}
-                                                >
+                                                <Button component="label" variant="outlined" fullWidth startIcon={<PhotoCameraIcon />} sx={{ borderStyle: 'dashed', borderWidth: 2, borderRadius: 2, py: 2, textTransform: 'none', fontWeight: 500 }}>
                                                     {inbodyImagePreviews.length === 0 ? 'Upload Inbody Images' : `Add More Images (${inbodyImagePreviews.length}/3)`}
-                                                    <input
-                                                        type="file"
-                                                        hidden
-                                                        multiple
-                                                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                                                        onChange={handleImageUpload}
-                                                    />
+                                                    <input type="file" hidden multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} />
                                                 </Button>
-                                                <Typography variant="caption" sx={{ mt: 1, display: 'block', color: theme.palette.text.secondary, textAlign: 'center' }}>
-                                                    Maximum file size: 5MB each • Formats: JPEG, PNG, GIF, WebP • Images will be uploaded when you submit
-                                                </Typography>
                                             </Box>
                                         )}
-                                        
-                                        {inbodyImagePreviews.length === 3 && (
-                                            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: theme.palette.success.main, textAlign: 'center', fontWeight: 500 }}>
-                                                ✓ Maximum images selected (3/3) • Images will be uploaded when you submit
-                                            </Typography>
-                                        )}
                                     </Box>
-                                </Paper>
-                            </motion.div>
-
-                            {/* Section 4 - Meal Habits */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.4 }}
-                            >
-                                <Paper sx={glassCardStyle}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                                        <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: `linear-gradient(135deg, #FF6B6B, #EE5A5A)`,
-                                            boxShadow: `0 4px 12px rgba(255, 107, 107, 0.4)`,
-                                        }}>
-                                            <RestaurantIcon sx={{ color: 'white', fontSize: 22 }} />
-                                        </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Meal Habits
-                                        </Typography>
-                                    </Box>
-                                    
-                                    <TextField 
-                                        select 
-                                        fullWidth 
-                                        name="breakfast" 
-                                        label="🌅 Do you eat breakfast?" 
-                                        value={formData.breakfast} 
-                                        onChange={handleChange} 
-                                        error={!!formErrors.breakfast} 
-                                        helperText={formErrors.breakfast} 
-                                        variant="filled" 
-                                        sx={inputStyle}
-                                    >
-                                        <MenuItem value="Always">Always</MenuItem>
-                                        <MenuItem value="Sometimes">Sometimes</MenuItem>
-                                        <MenuItem value="Never">Never</MenuItem>
-                                    </TextField>
-                                    
-                                    <TextField 
-                                        select 
-                                        fullWidth 
-                                        name="snackTime" 
-                                        label="🍪 When do you snack?" 
-                                        value={formData.snackTime} 
-                                        onChange={handleChange} 
-                                        error={!!formErrors.snackTime} 
-                                        helperText={formErrors.snackTime} 
-                                        variant="filled" 
-                                        sx={inputStyle}
-                                    >
-                                        <MenuItem value="Before Lunch">Before Lunch</MenuItem>
-                                        <MenuItem value="After Lunch">After Lunch</MenuItem>
-                                    </TextField>
-                                    
-                                    <TextField 
-                                        fullWidth 
-                                        type="number" 
-                                        name="sugar" 
-                                        label="🍬 Sugar intake (teaspoons per day)" 
-                                        value={formData.sugar} 
-                                        onChange={handleChange} 
-                                        error={!!formErrors.sugar} 
-                                        helperText={formErrors.sugar} 
-                                        variant="filled" 
-                                        sx={inputStyle} 
-                                    />
-                                </Paper>
-                            </motion.div>
-
-                            {/* Section 5 - Lifestyle */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.5 }}
-                            >
-                                <Paper sx={glassCardStyle}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-                                        <Box sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 2,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: `linear-gradient(135deg, #A78BFA, #8B5CF6)`,
-                                            boxShadow: `0 4px 12px rgba(167, 139, 250, 0.4)`,
-                                        }}>
-                                            <ChecklistIcon sx={{ color: 'white', fontSize: 22 }} />
-                                        </Box>
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                            Lifestyle Habits
-                                        </Typography>
-                                    </Box>
-                                    
-                                    <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary }}>
-                                        Select all that apply to you:
-                                    </Typography>
-                                    
-                                    <FormGroup sx={{ 
-                                        gap: 1,
-                                        '& .MuiFormControlLabel-root': {
-                                            p: 1.5,
-                                            borderRadius: 2,
-                                            backgroundColor: theme.palette.mode === 'dark' 
-                                                ? 'rgba(255,255,255,0.02)'
-                                                : 'rgba(0,0,0,0.02)',
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                backgroundColor: theme.palette.mode === 'dark' 
-                                                    ? 'rgba(255,255,255,0.05)'
-                                                    : 'rgba(0,0,0,0.04)',
-                                            }
-                                        }
-                                    }}>
-                                        <FormCheckBox checked={formData.currentSmoker} onChange={handleChange} name="currentSmoker" label="🚬 I currently smoke" />
-                                        <FormCheckBox checked={formData.obesityHistory} onChange={handleChange} name="obesityHistory" label="📊 I have a history of obesity" />
-                                        <FormCheckBox checked={formData.hydrated} onChange={handleChange} name="hydrated" label="💧 I stay well hydrated" />
-                                        <FormCheckBox checked={formData.nightEater} onChange={handleChange} name="nightEater" label="🌙 I often eat at night" />
-                                        <FormCheckBox checked={formData.coffee} onChange={handleChange} name="coffee" label="☕ I drink coffee daily" />
-                                    </FormGroup>
                                     
                                     {backendError && (
-                                        <Paper 
-                                            sx={{ 
-                                                mt: 3, 
-                                                p: 2, 
-                                                backgroundColor: 'error.light', 
-                                                borderRadius: 2,
-                                                border: `1px solid ${theme.palette.error.main}`,
-                                            }}
-                                        >
-                                            <Typography color="error.dark" sx={{ fontWeight: 500 }}>
-                                                ⚠️ {backendError}
-                                            </Typography>
+                                        <Paper sx={{ mt: 3, p: 2, backgroundColor: 'error.light', borderRadius: 2, border: `1px solid ${theme.palette.error.main}` }}>
+                                            <Typography color="error.dark" sx={{ fontWeight: 500 }}>⚠️ {backendError}</Typography>
                                         </Paper>
                                     )}
                                 </Paper>

@@ -9,6 +9,7 @@ import {
     useTheme, 
     Grid, 
     Chip, 
+    Avatar, 
     Accordion, 
     AccordionSummary, 
     AccordionDetails, 
@@ -35,6 +36,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import DescriptionIcon from '@mui/icons-material/Description';
 import FlagIcon from '@mui/icons-material/Flag';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -51,7 +53,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
-import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -71,6 +73,12 @@ export default function ViewPlanPage () {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     
+    // Form details state
+    const [formData, setFormData] = useState(location.state?.form || null);
+    const [formDetailsOpen, setFormDetailsOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
     // Chip detail dialog state
     const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
     const [selectedChipContent, setSelectedChipContent] = useState('');
@@ -97,11 +105,28 @@ export default function ViewPlanPage () {
         } else if (id) {
             // If no form in state, fetch by form ID from URL
             fetchPlan(id);
+            fetchForm(id);
         } else {
             setError('No form data provided');
             setLoading(false);
         }
     }, [form, id]);
+
+    const fetchForm = async (formId) => {
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setFormData(data.form);
+            }
+        } catch (err) {
+            console.error('Error fetching form details:', err);
+        }
+    };
 
     const fetchPlan = async (formId) => {
         try {
@@ -430,6 +455,39 @@ export default function ViewPlanPage () {
                                     Your personalized dietary guidance
                                 </Typography>
                             </Box>
+                            
+                            {/* View Form Button */}
+                            {formData && (
+                                <>
+                                    <Button
+                                        startIcon={<DescriptionIcon />}
+                                        onClick={() => setFormDetailsOpen(true)}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            display: { xs: 'none', sm: 'flex' },
+                                            ...glassButton(theme, 'primary'),
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        View Submission
+                                    </Button>
+                                    <IconButton
+                                        onClick={() => setFormDetailsOpen(true)}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            display: { xs: 'flex', sm: 'none' },
+                                            backgroundColor: theme.palette.mode === 'dark' 
+                                                ? 'rgba(255,255,255,0.05)' 
+                                                : 'rgba(0,0,0,0.04)',
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        <DescriptionIcon />
+                                    </IconButton>
+                                </>
+                            )}
                         </Box>
                     </motion.div>
 
@@ -1224,6 +1282,251 @@ export default function ViewPlanPage () {
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
+
+             {/* Form Details Dialog */}
+             <Dialog 
+                open={formDetailsOpen} 
+                onClose={() => setFormDetailsOpen(false)}
+                maxWidth="md"
+                fullWidth
+                TransitionComponent={Transition}
+                sx={{
+                    '& .MuiDialog-paper': {
+                        borderRadius: 3,
+                        background: theme.palette.mode === 'dark'
+                            ? 'rgba(26, 26, 46, 0.95)'
+                            : 'rgba(255, 255, 255, 0.98)',
+                        backdropFilter: 'blur(20px)',
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    py: 2.5,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        📋 Submission Details
+                    </Typography>
+                    <IconButton onClick={() => setFormDetailsOpen(false)} size="small">
+                            <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    {formData && (
+                            <Grid container spacing={3}>
+                            {/* Personal Information */}
+                            <Grid item xs={12}>
+                                <Card variant="outlined">
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Personal Information</Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Name:</strong> {formData.user?.name || formData.name || 'N/A'}</Typography>
+                                                <Typography><strong>Age:</strong> {formData.age}</Typography>
+                                                <Typography><strong>Gender:</strong> {formData.gender}</Typography>
+                                                <Typography><strong>Phone:</strong> {formData.phoneNumber || 'N/A'}</Typography>
+                                                <Typography><strong>Profession:</strong> {formData.profession || 'N/A'}</Typography>
+                                                <Typography><strong>Height:</strong> {formData.height} cm</Typography>
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Is Mother:</strong> {formData.isMother ? 'Yes' : 'No'}</Typography>
+                                                {formData.isMother && <Typography><strong>Cycle:</strong> {formData.menstrualCycle || 'N/A'}</Typography>}
+                                                <Typography><strong>Bowel Movement:</strong> {formData.bowelMovement || 'N/A'}</Typography>
+                                                <Typography><strong>Physical Activity:</strong> {formData.physicalActivity || 'N/A'}</Typography>
+                                                <Typography><strong>Who Cooks:</strong> {formData.whoCooks || 'N/A'}</Typography>
+                                                <Typography><strong>Smoker:</strong> {formData.currentSmoker ? 'Yes' : 'No'}</Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Health History */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
+                                        <Typography><strong>Operations:</strong> {formData.operations || 'None'}</Typography>
+                                        <Typography><strong>Health Conditions:</strong> {formData.healthConditions?.join(', ') || 'None'}</Typography>
+                                        <Typography><strong>Family History:</strong> {formData.familyHistory || 'None'}</Typography>
+                                        <Divider sx={{ my: 1 }} />
+                                        <Typography><strong>Medications:</strong> {formData.takeMedication ? formData.medications?.join(', ') : 'None'}</Typography>
+                                        <Typography><strong>Followed Advice:</strong> {formData.followedDietAdvice ? 'Yes' : 'No'}</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Blood Test */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Blood Test</Typography>
+                                        {formData.bloodTest ? (
+                                            <Grid container spacing={1}>
+                                                {Object.entries(formData.bloodTest).map(([key, val]) => (
+                                                    <Grid item xs={6} key={key}>
+                                                        <Typography variant="body2"><strong>{key}:</strong> {val || '-'}</Typography>
+                                                    </Grid>
+                                                ))}
+                                            </Grid>
+                                        ) : <Typography>No Data</Typography>}
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Diet History & Measurements */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Diet History</Typography>
+                                        <Typography><strong>Current Weight:</strong> {formData.currentWeight} kg</Typography>
+                                        <Typography><strong>Min/Max:</strong> {formData.minWeight} / {formData.maxWeight} kg</Typography>
+                                        <Typography><strong>Desired:</strong> {formData.desiredWeight} kg</Typography>
+                                        <Divider sx={{ my: 1 }} />
+                                        <Typography><strong>Tried Diet:</strong> {formData.triedDietBefore ? 'Yes' : 'No'}</Typography>
+                                        <Typography><strong>Meds for Weight:</strong> {formData.weightLossMedication ? 'Yes' : 'No'}</Typography>
+                                        <Typography><strong>History:</strong> {formData.weightChangeSinceBirth}</Typography>
+                                        <Typography><strong>Always Overweight:</strong> {formData.alwaysOverweight ? 'Yes' : 'No'}</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Daily Intake & Goals */}
+                            <Grid item xs={12}>
+                                <Card variant="outlined">
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Daily Intake & Goals</Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Breakfast:</strong> {formData.breakfast}</Typography>
+                                                <Typography><strong>Lunch:</strong> {formData.lunch}</Typography>
+                                                <Typography><strong>Dinner:</strong> {formData.dinner}</Typography>
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Dislikes:</strong> {formData.dislikedFood}</Typography>
+                                                <Typography><strong>Diet Given:</strong> {formData.dietGiven}</Typography>
+                                                <Typography><strong>Goals:</strong> {formData.goals?.join(', ')}</Typography>
+                                                <Divider sx={{ my: 1 }} />
+                                                <Typography><strong>Night Eater:</strong> {formData.nightEater ? 'Yes' : 'No'}</Typography>
+                                                <Typography><strong>Coffee:</strong> {formData.coffee ? 'Yes' : 'No'}</Typography>
+                                                <Typography><strong>Sugar:</strong> {formData.sugar} spoon(s)</Typography>
+                                                <Typography><strong>Snack Time:</strong> {formData.snackTime}</Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                                {/* Inbody Images */}
+                            {(formData.bodyImage || (formData.inbodyImages && formData.inbodyImages.length > 0)) && (
+                                <Grid item xs={12}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                📸 Inbody Images ({
+                                                    (formData.inbodyImages?.length || 0) + (formData.bodyImage ? 1 : 0)
+                                                })
+                                            </Typography>
+                                            <Box sx={{ 
+                                                display: 'grid', 
+                                                gridTemplateColumns: { 
+                                                    xs: '1fr', 
+                                                    sm: 'repeat(2, 1fr)', 
+                                                    md: 'repeat(3, 1fr)' 
+                                                }, 
+                                                gap: 2,
+                                                mt: 2
+                                            }}>
+                                                {/* Legacy bodyImage */}
+                                                {formData.bodyImage && (
+                                                    <Paper
+                                                        sx={{
+                                                            position: 'relative',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            border: `2px solid ${theme.palette.divider}`,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.02)',
+                                                                boxShadow: theme.shadows[8],
+                                                                borderColor: theme.palette.primary.main,
+                                                            }
+                                                        }}
+                                                        onClick={() => {
+                                                            setSelectedImage(formData.bodyImage);
+                                                            setImageDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={formData.bodyImage}
+                                                            alt="Inbody Legacy"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 200,
+                                                                objectFit: 'cover',
+                                                                display: 'block',
+                                                            }}
+                                                        />
+                                                    </Paper>
+                                                )}
+
+                                                {/* Array inbodyImages */}
+                                                {formData.inbodyImages && formData.inbodyImages.map((imageUrl, index) => (
+                                                    <Paper
+                                                        key={index}
+                                                        sx={{
+                                                            position: 'relative',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            border: `2px solid ${theme.palette.divider}`,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.02)',
+                                                                boxShadow: theme.shadows[8],
+                                                                borderColor: theme.palette.primary.main,
+                                                            }
+                                                        }}
+                                                        onClick={() => {
+                                                            setSelectedImage(imageUrl);
+                                                            setImageDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={`Inbody ${index + 1}`}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 200,
+                                                                objectFit: 'cover',
+                                                                display: 'block',
+                                                            }}
+                                                        />
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            )}
+                        </Grid>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setFormDetailsOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            <ImageViewerDialog
+                open={imageDialogOpen}
+                imageUrl={selectedImage}
+                onClose={() => setImageDialogOpen(false)}
+            />
         </PageFade>
     );
 };

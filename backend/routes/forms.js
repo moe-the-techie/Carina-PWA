@@ -24,6 +24,25 @@ const upload = multer({
 router.get('/forms',  protect, getAllForms);
 router.get('/forms/user/:id', protect, getUserForms);
 router.get('/forms/my', protect, getMyForms);
+
+// Get specific form for the user
+router.get('/forms/my/:id', protect, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const Form = (await import('../models/Form.js')).default;
+        const form = await Form.findOne({ _id: id, user: req.user._id })
+            .populate('user', 'name email dateOfBirth isMother gender'); // Populate user details as needed
+
+        if (!form) {
+            return res.status(404).json({ error: 'Form not found' });
+        }
+
+        res.status(200).json({ form });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/forms', protect, newForm);
 router.post('/forms/upload-body-image', protect, upload.single('image'), uploadBodyImage);
 

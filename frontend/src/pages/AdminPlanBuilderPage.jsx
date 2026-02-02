@@ -126,6 +126,7 @@ export default function AdminPlanBuilderPage() {
 
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [viewFormDetailsOpen, setViewFormDetailsOpen] = useState(false);
     
     // Current selected day tab
     const [selectedDayTab, setSelectedDayTab] = useState(0);
@@ -831,9 +832,19 @@ export default function AdminPlanBuilderPage() {
                         <Grid item xs={12} md={4}>
                             <Card sx={{ height: '100%' }}>
                                 <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                        Form Details
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography variant="h6">
+                                            Form Details
+                                        </Typography>
+                                        <Button 
+                                            size="small" 
+                                            variant="outlined" 
+                                            onClick={() => setViewFormDetailsOpen(true)}
+                                            sx={{ minWidth: 'auto', borderRadius: 2 }}
+                                        >
+                                            View Full
+                                        </Button>
+                                    </Box>
                                     <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
                                         <Typography variant="subtitle2" color="primary">Weight Goals</Typography>
                                         <Typography variant="body2" paragraph>
@@ -1672,6 +1683,245 @@ export default function AdminPlanBuilderPage() {
                         >
                             Copy
                         </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Form Details Dialog */}
+                <Dialog 
+                    open={viewFormDetailsOpen} 
+                    onClose={() => setViewFormDetailsOpen(false)}
+                    maxWidth="md"
+                    fullWidth
+                    TransitionComponent={Transition}
+                    sx={{
+                        '& .MuiDialog-paper': {
+                            borderRadius: 3,
+                            background: theme.palette.mode === 'dark'
+                                ? 'rgba(26, 26, 46, 0.95)'
+                                : 'rgba(255, 255, 255, 0.98)',
+                            backdropFilter: 'blur(20px)',
+                        }
+                    }}
+                >
+                    <DialogTitle sx={{
+                        background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        py: 2.5,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            📋 Submission Details
+                        </Typography>
+                        <IconButton onClick={() => setViewFormDetailsOpen(false)} size="small">
+                             <ContentCopyIcon sx={{ transform: 'rotate(180deg)', opacity: 0 }} /> 
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ mt: 2 }}>
+                        {currentFormData && (
+                             <Grid container spacing={3}>
+                                {/* Personal Information */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Personal Information</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Name:</strong> {currentFormData.user?.name || currentFormData.name || 'N/A'}</Typography>
+                                                    <Typography><strong>Age:</strong> {currentFormData.age}</Typography>
+                                                    <Typography><strong>Gender:</strong> {currentFormData.gender}</Typography>
+                                                    <Typography><strong>Phone:</strong> {currentFormData.phoneNumber || 'N/A'}</Typography>
+                                                    <Typography><strong>Profession:</strong> {currentFormData.profession || 'N/A'}</Typography>
+                                                    <Typography><strong>Height:</strong> {currentFormData.height} cm</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Is Mother:</strong> {currentFormData.isMother ? 'Yes' : 'No'}</Typography>
+                                                    {currentFormData.isMother && <Typography><strong>Cycle:</strong> {currentFormData.menstrualCycle || 'N/A'}</Typography>}
+                                                    <Typography><strong>Bowel Movement:</strong> {currentFormData.bowelMovement || 'N/A'}</Typography>
+                                                    <Typography><strong>Physical Activity:</strong> {currentFormData.physicalActivity || 'N/A'}</Typography>
+                                                    <Typography><strong>Who Cooks:</strong> {currentFormData.whoCooks || 'N/A'}</Typography>
+                                                    <Typography><strong>Smoker:</strong> {currentFormData.currentSmoker ? 'Yes' : 'No'}</Typography>
+                                                </Grid>
+                                            </Grid>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Health History */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
+                                            <Typography><strong>Operations:</strong> {currentFormData.operations || 'None'}</Typography>
+                                            <Typography><strong>Health Conditions:</strong> {currentFormData.healthConditions?.join(', ') || 'None'}</Typography>
+                                            <Typography><strong>Family History:</strong> {currentFormData.familyHistory || 'None'}</Typography>
+                                            <Divider sx={{ my: 1 }} />
+                                            <Typography><strong>Medications:</strong> {currentFormData.takeMedication ? currentFormData.medications?.join(', ') : 'None'}</Typography>
+                                            <Typography><strong>Followed Advice:</strong> {currentFormData.followedDietAdvice ? 'Yes' : 'No'}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Blood Test */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Blood Test</Typography>
+                                            {currentFormData.bloodTest ? (
+                                                <Grid container spacing={1}>
+                                                    {Object.entries(currentFormData.bloodTest).map(([key, val]) => (
+                                                        <Grid item xs={6} key={key}>
+                                                            <Typography variant="body2"><strong>{key}:</strong> {val || '-'}</Typography>
+                                                        </Grid>
+                                                    ))}
+                                                </Grid>
+                                            ) : <Typography>No Data</Typography>}
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Diet History & Measurements */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Diet History</Typography>
+                                            <Typography><strong>Current Weight:</strong> {currentFormData.currentWeight} kg</Typography>
+                                            <Typography><strong>Min/Max:</strong> {currentFormData.minWeight} / {currentFormData.maxWeight} kg</Typography>
+                                            <Typography><strong>Desired:</strong> {currentFormData.desiredWeight} kg</Typography>
+                                            <Divider sx={{ my: 1 }} />
+                                            <Typography><strong>Tried Diet:</strong> {currentFormData.triedDietBefore ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>Meds for Weight:</strong> {currentFormData.weightLossMedication ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>History:</strong> {currentFormData.weightChangeSinceBirth}</Typography>
+                                            <Typography><strong>Always Overweight:</strong> {currentFormData.alwaysOverweight ? 'Yes' : 'No'}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Daily Intake & Goals */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Daily Intake & Goals</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Breakfast:</strong> {currentFormData.breakfast}</Typography>
+                                                    <Typography><strong>Lunch:</strong> {currentFormData.lunch}</Typography>
+                                                    <Typography><strong>Dinner:</strong> {currentFormData.dinner}</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Dislikes:</strong> {currentFormData.dislikedFood}</Typography>
+                                                    <Typography><strong>Diet Given:</strong> {currentFormData.dietGiven}</Typography>
+                                                    <Typography><strong>Goals:</strong> {currentFormData.goals?.join(', ')}</Typography>
+                                                    <Divider sx={{ my: 1 }} />
+                                                    <Typography><strong>Night Eater:</strong> {currentFormData.nightEater ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Coffee:</strong> {currentFormData.coffee ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Sugar:</strong> {currentFormData.sugar} spoon(s)</Typography>
+                                                    <Typography><strong>Snack Time:</strong> {currentFormData.snackTime}</Typography>
+                                                </Grid>
+                                            </Grid>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                 {/* Inbody Images */}
+                                {(currentFormData.bodyImage || (currentFormData.inbodyImages && currentFormData.inbodyImages.length > 0)) && (
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent>
+                                                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    📸 Inbody Images ({
+                                                        (currentFormData.inbodyImages?.length || 0) + (currentFormData.bodyImage ? 1 : 0)
+                                                    })
+                                                </Typography>
+                                                <Box sx={{ 
+                                                    display: 'grid', 
+                                                    gridTemplateColumns: { 
+                                                        xs: '1fr', 
+                                                        sm: 'repeat(2, 1fr)', 
+                                                        md: 'repeat(3, 1fr)' 
+                                                    }, 
+                                                    gap: 2,
+                                                    mt: 2
+                                                }}>
+                                                    {/* Legacy bodyImage */}
+                                                    {currentFormData.bodyImage && (
+                                                        <Paper
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 2,
+                                                                overflow: 'hidden',
+                                                                border: `2px solid ${theme.palette.divider}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.02)',
+                                                                    boxShadow: theme.shadows[8],
+                                                                    borderColor: theme.palette.primary.main,
+                                                                }
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(currentFormData.bodyImage);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={currentFormData.bodyImage}
+                                                                alt="Inbody Legacy"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 200,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                }}
+                                                            />
+                                                        </Paper>
+                                                    )}
+
+                                                    {/* Array inbodyImages */}
+                                                    {currentFormData.inbodyImages && currentFormData.inbodyImages.map((imageUrl, index) => (
+                                                        <Paper
+                                                            key={index}
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 2,
+                                                                overflow: 'hidden',
+                                                                border: `2px solid ${theme.palette.divider}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.02)',
+                                                                    boxShadow: theme.shadows[8],
+                                                                    borderColor: theme.palette.primary.main,
+                                                                }
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(imageUrl);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={imageUrl}
+                                                                alt={`Inbody ${index + 1}`}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 200,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                }}
+                                                            />
+                                                        </Paper>
+                                                    ))}
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
+                            </Grid>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setViewFormDetailsOpen(false)}>Close</Button>
                     </DialogActions>
                 </Dialog>
 

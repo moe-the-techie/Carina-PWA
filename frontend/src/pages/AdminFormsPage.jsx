@@ -791,68 +791,40 @@ export default function AdminFormsPage() {
                     <DialogContent sx={{ mt: 2 }}>
                         {selectedForm && (
                             <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        height: '100%',
-                                        borderRadius: 2,
-                                        boxShadow: 'none',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                    }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <PersonIcon color="primary" />
-                                                User Information
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-                                                <Avatar
-                                                    src={selectedForm.user?.profileImageUrl}
-                                                    alt={selectedForm.user?.name}
-                                                    sx={{ 
-                                                        width: 48, 
-                                                        height: 48,
-                                                        cursor: selectedForm.user?.profileImageUrl ? 'pointer' : 'default',
-                                                        '&:hover': selectedForm.user?.profileImageUrl ? {
-                                                            opacity: 0.8,
-                                                            transition: 'opacity 0.2s'
-                                                        } : {}
-                                                    }}
-                                                    onClick={() => {
-                                                        if (selectedForm.user?.profileImageUrl) {
-                                                            setSelectedImage(selectedForm.user.profileImageUrl);
-                                                            setImageDialogOpen(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    {!selectedForm.user?.profileImageUrl && selectedForm.user?.name?.charAt(0)?.toUpperCase()}
-                                                </Avatar>
-                                                <Box>
-                                                    <Typography variant="subtitle1">{selectedForm.user?.name}</Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {selectedForm.user?.email}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                            <Typography><strong>Name:</strong> {selectedForm.user?.name}</Typography>
-                                            <Typography><strong>Email:</strong> {selectedForm.user?.email}</Typography>
-                                            <Typography><strong>Gender:</strong> {selectedForm.user?.gender}</Typography>
-                                            <Typography><strong>Date of Birth:</strong> {
-                                                selectedForm.user?.dateOfBirth 
-                                                    ? new Date(selectedForm.user.dateOfBirth).toLocaleDateString()
-                                                    : 'Not provided'
-                                            }</Typography>
+                                {/* Personal Information */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">User & Personal Information</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+                                                        <Avatar src={selectedForm.user?.profileImageUrl}>{selectedForm.user?.name?.charAt(0)}</Avatar>
+                                                        <Box>
+                                                            <Typography variant="subtitle1">{selectedForm.user?.name}</Typography>
+                                                            <Typography variant="body2" color="text.secondary">{selectedForm.user?.email}</Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <Typography><strong>Phone:</strong> {selectedForm.phoneNumber || 'N/A'}</Typography>
+                                                    <Typography><strong>DOB:</strong> {selectedForm.dateOfBirth ? new Date(selectedForm.dateOfBirth).toLocaleDateString() : 'N/A'}</Typography>
+                                                    <Typography><strong>Profession:</strong> {selectedForm.profession || 'N/A'}</Typography>
+                                                    <Typography><strong>Height:</strong> {selectedForm.height} cm</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Is Mother:</strong> {selectedForm.isMother ? 'Yes' : 'No'}</Typography>
+                                                    {selectedForm.isMother && <Typography><strong>Cycle:</strong> {selectedForm.menstrualCycle || 'N/A'}</Typography>}
+                                                    <Typography><strong>Bowel Movement:</strong> {selectedForm.bowelMovement || 'N/A'}</Typography>
+                                                    <Typography><strong>Physical Activity:</strong> {selectedForm.physicalActivity || 'N/A'}</Typography>
+                                                    <Typography><strong>Who Cooks:</strong> {selectedForm.whoCooks || 'N/A'}</Typography>
+                                                    <Typography><strong>Smoker:</strong> {selectedForm.currentSmoker ? 'Yes' : 'No'}</Typography>
+                                                </Grid>
+                                            </Grid>
                                         </CardContent>
-                                        <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                                        <CardActions sx={{ justifyContent: 'flex-end' }}>
                                             <Button 
-                                                variant="outlined"
-                                                color="primary"
-                                                onClick={() => {
-                                                    setFormDetailsOpen(false);
-                                                    handleMessageUser(selectedForm?.user?._id);
-                                                }}
+                                                variant="outlined" 
                                                 startIcon={<ChatIcon />}
-                                                size="small"
+                                                onClick={() => { setFormDetailsOpen(false); handleMessageUser(selectedForm?.user?._id); }}
                                             >
                                                 Message User
                                             </Button>
@@ -860,60 +832,78 @@ export default function AdminFormsPage() {
                                     </Card>
                                 </Grid>
 
+                                {/* Health History */}
                                 <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Weight Information
-                                            </Typography>
-                                            <Typography><strong>Current Weight:</strong> {selectedForm.currentWeight}kg</Typography>
-                                            <Typography><strong>Min Weight:</strong> {selectedForm.minWeight}kg</Typography>
-                                            <Typography><strong>Max Weight:</strong> {selectedForm.maxWeight}kg</Typography>
-                                            <Typography><strong>Desired Weight:</strong> {selectedForm.desiredWeight}kg</Typography>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Medical Information
-                                            </Typography>
-                                            <Typography><strong>Allergies:</strong> {
-                                                selectedForm.allergies?.length > 0 
-                                                    ? selectedForm.allergies.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                            <Typography><strong>Health Conditions:</strong> {
-                                                selectedForm.healthConditions?.length > 0 
-                                                    ? selectedForm.healthConditions.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                            <Typography><strong>Medications:</strong> {
-                                                selectedForm.medications?.length > 0 
-                                                    ? selectedForm.medications.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Lifestyle Information
-                                            </Typography>
-                                            <Typography><strong>Breakfast:</strong> {selectedForm.breakfast}</Typography>
-                                            <Typography><strong>Snack Time:</strong> {selectedForm.snackTime}</Typography>
-                                            <Typography><strong>Sugar Intake:</strong> {selectedForm.sugar} tsp/day</Typography>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
+                                            <Typography><strong>Operations:</strong> {selectedForm.operations || 'None'}</Typography>
+                                            <Typography><strong>Health Conditions:</strong> {selectedForm.healthConditions?.join(', ') || 'None'}</Typography>
+                                            <Typography><strong>Family History:</strong> {selectedForm.familyHistory || 'None'}</Typography>
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography><strong>Current Smoker:</strong> {selectedForm.currentSmoker ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Obesity History:</strong> {selectedForm.obesityHistory ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Stays Hydrated:</strong> {selectedForm.hydrated ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Night Eater:</strong> {selectedForm.nightEater ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Coffee Drinker:</strong> {selectedForm.coffee ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>Medications:</strong> {selectedForm.takeMedication ? selectedForm.medications?.join(', ') : 'None'}</Typography>
+                                            <Typography><strong>Followed Advice:</strong> {selectedForm.followedDietAdvice ? 'Yes' : 'No'}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Blood Test */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Blood Test</Typography>
+                                            {selectedForm.bloodTest ? (
+                                                <Grid container spacing={1}>
+                                                    {Object.entries(selectedForm.bloodTest).map(([key, val]) => (
+                                                        <Grid item xs={6} key={key}>
+                                                            <Typography variant="body2"><strong>{key}:</strong> {val || '-'}</Typography>
+                                                        </Grid>
+                                                    ))}
+                                                </Grid>
+                                            ) : <Typography>No Data</Typography>}
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Diet History & Measurements */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Diet History</Typography>
+                                            <Typography><strong>Current Weight:</strong> {selectedForm.currentWeight} kg</Typography>
+                                            <Typography><strong>Min/Max:</strong> {selectedForm.minWeight} / {selectedForm.maxWeight} kg</Typography>
+                                            <Typography><strong>Desired:</strong> {selectedForm.desiredWeight} kg</Typography>
+                                            <Divider sx={{ my: 1 }} />
+                                            <Typography><strong>Tried Diet:</strong> {selectedForm.triedDietBefore ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>Meds for Weight:</strong> {selectedForm.weightLossMedication ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>History:</strong> {selectedForm.weightChangeSinceBirth}</Typography>
+                                            <Typography><strong>Always Overweight:</strong> {selectedForm.alwaysOverweight ? 'Yes' : 'No'}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Daily Intake & Goals */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Daily Intake & Goals</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Breakfast:</strong> {selectedForm.breakfast}</Typography>
+                                                    <Typography><strong>Lunch:</strong> {selectedForm.lunch}</Typography>
+                                                    <Typography><strong>Dinner:</strong> {selectedForm.dinner}</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Dislikes:</strong> {selectedForm.dislikedFood}</Typography>
+                                                    <Typography><strong>Diet Given:</strong> {selectedForm.dietGiven}</Typography>
+                                                    <Typography><strong>Goals:</strong> {selectedForm.goals?.join(', ')}</Typography>
+                                                    <Divider sx={{ my: 1 }} />
+                                                    <Typography><strong>Night Eater:</strong> {selectedForm.nightEater ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Coffee:</strong> {selectedForm.coffee ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Sugar:</strong> {selectedForm.sugar} spoon(s)</Typography>
+                                                    <Typography><strong>Snack Time:</strong> {selectedForm.snackTime}</Typography>
+                                                </Grid>
+                                            </Grid>
                                         </CardContent>
                                     </Card>
                                 </Grid>
