@@ -1310,15 +1310,15 @@ export default function AdminFormsPage() {
 
                                                     <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                                                         <Typography variant="subtitle2" color="success.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
-                                                            Recommended Daily:
+                                                            Allowed:
                                                         </Typography>
                                                         <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap', mb: { xs: 0.5, sm: 1 } }}>
-                                                            {selectedPlan.recommendations?.eatDaily?.length > 0 ? (
-                                                                selectedPlan.recommendations.eatDaily.map((item, index) => (
+                                                            {selectedPlan.recommendations?.allowed?.length > 0 ? (
+                                                                selectedPlan.recommendations.allowed.map((item, index) => (
                                                                     <Chip 
                                                                         key={index} 
                                                                         label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
-                                                                        onClick={() => openChipDetailDialog(item, 'Recommended Daily Item', 'Eat Daily')}
+                                                                        onClick={() => openChipDetailDialog(item, 'Allowed Item', 'Allowed')}
                                                                         color="success" 
                                                                         size="small"
                                                                         sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
@@ -1351,41 +1351,65 @@ export default function AdminFormsPage() {
                                                             )}
                                                         </Box>
                                                     </Box>
+                                                    
+                                                    {selectedPlan.recommendations?.notes && (
+                                                        <Box sx={{ mt: 2 }}>
+                                                            <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Notes:
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                                                {selectedPlan.recommendations.notes}
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
                                                 </Grid>
 
-                                                {/* Meal-specific Recommendations */}
+                                                {/* Weekly Meal Plan Preview */}
                                                 <Grid item xs={12} md={6}>
-                                                    {['breakfast', 'lunch', 'dinner'].map((mealType) => (
-                                                        selectedPlan.recommendations?.[mealType]?.some(cat => cat.items?.length > 0) && (
-                                                            <Box key={mealType} sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="primary.main" gutterBottom sx={{ textTransform: 'capitalize' }}>
-                                                                    {mealType} Recommendations:
-                                                                </Typography>
-                                                                {selectedPlan.recommendations[mealType].map((category, catIndex) => (
-                                                                    category.items?.length > 0 && (
-                                                                        <Box key={catIndex} sx={{ mb: 1 }}>
-                                                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                                                                {category.category}:
+                                                    {selectedPlan.weeklyPlan && (
+                                                        <Box>
+                                                            <Typography variant="subtitle2" color="primary.main" gutterBottom>
+                                                                Weekly Meal Plan Preview:
+                                                            </Typography>
+                                                            {['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'].slice(0, 3).map((day) => (
+                                                                selectedPlan.weeklyPlan[day] && (
+                                                                    selectedPlan.weeklyPlan[day].breakfast || 
+                                                                    selectedPlan.weeklyPlan[day].lunch || 
+                                                                    selectedPlan.weeklyPlan[day].dinner || 
+                                                                    selectedPlan.weeklyPlan[day].snack
+                                                                ) && (
+                                                                    <Box key={day} sx={{ mb: 1.5, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                                                        <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
+                                                                            {day}:
+                                                                        </Typography>
+                                                                        {selectedPlan.weeklyPlan[day]?.breakfast && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🌅 {selectedPlan.weeklyPlan[day].breakfast.substring(0, 50)}{selectedPlan.weeklyPlan[day].breakfast.length > 50 ? '...' : ''}
                                                                             </Typography>
-                                                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                                                                                {category.items.map((item, itemIndex) => (
-                                                                                    <Chip 
-                                                                                        key={itemIndex} 
-                                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
-                                                                                        onClick={() => openChipDetailDialog(item, `${category.category} Item`, `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} - ${category.category}`)}
-                                                                                        size="small"
-                                                                                        variant="outlined"
-                                                                                        color="primary"
-                                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
-                                                                                    />
-                                                                                ))}
-                                                                            </Box>
-                                                                        </Box>
-                                                                    )
-                                                                ))}
-                                                            </Box>
-                                                        )
-                                                    ))}
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.lunch && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                ☀️ {selectedPlan.weeklyPlan[day].lunch.substring(0, 50)}{selectedPlan.weeklyPlan[day].lunch.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.dinner && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🌙 {selectedPlan.weeklyPlan[day].dinner.substring(0, 50)}{selectedPlan.weeklyPlan[day].dinner.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.snack && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🍪 {selectedPlan.weeklyPlan[day].snack.substring(0, 50)}{selectedPlan.weeklyPlan[day].snack.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Box>
+                                                                )
+                                                            ))}
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                (Showing first 3 days - view full plan for complete details)
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
                                                 </Grid>
                                             </Grid>
                                         </CardContent>
