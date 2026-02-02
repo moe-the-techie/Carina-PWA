@@ -7,6 +7,12 @@ const formSchema = new Schema ({
         ref: 'User',
         required: true
     },
+    // Form Type
+    type: {
+        type: String,
+        enum: ['new-patient', 'follow-up'],
+        default: 'new-patient'
+    },
     // Patient Information (some might be fetched from User, but storing snapshot here)
     fullName: { type: String },
     email: { type: String },

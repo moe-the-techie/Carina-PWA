@@ -106,15 +106,27 @@ export async function getUserDetails(req, res) {
 
 export async function getAllFormsAdmin(req, res) {
     try {
-        const { page = 1, limit = 10, reviewed, userId } = req.query;
+        const { page = 1, limit = 10, reviewed, userId, type } = req.query;
         const query = {};
         
-        if (reviewed !== undefined) {
+        if (reviewed !== undefined && reviewed !== '') {
             query.reviewed = reviewed === 'true';
         }
         
         if (userId) {
             query.user = userId;
+        }
+
+        if (type) {
+            if (type === 'new-patient') {
+                query.$or = [
+                    { type: 'new-patient' },
+                    { type: { $exists: false } }, // For backward compatibility
+                    { type: null }
+                ];
+            } else {
+                query.type = type;
+            }
         }
 
         const forms = await Form.find(query)

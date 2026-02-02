@@ -43,7 +43,9 @@ import {
     TextField,
     Fade,
     Zoom,
-    Slide
+    Slide,
+    Tabs,
+    Tab
 } from '@mui/material';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -85,6 +87,7 @@ export default function AdminFormsPage() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [reviewedFilter, setReviewedFilter] = useState('');
+    const [typeFilter, setTypeFilter] = useState('new-patient');
     const [selectedForm, setSelectedForm] = useState(null);
     const [formDetailsOpen, setFormDetailsOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
@@ -95,6 +98,8 @@ export default function AdminFormsPage() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
     const [selectedFormForActions, setSelectedFormForActions] = useState(null);
+    const [historyForms, setHistoryForms] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     
     // Chip detail dialog state
     const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
@@ -104,7 +109,7 @@ export default function AdminFormsPage() {
 
     useEffect(() => {
         fetchForms();
-    }, [page, reviewedFilter]);
+    }, [page, reviewedFilter, typeFilter]);
 
     const fetchForms = async () => {
         try {
@@ -112,6 +117,9 @@ export default function AdminFormsPage() {
             let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
             if (reviewedFilter !== '') {
                 url += `&reviewed=${reviewedFilter}`;
+            }
+            if (typeFilter) {
+                url += `&type=${typeFilter}`;
             }
 
             const response = await fetch(url, {
@@ -132,6 +140,34 @@ export default function AdminFormsPage() {
             setError(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (formDetailsOpen && selectedForm?.user?._id) {
+            fetchHistoryForms(selectedForm.user._id);
+        }
+    }, [formDetailsOpen, selectedForm]);
+
+    const fetchHistoryForms = async (userId) => {
+        if (!userId) return;
+        setHistoryLoading(true);
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/forms/user/${userId}?limit=20`, {
+                 headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                // Filter out the current form
+                const history = data.forms.filter(f => f._id !== selectedForm?._id);
+                setHistoryForms(history);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setHistoryLoading(false);
         }
     };
 
@@ -324,6 +360,7 @@ export default function AdminFormsPage() {
                     ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
                     : `linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)`,
             }}>
+                <LoadingBackdrop open={loading} />
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -410,6 +447,40 @@ export default function AdminFormsPage() {
                         </Box>
                     </Box>
                 </motion.div>
+
+                {/* Form Type Tabs */}
+                <Paper 
+                    elevation={0}
+                    sx={{ 
+                        mb: 3, 
+                        bgcolor: 'background.paper', 
+                        borderRadius: 2, 
+                        overflow: 'hidden',
+                        border: 1,
+                        borderColor: 'divider'
+                    }}
+                >
+                    <Tabs 
+                        value={typeFilter} 
+                        onChange={(e, newValue) => {
+                            setTypeFilter(newValue);
+                            setPage(1);
+                        }}
+                        variant="fullWidth"
+                        indicatorColor="primary"
+                        textColor="primary"
+                        sx={{
+                            '& .MuiTab-root': {
+                                py: 2,
+                                fontSize: '1rem',
+                                fontWeight: 600
+                            }
+                        }}
+                    >
+                        <Tab label="New Patient Forms" value="new-patient" />
+                        <Tab label="Follow Up Forms" value="follow-up" />
+                    </Tabs>
+                </Paper>
 
                 {/* Stats Cards */}
                 <motion.div
@@ -1044,6 +1115,93 @@ export default function AdminFormsPage() {
                                         </Card>
                                     </Grid>
                                 )}
+
+                                {/* Previous Forms History */}
+                                <Grid item xs={12}>
+                                    <Accordion defaultExpanded={selectedForm.type === 'follow-up'}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <CalendarTodayIcon color="action" />
+                                                Form History
+                                                {selectedForm.type === 'follow-up' && (
+                                                    <Chip label="Follow Up" size="small" color="secondary" sx={{ ml: 1 }} />
+                                                )}
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            {historyLoading ? (
+                                                <Box sx={{ width: '100%' }}>
+                                                    <LinearProgress />
+                                                </Box>
+                                            ) : historyForms.length === 0 ? (
+                                                <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                                    No other forms found for this user.
+                                                </Typography>
+                                            ) : (
+                                                <TableContainer component={Paper} variant="outlined">
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell>Date</TableCell>
+                                                                <TableCell>Type</TableCell>
+                                                                <TableCell>Weight</TableCell>
+                                                                <TableCell>Status</TableCell>
+                                                                <TableCell align="right">Action</TableCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {historyForms.map((historyForm) => (
+                                                                <TableRow key={historyForm._id} hover>
+                                                                    <TableCell>{new Date(historyForm.createdAt).toLocaleDateString()}</TableCell>
+                                                                    <TableCell>
+                                                                        <Chip 
+                                                                            label={historyForm.type === 'new-patient' ? 'New' : 'Follow Up'} 
+                                                                            size="small" 
+                                                                            color={historyForm.type === 'new-patient' ? 'primary' : 'secondary'}
+                                                                            variant="outlined"
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell>{historyForm.currentWeight} kg</TableCell>
+                                                                    <TableCell>
+                                                                        <Chip 
+                                                                            label={historyForm.reviewed ? 'Reviewed' : 'Pending'} 
+                                                                            size="small" 
+                                                                            color={historyForm.reviewed ? 'success' : 'warning'}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell align="right">
+                                                                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                                                            <Button 
+                                                                                size="small" 
+                                                                                onClick={() => setSelectedForm(historyForm)}
+                                                                                startIcon={<DescriptionIcon />}
+                                                                            >
+                                                                                Form
+                                                                            </Button>
+                                                                            {historyForm.planSent && (
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    color="secondary"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        viewPlan(historyForm);
+                                                                                    }}
+                                                                                    startIcon={<FeedbackIcon />}
+                                                                                >
+                                                                                    Plan
+                                                                                </Button>
+                                                                            )}
+                                                                        </Box>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </TableContainer>
+                                            )}
+                                        </AccordionDetails>
+                                    </Accordion>
+                                </Grid>
 
                                 {/* Action Buttons Card */}
                                 {!selectedForm.reviewed && (
