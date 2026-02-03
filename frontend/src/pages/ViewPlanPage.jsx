@@ -52,6 +52,7 @@ import CookieIcon from '@mui/icons-material/Cookie';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';

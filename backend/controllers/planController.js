@@ -371,3 +371,150 @@ export async function getPlanFeedback(req, res) {
         res.status(500).json({ error: error.message });
     }
 }
+
+// Log daily progress for a plan
+export async function logDailyProgress(req, res) {
+    try {
+        const { planId } = req.params;
+        const { date, mealsCompleted, exerciseCompleted, waterIntake, weight, notes, mood } = req.body;
+
+        const plan = await Plan.findOne({ _id: planId, user: req.user._id });
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found or does not belong to user' });
+        }
+
+        if (plan.status !== 'active') {
+            return res.status(400).json({ error: 'Can only log progress for active plans' });
+        }
+
+        // Normalize the date to start of day
+        const progressDate = new Date(date || new Date());
+        progressDate.setHours(0, 0, 0, 0);
+
+        // Check if progress already exists for this date
+        const existingIndex = plan.progress.findIndex(p => {
+            const pDate = new Date(p.date);
+            pDate.setHours(0, 0, 0, 0);
+            return pDate.getTime() === progressDate.getTime();
+        });
+
+        const progressEntry = {
+            date: progressDate,
+            mealsCompleted: mealsCompleted || { breakfast: false, lunch: false, dinner: false, snack: false },
+            exerciseCompleted: exerciseCompleted || false,
+            waterIntake: waterIntake || 0,
+            weight: weight,
+            notes: notes || '',
+            mood: mood || 'okay'
+        };
+
+        if (existingIndex >= 0) {
+            // Update existing progress
+            plan.progress[existingIndex] = progressEntry;
+        } else {
+            // Add new progress entry
+            plan.progress.push(progressEntry);
+        }
+
+        // Update streak
+        plan.updateStreak();
+
+        await plan.save();
+
+        res.status(200).json({
+            message: 'Progress logged successfully',
+            progress: progressEntry,
+            currentStreak: plan.currentStreak,
+            longestStreak: plan.longestStreak,
+            overallProgress: plan.calculateProgress()
+        });
+    } catch (error) {
+        console.error('Error logging progress:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+// Get progress for a plan
+export async function getPlanProgress(req, res) {
+    try {
+        const { planId } = req.params;
+        const { startDate, endDate } = req.query;
+
+        const plan = await Plan.findOne({ _id: planId, user: req.user._id })
+            .select('progress currentStreak longestStreak activatedAt duration status');
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found or does not belong to user' });
+        }
+
+        let progressData = plan.progress || [];
+
+        // Filter by date range if provided
+        if (startDate || endDate) {
+            progressData = progressData.filter(p => {
+                const pDate = new Date(p.date);
+                if (startDate && pDate < new Date(startDate)) return false;
+                if (endDate && pDate > new Date(endDate)) return false;
+                return true;
+            });
+        }
+
+        // Sort by date descending (most recent first)
+        progressData = progressData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.status(200).json({
+            progress: progressData,
+            currentStreak: plan.currentStreak,
+            longestStreak: plan.longestStreak,
+            overallProgress: plan.calculateProgress(),
+            totalDays: plan.duration * 7,
+            daysLogged: plan.progress.length
+        });
+    } catch (error) {
+        console.error('Error fetching progress:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
+// Get today's progress for a plan
+export async function getTodayProgress(req, res) {
+    try {
+        const { planId } = req.params;
+
+        const plan = await Plan.findOne({ _id: planId, user: req.user._id })
+            .select('progress currentStreak longestStreak weeklyPlan activatedAt duration');
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found or does not belong to user' });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Find today's progress
+        const todayProgress = plan.progress.find(p => {
+            const pDate = new Date(p.date);
+            pDate.setHours(0, 0, 0, 0);
+            return pDate.getTime() === today.getTime();
+        });
+
+        // Get today's day name for meals
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const todayDayName = days[today.getDay()];
+        const todayMeals = plan.weeklyPlan?.[todayDayName] || {};
+
+        res.status(200).json({
+            date: today,
+            dayName: todayDayName,
+            todayMeals,
+            progress: todayProgress || null,
+            currentStreak: plan.currentStreak,
+            longestStreak: plan.longestStreak,
+            overallProgress: plan.calculateProgress()
+        });
+    } catch (error) {
+        console.error('Error fetching today progress:', error);
+        res.status(500).json({ error: error.message });
+    }
+}

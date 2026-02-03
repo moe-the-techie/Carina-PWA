@@ -25,6 +25,40 @@ const dayMealSchema = new Schema({
     }
 }, { _id: false });
 
+// Schema for daily progress tracking
+const dailyProgressSchema = new Schema({
+    date: {
+        type: Date,
+        required: true
+    },
+    mealsCompleted: {
+        breakfast: { type: Boolean, default: false },
+        lunch: { type: Boolean, default: false },
+        dinner: { type: Boolean, default: false },
+        snack: { type: Boolean, default: false }
+    },
+    exerciseCompleted: {
+        type: Boolean,
+        default: false
+    },
+    waterIntake: {
+        type: Number, // glasses of water
+        default: 0
+    },
+    weight: {
+        type: Number // optional daily weight log
+    },
+    notes: {
+        type: String,
+        trim: true
+    },
+    mood: {
+        type: String,
+        enum: ['great', 'good', 'okay', 'tired', 'bad'],
+        default: 'okay'
+    }
+}, { _id: false });
+
 const planSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
@@ -99,6 +133,17 @@ const planSchema = new Schema({
         enum: ['draft', 'active', 'completed', 'paused'],
         default: 'draft'
     },
+    // Daily progress tracking
+    progress: [dailyProgressSchema],
+    // Streak tracking
+    currentStreak: {
+        type: Number,
+        default: 0
+    },
+    longestStreak: {
+        type: Number,
+        default: 0
+    },
     createdBy: {
         type: Schema.Types.ObjectId,
         ref: 'User',
@@ -129,6 +174,68 @@ const planSchema = new Schema({
         type: Date
     }
 });
+
+// Method to calculate overall progress percentage
+planSchema.methods.calculateProgress = function() {
+    if (!this.activatedAt || !this.duration) return 0;
+    
+    const totalDays = this.duration * 7;
+    const completedDays = this.progress.filter(p => {
+        const meals = p.mealsCompleted;
+        // Count a day as complete if at least 3 meals are done
+        const mealsCompleted = [meals.breakfast, meals.lunch, meals.dinner, meals.snack]
+            .filter(Boolean).length;
+        return mealsCompleted >= 3;
+    }).length;
+    
+    return Math.min(Math.round((completedDays / totalDays) * 100), 100);
+};
+
+// Method to update streak
+planSchema.methods.updateStreak = function() {
+    if (!this.progress || this.progress.length === 0) {
+        this.currentStreak = 0;
+        return;
+    }
+
+    // Sort progress by date descending
+    const sortedProgress = [...this.progress].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+    );
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < sortedProgress.length; i++) {
+        const progressDate = new Date(sortedProgress[i].date);
+        progressDate.setHours(0, 0, 0, 0);
+        
+        const expectedDate = new Date(today);
+        expectedDate.setDate(today.getDate() - i);
+        
+        // Check if this progress is for the expected day in sequence
+        if (progressDate.getTime() === expectedDate.getTime()) {
+            const meals = sortedProgress[i].mealsCompleted;
+            const mealsCompleted = [meals.breakfast, meals.lunch, meals.dinner, meals.snack]
+                .filter(Boolean).length;
+            
+            if (mealsCompleted >= 2) {
+                streak++;
+            } else {
+                break;
+            }
+        } else if (progressDate.getTime() < expectedDate.getTime()) {
+            // Gap in days, break streak
+            break;
+        }
+    }
+
+    this.currentStreak = streak;
+    if (streak > this.longestStreak) {
+        this.longestStreak = streak;
+    }
+};
 
 
 const Plan = mongoose.model('Plan', planSchema);

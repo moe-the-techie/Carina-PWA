@@ -17,7 +17,8 @@ import {
     Skeleton,
     Avatar,
     useMediaQuery,
-    alpha
+    alpha,
+    LinearProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +27,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
+import EditIcon from '@mui/icons-material/Edit';
 import PageFade from '../components/PageFade';
 import { 
     glassCard, 
@@ -37,6 +40,16 @@ import {
 } from '../styles';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// Helper to calculate plan progress
+const calculatePlanProgress = (plan) => {
+    if (!plan?.activatedAt || !plan?.duration) return 0;
+    const activatedDate = new Date(plan.activatedAt);
+    const now = new Date();
+    const durationInDays = plan.duration * 7;
+    const daysPassed = Math.floor((now - activatedDate) / (1000 * 60 * 60 * 24));
+    return Math.min(Math.round((daysPassed / durationInDays) * 100), 100);
+};
 
 export default function AdminDashboardPage() {
     const theme = useTheme();
@@ -419,6 +432,97 @@ export default function AdminDashboardPage() {
                             </motion.div>
                         </Grid>
                     </Grid>
+
+                    {/* Recent Active Plans */}
+                    {dashboardData.recentActivePlans && dashboardData.recentActivePlans.length > 0 && (
+                        <motion.div variants={itemVariants}>
+                            <Paper sx={{ ...glassCardStyle, p: 0, mt: 2, display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <PlayCircleFilledIcon sx={{ color: accentColors.emerald.main }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        Recently Activated Plans
+                                    </Typography>
+                                </Box>
+                                <TableContainer>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>User</TableCell>
+                                                <TableCell>Plan</TableCell>
+                                                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Progress</TableCell>
+                                                <TableCell align="right">Activated</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {dashboardData.recentActivePlans.map((plan) => {
+                                                const progress = calculatePlanProgress(plan);
+                                                return (
+                                                    <TableRow key={plan._id} hover>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                                <Avatar 
+                                                                    sx={{ 
+                                                                        background: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`,
+                                                                        fontWeight: 600,
+                                                                        width: 36,
+                                                                        height: 36
+                                                                    }}
+                                                                >
+                                                                    {plan.user?.name?.charAt(0).toUpperCase() || '?'}
+                                                                </Avatar>
+                                                                <Box>
+                                                                    <Typography variant="subtitle2">
+                                                                        {plan.user?.name || 'Unknown'}
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        {plan.user?.email || ''}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" fontWeight={500}>
+                                                                {plan.title || 'Nutrition Plan'}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {plan.duration} week{plan.duration > 1 ? 's' : ''}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 120 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <LinearProgress 
+                                                                    variant="determinate" 
+                                                                    value={progress}
+                                                                    sx={{
+                                                                        flex: 1,
+                                                                        height: 6,
+                                                                        borderRadius: 3,
+                                                                        backgroundColor: alpha(accentColors.emerald.main, 0.2),
+                                                                        '& .MuiLinearProgress-bar': {
+                                                                            borderRadius: 3,
+                                                                            backgroundColor: accentColors.emerald.main
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Typography variant="caption" sx={{ color: accentColors.emerald.main, fontWeight: 600, minWidth: 35 }}>
+                                                                    {progress}%
+                                                                </Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {plan.activatedAt ? new Date(plan.activatedAt).toLocaleDateString() : '-'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Paper>
+                        </motion.div>
+                    )}
                 </Box>
             </Box>
         </PageFade>

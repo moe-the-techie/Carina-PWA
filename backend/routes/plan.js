@@ -11,7 +11,10 @@ import {
     getPlansForUser,
     getPlanByForm,
     submitPlanFeedback,
-    getPlanFeedback
+    getPlanFeedback,
+    logDailyProgress,
+    getPlanProgress,
+    getTodayProgress
 } from '../controllers/planController.js';
 
 router.post('/admin/plans', adminOnly, createPlan);
@@ -39,6 +42,11 @@ router.get('/plans/my', protect, async (req, res) => {
 
 // User routes for feedback
 router.post('/plans/:planId/feedback', protect, submitPlanFeedback);
+
+// User routes for progress tracking
+router.post('/plans/:planId/progress', protect, logDailyProgress);
+router.get('/plans/:planId/progress', protect, getPlanProgress);
+router.get('/plans/:planId/progress/today', protect, getTodayProgress);
 
 // Admin routes for feedback
 router.get('/admin/plans/:planId/feedback', adminOnly, getPlanFeedback);

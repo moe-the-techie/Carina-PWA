@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PageFade from '../components/PageFade';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,11 +12,17 @@ import CardContent from '@mui/material/CardContent';
 import Pagination from '@mui/material/Pagination';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import { alpha } from '@mui/material/styles';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
-import { spacing, borderRadius, shadows, zIndex, gradients } from '../styles';
+import { spacing, borderRadius, shadows, zIndex, gradients, accentColors } from '../styles';
 import { glassCard, glassButton } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
+import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -29,6 +35,7 @@ export default function HomePage() {
   const [totalPages, setTotalPages] = useState(1);
   const [formCredits, setFormCredits] = useState(null);
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Active, 2: Pending
   const theme = useTheme();
 
   useEffect(() => {
@@ -108,6 +115,27 @@ export default function HomePage() {
     }
   }
 
+  // Filter forms based on selected tab
+  const filteredForms = useMemo(() => {
+    switch (filterTab) {
+      case 1: // Active Plans
+        return forms.filter(form => form.plan?.status === 'active');
+      case 2: // Pending
+        return forms.filter(form => !form.plan || !form.reviewed);
+      default: // All
+        return forms;
+    }
+  }, [forms, filterTab]);
+
+  // Count active and pending for tab badges
+  const activePlansCount = useMemo(() => 
+    forms.filter(form => form.plan?.status === 'active').length, 
+  [forms]);
+  
+  const pendingCount = useMemo(() => 
+    forms.filter(form => !form.plan || !form.reviewed).length, 
+  [forms]);
+
   return (
     <PageFade>
       <Box
@@ -130,8 +158,70 @@ export default function HomePage() {
           gutterBottom
           sx={pageTitle(theme, { align: 'left' })}
         >
-          My Forms
+          My Forms & Plans
         </Typography>
+
+        {/* Filter Tabs */}
+        <Box sx={{ width: '100%', mb: spacing.md }}>
+          <Tabs
+            value={filterTab}
+            onChange={(e, newValue) => setFilterTab(newValue)}
+            variant="fullWidth"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.9)',
+              borderRadius: borderRadius.md,
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 500,
+                minHeight: 48,
+              },
+              '& .Mui-selected': {
+                fontWeight: 600,
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+              }
+            }}
+          >
+            <Tab 
+              icon={<ListAltIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label={`All (${forms.length})`}
+            />
+            <Tab 
+              icon={<PlayCircleFilledIcon sx={{ fontSize: 18, color: filterTab === 1 ? accentColors.emerald.main : 'inherit' }} />}
+              iconPosition="start"
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  Active
+                  {activePlansCount > 0 && (
+                    <Chip 
+                      label={activePlansCount} 
+                      size="small" 
+                      sx={{ 
+                        height: 20, 
+                        fontSize: '0.7rem',
+                        backgroundColor: alpha(accentColors.emerald.main, 0.2),
+                        color: accentColors.emerald.main,
+                        fontWeight: 600
+                      }} 
+                    />
+                  )}
+                </Box>
+              }
+            />
+            <Tab 
+              icon={<HourglassEmptyIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label={`Pending (${pendingCount})`}
+            />
+          </Tabs>
+        </Box>
 
         {/* Credits Banner */}
         {paymentsEnabled && (
@@ -211,17 +301,48 @@ export default function HomePage() {
           </>
         ) : (
           <>
-            {forms.length === 0 && (
-              <Typography align="center" color="textSecondary">
-                No forms submitted yet.
-              </Typography>
+            {filteredForms.length === 0 && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                py: 4,
+                px: 2,
+                ...glassCard(theme),
+                width: '100%',
+                borderRadius: borderRadius.md
+              }}>
+                {filterTab === 1 ? (
+                  <>
+                    <PlayCircleFilledIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 1 }} />
+                    <Typography color="textSecondary" gutterBottom>
+                      No active plans
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Your active plans will appear here once activated by our team.
+                    </Typography>
+                  </>
+                ) : filterTab === 2 ? (
+                  <>
+                    <HourglassEmptyIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 1 }} />
+                    <Typography color="textSecondary" gutterBottom>
+                      No pending forms
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      All your forms have been reviewed!
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography color="textSecondary">
+                    No forms submitted yet.
+                  </Typography>
+                )}
+              </Box>
             )}
 
-            {forms.map((form) => (
+            {filteredForms.map((form) => (
               <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
             ))}
 
-            {totalPages > 1 && (
+            {totalPages > 1 && filterTab === 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 8 }}>
                 <Pagination 
                   count={totalPages} 

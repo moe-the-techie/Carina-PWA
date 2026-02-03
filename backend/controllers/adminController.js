@@ -13,6 +13,9 @@ export async function getDashboardStats(req, res) {
         const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
         const totalForms = await Form.countDocuments();
         const pendingForms = await Form.countDocuments({ reviewed: false });
+        const activePlans = await Plan.countDocuments({ status: 'active' });
+        const totalPlans = await Plan.countDocuments();
+        
         const recentUsers = await User.find({ role: 'user', isVerified: true })
             .sort({ createdAt: -1 })
             .limit(5)
@@ -23,13 +26,21 @@ export async function getDashboardStats(req, res) {
             .sort({ createdAt: -1 })
             .limit(5);
 
+        // Get recent active plans
+        const recentActivePlans = await Plan.find({ status: 'active' })
+            .populate('user', 'name email')
+            .sort({ activatedAt: -1 })
+            .limit(5);
 
         res.status(200).json({
             totalUsers,
             totalForms,
             pendingForms,
+            activePlans,
+            totalPlans,
             recentUsers,
-            recentForms
+            recentForms,
+            recentActivePlans
         });
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
