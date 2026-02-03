@@ -17,7 +17,9 @@ import {
     assignUserClass,
     getAllPaymentsAdmin,
     verifyPaymentAdmin,
-    updatePaymentStatusAdmin
+    updatePaymentStatusAdmin,
+    getAllActivePlansAdmin,
+    getPlanProgressAdmin
 } from '../controllers/adminController.js';
 
 router.get('/admin/dashboard', adminOnly, getDashboardStats);
@@ -35,7 +37,12 @@ router.post('/admin/classes', adminOnly, checkFeatureEnabled('ENABLE_USER_CLASSE
 router.put('/admin/classes/:classId', adminOnly, checkFeatureEnabled('ENABLE_USER_CLASSES'), updateUserClass);
 router.delete('/admin/classes/:classId', adminOnly, checkFeatureEnabled('ENABLE_USER_CLASSES'), deleteUserClass);
 
-export default router;
 router.get('/admin/payments', adminOnly, getAllPaymentsAdmin);
 router.post('/admin/payments/:paymentId/verify', adminOnly, verifyPaymentAdmin);
 router.put('/admin/payments/:paymentId/status', adminOnly, updatePaymentStatusAdmin);
+
+// Active Plans routes
+router.get('/admin/active-plans', adminOnly, getAllActivePlansAdmin);
+router.get('/admin/active-plans/:planId/progress', adminOnly, getPlanProgressAdmin);
+
+export default router;

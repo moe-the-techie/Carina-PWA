@@ -22,6 +22,7 @@ import AdminChatsPage from './pages/AdminChatsPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
+import AdminActivePlansPage from './pages/AdminActivePlansPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
@@ -134,6 +135,7 @@ function App() {
                 <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPaymentsPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminActivePlansPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

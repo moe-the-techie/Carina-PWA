@@ -601,6 +601,195 @@ export async function verifyPaymentAdmin(req, res) {
     }
 }
 
+// Get all active plans with progress details for admin
+export async function getAllActivePlansAdmin(req, res) {
+    try {
+        const { page = 1, limit = 10, search = '', status = 'active' } = req.query;
+        const query = {};
+
+        // Filter by status (default to active, can be 'all' for all statuses)
+        if (status !== 'all') {
+            query.status = status;
+        }
+
+        // Search by user name or email
+        if (search) {
+            const users = await User.find({
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ]
+            }).select('_id');
+
+            if (users.length > 0) {
+                query.user = { $in: users.map(u => u._id) };
+            } else {
+                // Also search by plan title
+                query.title = { $regex: search, $options: 'i' };
+            }
+        }
+
+        const plans = await Plan.find(query)
+            .populate('user', 'name email profileImageUrl')
+            .populate('createdBy', 'name')
+            .populate('form', 'currentWeight desiredWeight createdAt')
+            .sort({ activatedAt: -1, createdAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit));
+
+        // Calculate progress for each plan
+        const plansWithProgress = plans.map(plan => {
+            const planObj = plan.toObject();
+            
+            // Calculate overall progress percentage
+            let overallProgress = 0;
+            if (plan.activatedAt && plan.duration) {
+                const totalDays = plan.duration * 7;
+                const completedDays = (plan.progress || []).filter(p => {
+                    const meals = p.mealsCompleted || {};
+                    const mealsCompleted = [meals.breakfast, meals.lunch, meals.dinner, meals.snack]
+                        .filter(Boolean).length;
+                    return mealsCompleted >= 3;
+                }).length;
+                overallProgress = Math.min(Math.round((completedDays / totalDays) * 100), 100);
+            }
+
+            // Calculate days elapsed
+            const daysElapsed = plan.activatedAt 
+                ? Math.floor((new Date() - new Date(plan.activatedAt)) / (1000 * 60 * 60 * 24))
+                : 0;
+
+            // Get recent progress entries
+            const recentProgress = (plan.progress || [])
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 7);
+
+            return {
+                ...planObj,
+                overallProgress,
+                daysElapsed,
+                totalDays: plan.duration ? plan.duration * 7 : 0,
+                daysLogged: (plan.progress || []).length,
+                recentProgress,
+                // Remove full progress array to reduce payload
+                progress: undefined
+            };
+        });
+
+        const total = await Plan.countDocuments(query);
+
+        res.json({
+            plans: plansWithProgress,
+            totalPages: Math.ceil(total / limit),
+            currentPage: parseInt(page),
+            total
+        });
+    } catch (error) {
+        console.error('Error fetching active plans:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+}
+
+// Get detailed progress for a specific plan (admin)
+export async function getPlanProgressAdmin(req, res) {
+    try {
+        const { planId } = req.params;
+        const { startDate, endDate } = req.query;
+
+        const plan = await Plan.findById(planId)
+            .populate('user', 'name email profileImageUrl')
+            .populate('createdBy', 'name')
+            .populate('form', 'currentWeight desiredWeight createdAt');
+
+        if (!plan) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        let progressData = plan.progress || [];
+
+        // Filter by date range if provided
+        if (startDate || endDate) {
+            progressData = progressData.filter(p => {
+                const pDate = new Date(p.date);
+                if (startDate && pDate < new Date(startDate)) return false;
+                if (endDate && pDate > new Date(endDate)) return false;
+                return true;
+            });
+        }
+
+        // Sort by date descending (most recent first)
+        progressData = progressData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Calculate overall progress percentage
+        const totalDays = plan.duration ? plan.duration * 7 : 0;
+        const completedDays = (plan.progress || []).filter(p => {
+            const meals = p.mealsCompleted || {};
+            const mealsCompleted = [meals.breakfast, meals.lunch, meals.dinner, meals.snack]
+                .filter(Boolean).length;
+            return mealsCompleted >= 3;
+        }).length;
+        const overallProgress = totalDays > 0 ? Math.min(Math.round((completedDays / totalDays) * 100), 100) : 0;
+
+        // Calculate days elapsed since activation
+        const daysElapsed = plan.activatedAt 
+            ? Math.floor((new Date() - new Date(plan.activatedAt)) / (1000 * 60 * 60 * 24))
+            : 0;
+
+        // Calculate average stats
+        const progressEntries = plan.progress || [];
+        const avgWaterIntake = progressEntries.length > 0
+            ? Math.round(progressEntries.reduce((sum, p) => sum + (p.waterIntake || 0), 0) / progressEntries.length * 10) / 10
+            : 0;
+
+        const weightEntries = progressEntries.filter(p => p.weight);
+        const weights = weightEntries.map(p => ({ date: p.date, weight: p.weight }));
+
+        // Mood distribution
+        const moodCounts = progressEntries.reduce((acc, p) => {
+            const mood = p.mood || 'okay';
+            acc[mood] = (acc[mood] || 0) + 1;
+            return acc;
+        }, {});
+
+        res.status(200).json({
+            plan: {
+                _id: plan._id,
+                title: plan.title,
+                description: plan.description,
+                duration: plan.duration,
+                status: plan.status,
+                activatedAt: plan.activatedAt,
+                completedAt: plan.completedAt,
+                createdAt: plan.createdAt,
+                goals: plan.goals,
+                weeklyPlan: plan.weeklyPlan,
+                recommendations: plan.recommendations,
+                warnings: plan.warnings,
+                feedback: plan.feedback,
+                user: plan.user,
+                createdBy: plan.createdBy,
+                form: plan.form
+            },
+            progress: progressData,
+            stats: {
+                currentStreak: plan.currentStreak || 0,
+                longestStreak: plan.longestStreak || 0,
+                overallProgress,
+                totalDays,
+                daysElapsed,
+                daysLogged: progressEntries.length,
+                completedDays,
+                avgWaterIntake,
+                weights,
+                moodCounts
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching plan progress:', error);
+        res.status(500).json({ error: error.message });
+    }
+}
+
 export async function updatePaymentStatusAdmin(req, res) {
     try {
         const { paymentId } = req.params;

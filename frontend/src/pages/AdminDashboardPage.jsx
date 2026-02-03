@@ -151,28 +151,32 @@ export default function AdminDashboardPage() {
             value: dashboardData.totalUsers || 0,
             icon: PeopleIcon,
             color: theme.palette.primary.main,
-            gradient: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+            gradient: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            link: '/admin/users'
         },
         {
             label: 'Total Forms',
             value: dashboardData.totalForms || 0,
             icon: DescriptionIcon,
             color: theme.palette.secondary.main,
-            gradient: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`
+            gradient: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
+            link: '/admin/forms'
         },
         {
             label: 'Pending Forms',
             value: dashboardData.pendingForms || 0,
             icon: PendingActionsIcon,
             color: accentColors.amber.main,
-            gradient: `linear-gradient(135deg, ${accentColors.amber.main}, ${accentColors.amber.dark})`
+            gradient: `linear-gradient(135deg, ${accentColors.amber.main}, ${accentColors.amber.dark})`,
+            link: '/admin/forms'
         },
         {
             label: 'Active Plans',
             value: dashboardData.activePlans || 0,
             icon: AssignmentTurnedInIcon,
             color: accentColors.emerald.main,
-            gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`
+            gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`,
+            link: '/admin/active-plans'
         }
     ];
 
@@ -217,11 +221,14 @@ export default function AdminDashboardPage() {
                             <Grid size={{ xs: 6, md: 3 }} key={index}>
                                 <motion.div variants={itemVariants}>
                                     <Paper 
+                                        onClick={() => stat.link && navigate(stat.link)}
                                         sx={{ 
                                             ...glassCardStyle, 
                                             p: { xs: 2, sm: 3 },
                                             position: 'relative',
                                             overflow: 'hidden',
+                                            cursor: stat.link ? 'pointer' : 'default',
+                                            transition: 'all 0.3s ease',
                                             '&:hover': {
                                                 transform: 'translateY(-4px)',
                                                 boxShadow: theme.palette.mode === 'dark'
