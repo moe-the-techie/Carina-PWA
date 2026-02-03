@@ -28,9 +28,20 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
+      .then(async cache => {
         console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'reload' })));
+        // Cache assets individually to handle missing assets gracefully
+        const cachePromises = STATIC_ASSETS.map(async url => {
+          try {
+            const response = await fetch(new Request(url, { cache: 'reload' }));
+            if (response.ok) {
+              await cache.put(url, response);
+            }
+          } catch (err) {
+            console.log('[SW] Could not cache:', url);
+          }
+        });
+        return Promise.all(cachePromises);
       })
       .then(() => {
         console.log('[SW] Service worker installed');
@@ -98,9 +109,12 @@ async function networkFirstStrategy(request, cacheName) {
     const networkResponse = await fetch(request);
     
     // Only cache successful responses
-    if (networkResponse && networkResponse.status === 200) {
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     
     return networkResponse;
@@ -140,9 +154,12 @@ async function cacheFirstStrategy(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     
-    if (networkResponse && networkResponse.status === 200) {
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     
     return networkResponse;
@@ -159,8 +176,13 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
   const cachedResponse = await caches.match(request);
   
   const fetchPromise = fetch(request).then(networkResponse => {
-    if (networkResponse && networkResponse.status === 200) {
-      cache.put(request, networkResponse.clone());
+    // Only cache successful GET responses with valid status
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
+      // Clone before putting in cache
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     return networkResponse;
   }).catch(() => {
@@ -179,16 +201,25 @@ async function handleRequest(request) {
     const contentType = reqClone.headers.get('Content-Type');
 
     if (contentType && contentType.includes('application/json')) {
-      const body = await reqClone.json();
-      const userName = body.name || body.username || '';
+      // Check if there's actually a body to parse
+      const text = await reqClone.text();
+      if (text && text.trim()) {
+        try {
+          const body = JSON.parse(text);
+          const userName = body.name || body.username || '';
 
-      if (userName) {
-        console.log('[SW] Storing username:', userName);
-        self.localStorageSet('username', userName);
+          if (userName) {
+            console.log('[SW] Storing username:', userName);
+            self.localStorageSet('username', userName);
+          }
+        } catch (parseErr) {
+          // JSON parse failed - body is not valid JSON, ignore silently
+        }
       }
     }
   } catch (err) {
-    console.error('[SW] Error handling request:', err);
+    // Silently ignore request handling errors - they're not critical
+    console.log('[SW] Could not process request body');
   }
 
   // Pass through the original fetch

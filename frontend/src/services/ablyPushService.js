@@ -41,15 +41,33 @@ export const initializeAblyPush = async () => {
             throw new Error('No authentication token available');
         }
 
+        // Get the already registered service worker
+        const swRegistration = await getServiceWorkerRegistration();
+
+        // Monkey patch navigator.serviceWorker.register in dev mode to handle module workers
+        // Ably tries to re-register the SW but doesn't pass { type: 'module' } which is required in Vite dev
+        if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+            const originalRegister = navigator.serviceWorker.register;
+            navigator.serviceWorker.register = function(scriptURL, options) {
+                // If the URL matches our active SW, force module type
+                if (scriptURL === swRegistration.active?.scriptURL || (typeof scriptURL === 'string' && scriptURL.includes('dev-sw.js'))) {
+                    console.log('[AblyPush] Intercepted Ably SW registration, forcing type: module');
+                    return originalRegister.call(this, scriptURL, { ...options, type: 'module' });
+                }
+                return originalRegister.apply(this, arguments);
+            };
+        }
+        
         // Initialize Ably Realtime with Push plugin
+        // Use the existing service worker registration instead of specifying a URL
         pushClient = new Ably.Realtime({
             authUrl: `${API_URL}/api/chat/ably/auth`,
             authHeaders: {
                 'Authorization': `Bearer ${token}`
             },
             authMethod: 'GET',
-            pushServiceWorkerUrl: '/sw.js',
             plugins: { Push },
+            pushServiceWorkerUrl: swRegistration.active?.scriptURL || '/sw.js',
             disconnectedRetryTimeout: 15000,
             suspendedRetryTimeout: 30000,
         });
@@ -78,27 +96,50 @@ export const initializeAblyPush = async () => {
     }
 };
 
+let activationInProgress = false;
+
 /**
  * Activate push notifications for the browser
  * This registers the device with Ably for push notifications
  */
 export const activatePush = async () => {
+    // Prevent duplicate activation attempts
+    if (isActivated) {
+        console.log('[AblyPush] Already activated');
+        return { success: true, deviceId: localStorage.getItem('ably-device-id') };
+    }
+    
+    if (activationInProgress) {
+        console.log('[AblyPush] Activation already in progress, waiting...');
+        // Wait a bit and check again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (isActivated) {
+            return { success: true, deviceId: localStorage.getItem('ably-device-id') };
+        }
+        return { success: false, reason: 'activation_in_progress' };
+    }
+
+    activationInProgress = true;
+    
     try {
         // Check if push notifications are supported
         if (!('PushManager' in window)) {
             console.warn('[AblyPush] Push notifications not supported');
+            activationInProgress = false;
             return { success: false, reason: 'not_supported' };
         }
 
         // Request notification permission
         if (Notification.permission === 'denied') {
             console.warn('[AblyPush] Notification permission denied');
+            activationInProgress = false;
             return { success: false, reason: 'permission_denied' };
         }
 
         if (Notification.permission !== 'granted') {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
+                activationInProgress = false;
                 return { success: false, reason: 'permission_not_granted' };
             }
         }
@@ -114,6 +155,7 @@ export const activatePush = async () => {
         await client.push.activate();
         
         isActivated = true;
+        activationInProgress = false;
         console.log('[AblyPush] Push activated successfully');
 
         // Store device ID for reference
@@ -124,6 +166,7 @@ export const activatePush = async () => {
 
         return { success: true, deviceId };
     } catch (error) {
+        activationInProgress = false;
         console.error('[AblyPush] Activation error:', error);
         return { success: false, reason: error.message };
     }

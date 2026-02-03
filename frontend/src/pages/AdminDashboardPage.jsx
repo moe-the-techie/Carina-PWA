@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
                     </Box>
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         {[1, 2, 3, 4].map((i) => (
-                            <Grid item xs={6} md={3} key={i}>
+                            <Grid size={{ xs: 6, md: 3 }} key={i}>
                                 <Paper sx={{ ...glassCardStyle, p: 3 }}>
                                     <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
                                     <Skeleton variant="text" width="60%" height={32} />
@@ -114,13 +114,13 @@ export default function AdminDashboardPage() {
                         ))}
                     </Grid>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} lg={6}>
+                        <Grid size={{ xs: 12, lg: 6 }}>
                             <Paper sx={{ ...glassCardStyle, p: 3, height: 400 }}>
                                 <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
                                 <Skeleton variant="rectangular" width="100%" height={300} />
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} lg={6}>
+                        <Grid size={{ xs: 12, lg: 6 }}>
                             <Paper sx={{ ...glassCardStyle, p: 3, height: 400 }}>
                                 <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
                                 <Skeleton variant="rectangular" width="100%" height={300} />
@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
                 >
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         {stats.map((stat, index) => (
-                            <Grid item xs={6} md={3} key={index}>
+                            <Grid size={{ xs: 6, md: 3 }} key={index}>
                                 <motion.div variants={itemVariants}>
                                     <Paper 
                                         sx={{ 
@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
                 >
                     <Grid container spacing={2} alignItems="stretch" sx={{ flexGrow: 1 }}>
                         {/* Recent Users */}
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <motion.div variants={itemVariants} style={{ height: '100%' }}>
                                 <Paper sx={{ ...glassCardStyle, p: 0, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                                     <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -354,7 +354,7 @@ export default function AdminDashboardPage() {
                         </Grid>
 
                         {/* Recent Forms */}
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <motion.div variants={itemVariants} style={{ height: '100%' }}>
                                 <Paper sx={{ ...glassCardStyle, p: 0, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                                     <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>

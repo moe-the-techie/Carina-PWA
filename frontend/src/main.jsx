@@ -8,21 +8,34 @@ import './index.css'
 import './responsive.css'
 import App from './App.jsx'
 import { ThemeContextProvider } from './contexts/ThemeContext.jsx';
+import { registerSW } from 'virtual:pwa-register';
 
+// Register service worker using Vite PWA plugin
+const updateSW = registerSW({
+  onRegistered(registration) {
+    console.log('[PWA] Service worker registered:', registration?.scope);
+    
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log('[PWA] Notification permission:', permission);
+      });
+    }
+  },
+  onRegisterError(error) {
+    console.error('[PWA] SW registration failed:', error);
+  },
+  onNeedRefresh() {
+    console.log('[PWA] New content available, refresh needed');
+    // Auto-update without prompting
+    updateSW(true);
+  },
+  onOfflineReady() {
+    console.log('[PWA] App ready to work offline');
+  }
+});
+
+// Listen for SW messages to write to localStorage
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js', { type: import.meta.env.DEV ? 'module' : 'classic' })
-    .then(reg => {
-      console.log('[PWA] Service worker registered:', reg.scope);
-      
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-          console.log('[PWA] Notification permission:', permission);
-        });
-      }
-    })
-    .catch(err => console.error('[PWA] SW registration failed:', err));
-
-  // Listen for SW messages to write to localStorage
   navigator.serviceWorker.addEventListener('message', event => {
     const { type, key, value, subscription } = event.data;
     if (type === 'SET_LOCALSTORAGE') {
