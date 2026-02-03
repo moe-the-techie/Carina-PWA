@@ -2,6 +2,12 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -63,6 +69,21 @@ app.use('/api', chatRoutes);
 app.use('/api', announcementRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api', pushRoutes);
+
+// Debug logging route
+app.post('/api/debug-log', (req, res) => {
+  const { message, timestamp } = req.body;
+  const logMessage = `[${new Date(timestamp).toISOString()}] ${message}\n`;
+  
+  fs.appendFile(path.join(__dirname, 'debug_log.txt'), logMessage, (err) => {
+    if (err) {
+      console.error('Error writing to debug log:', err);
+      return res.status(500).json({ error: 'Failed to write log' });
+    }
+    res.status(200).json({ success: true });
+  });
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 
