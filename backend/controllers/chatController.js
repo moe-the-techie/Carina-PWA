@@ -1,7 +1,7 @@
 import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import User from '../models/User.js';
-import { publishMessage, generateAblyToken, generateAdminAblyToken } from '../config/ably.js';
+import { publishMessage, generateAblyToken, generateAdminAblyToken, sendPushNotification } from '../config/ably.js';
 import { uploadToImgBB, hideAudioInImage, extractAudioFromImage } from '../config/imgbb.js';
 
 // Get or create a chat for the current user
@@ -119,6 +119,53 @@ export const sendMessage = async (req, res) => {
             unreadByAdmins: chat.unreadByAdmins,
             unreadByUser: chat.unreadByUser
         });
+
+        // Send push notification (works even when app is closed)
+        // If admin sends message, notify the user
+        // If user sends message, notify admins (they need to fetch admin list)
+        if (senderRole === 'admin') {
+            // Notify the user via push
+            const notificationTitle = 'Message from Support';
+            const notificationBody = messageType === 'text' 
+                ? (content.length > 50 ? content.substring(0, 50) + '...' : content)
+                : messageType === 'image' ? 'Sent you an image' : 'Sent you a voice message';
+            
+            sendPushNotification(chat.userId.toString(), {
+                title: notificationTitle,
+                body: notificationBody,
+                data: {
+                    type: 'chat',
+                    chatId: chat._id.toString(),
+                    senderRole: 'admin',
+                    url: '/chat'
+                }
+            }).catch(err => console.error('Push notification error:', err));
+        } else {
+            // Notify admins - send to admin notification channel
+            // Admins subscribe to this via clientId
+            const sender = await User.findById(senderId).select('name');
+            const senderName = sender?.name || 'User';
+            const notificationTitle = `New message from ${senderName}`;
+            const notificationBody = messageType === 'text' 
+                ? (content.length > 50 ? content.substring(0, 50) + '...' : content)
+                : messageType === 'image' ? 'Sent an image' : 'Sent a voice message';
+            
+            // Get all admin users and send push to each
+            const admins = await User.find({ role: 'admin' }).select('_id');
+            for (const admin of admins) {
+                sendPushNotification(admin._id.toString(), {
+                    title: notificationTitle,
+                    body: notificationBody,
+                    data: {
+                        type: 'chat',
+                        chatId: chat._id.toString(),
+                        userId: chat.userId.toString(),
+                        senderRole: 'user',
+                        url: '/admin/chats'
+                    }
+                }).catch(err => console.error('Admin push notification error:', err));
+            }
+        }
 
         res.status(201).json(publishData);
     } catch (error) {

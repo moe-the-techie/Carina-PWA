@@ -27,6 +27,7 @@ import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import OfflineIndicator from './components/OfflineIndicator';
 import { disconnectAbly } from './services/ablyService';
+import { cleanupPushNotifications } from './services/ablyPushService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -93,6 +94,7 @@ function App() {
     setUserId(null);
     setUser(null);
     disconnectAbly();
+    cleanupPushNotifications().catch(console.error);
    }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
