@@ -855,7 +855,7 @@ export default function NewFormPage () {
                                             p: 1.5,
                                             borderRadius: 2,
                                             backgroundColor: theme.palette.mode === 'dark' 
-                                                ? 'rgba(255,255,255,0.02)'
+                                                ? 'rgba(255,255,255,0.04)'
                                                 : 'rgba(0,0,0,0.02)',
                                             transition: 'all 0.2s ease',
                                             '&:hover': {

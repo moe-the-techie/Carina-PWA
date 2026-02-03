@@ -95,7 +95,6 @@ function App() {
    }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
-
     return (
         <Router>
             <UnreadCountProvider user={user}>
