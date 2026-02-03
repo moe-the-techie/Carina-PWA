@@ -221,11 +221,17 @@ export async function activatePlan(req, res) {
     try {
         const { planId } = req.params;
         
+        // Calculate expiration date (7 days from activation)
+        const activatedAt = new Date();
+        const expiresAt = new Date(activatedAt);
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        
         const plan = await Plan.findByIdAndUpdate(
             planId,
             { 
                 status: 'active',
-                activatedAt: new Date()
+                activatedAt: activatedAt,
+                expiresAt: expiresAt
             },
             { new: true }
         ).populate('user', 'name email')

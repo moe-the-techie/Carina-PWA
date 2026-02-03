@@ -172,6 +172,12 @@ const planSchema = new Schema({
     },
     completedAt: {
         type: Date
+    },
+    reminderSentAt: {
+        type: Date
+    },
+    expiresAt: {
+        type: Date
     }
 });
 

@@ -19,7 +19,9 @@ import {
     verifyPaymentAdmin,
     updatePaymentStatusAdmin,
     getAllActivePlansAdmin,
-    getPlanProgressAdmin
+    getPlanProgressAdmin,
+    triggerPlanReminders,
+    triggerExpiredPlanUpdates
 } from '../controllers/adminController.js';
 
 router.get('/admin/dashboard', adminOnly, getDashboardStats);
@@ -44,5 +46,9 @@ router.put('/admin/payments/:paymentId/status', adminOnly, updatePaymentStatusAd
 // Active Plans routes
 router.get('/admin/active-plans', adminOnly, getAllActivePlansAdmin);
 router.get('/admin/active-plans/:planId/progress', adminOnly, getPlanProgressAdmin);
+
+// Plan reminder service routes (for testing/manual triggering)
+router.post('/admin/trigger-plan-reminders', adminOnly, triggerPlanReminders);
+router.post('/admin/trigger-expired-plan-updates', adminOnly, triggerExpiredPlanUpdates);
 
 export default router;

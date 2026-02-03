@@ -8,6 +8,7 @@ import Payment from '../models/Payment.js';
 import fawaterkConfig from '../config/fawaterk.js';
 import { deleteImage } from '../config/cloudinary.js';
 import { adminAuth } from '../config/firebase.js';
+import { sendPlanReminders, updateExpiredPlans } from '../services/planReminderService.js';
 export async function getDashboardStats(req, res) {
     try {
         const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
@@ -872,5 +873,33 @@ export async function updatePaymentStatusAdmin(req, res) {
     } catch (error) {
         console.error('Error updating payment status:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+}
+
+// Manually trigger plan reminder checks (for testing/admin use)
+export async function triggerPlanReminders(req, res) {
+    try {
+        await sendPlanReminders();
+        res.status(200).json({ 
+            message: 'Plan reminder check completed successfully',
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error('Error triggering plan reminders:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+}
+
+// Manually trigger expired plan status updates (for testing/admin use)
+export async function triggerExpiredPlanUpdates(req, res) {
+    try {
+        await updateExpiredPlans();
+        res.status(200).json({ 
+            message: 'Expired plan status update completed successfully',
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error('Error triggering expired plan updates:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 }
