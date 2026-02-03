@@ -1,6 +1,37 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    /* Animation duration CSS custom properties for responsive design */
+    --animation-fast: 0.2s;
+    --animation-normal: 0.4s;
+    --animation-slow: 0.6s;
+    --transition-fast: 0.2s;
+    --transition-normal: 0.3s;
+  }
+  
+  /* Mobile-optimized animation durations */
+  @media (max-width: 600px) {
+    :root {
+      --animation-fast: 0.15s;
+      --animation-normal: 0.25s;
+      --animation-slow: 0.35s;
+      --transition-fast: 0.15s;
+      --transition-normal: 0.2s;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --animation-fast: 0.1s;
+      --animation-normal: 0.1s;
+      --animation-slow: 0.1s;
+      --transition-fast: 0.1s;
+      --transition-normal: 0.1s;
+    }
+  }
+  
   body {
     @apply font-sans;
     font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
@@ -96,14 +127,21 @@
 }
 
 .animate-slide-up {
-  animation: slideUpFadeIn 0.6s ease-out forwards;
+  animation: slideUpFadeIn var(--animation-normal) ease-out forwards;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.4s ease-out forwards;
+  animation: scaleIn var(--animation-fast) ease-out forwards;
 }
 
-/* ===== GLASSMORPHISM UTILITIES ===== */
+/* Use custom properties for existing utility classes */
+.transition-smooth {
+  transition: all var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover {
+  transition: transform var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
+}
 
 .glass {
   background: rgba(255, 255, 255, 0.1);

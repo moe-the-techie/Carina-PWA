@@ -15,7 +15,7 @@ const PrimaryButton = styled(Button)(({ theme }) => ({
   position: 'relative',
   overflow: 'hidden',
   boxShadow: '0 4px 20px rgba(145, 235, 78, 0.4), 0 0 0 0 rgba(145, 235, 78, 0.4)',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  transition: 'all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1)',
   
   '&::before': {
     content: '""',

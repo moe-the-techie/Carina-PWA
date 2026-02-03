@@ -115,10 +115,14 @@ export const shadows = {
 // ===== TRANSITION TOKENS =====
 export const transitions = {
     fast: 'all 0.15s ease',
-    normal: 'all 0.3s ease',
-    slow: 'all 0.5s ease',
+    normal: 'all 0.25s ease',
+    slow: 'all 0.4s ease',
     bounce: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-    smooth: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    smooth: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+    // Mobile-specific transitions (use these with CSS custom properties)
+    mobileFast: 'all 0.1s ease',
+    mobileNormal: 'all 0.2s ease',
+    mobileSlow: 'all 0.3s ease',
 };
 
 // ===== GRADIENT PRESETS =====

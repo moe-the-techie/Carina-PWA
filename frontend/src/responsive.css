@@ -122,9 +122,30 @@ button, [role="button"] {
 }
 
 @media (max-width: 600px) {
+  /* Reduce animation complexity and duration for better performance on mobile */
   * {
-    transition: none !important;
-    animation-duration: 0.1s !important;
+    /* Reduce transition durations instead of removing them completely */
+    transition-duration: 0.2s !important;
+    animation-duration: 0.3s !important;
+    animation-timing-function: ease-out !important;
+  }
+  
+  /* Disable complex animations that can cause jank */
+  *[data-framer-name],
+  .animate-float,
+  .animate-glow,
+  .animate-gradient,
+  .animate-shimmer {
+    animation: none !important;
+  }
+  
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.1s !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.1s !important;
+    }
   }
 }
 

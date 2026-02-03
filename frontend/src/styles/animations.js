@@ -3,25 +3,35 @@
  * Consistent animations across the application
  */
 
+// ===== MOBILE DETECTION UTILITY =====
+const isMobile = () => window.innerWidth <= 600;
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ===== RESPONSIVE DURATION HELPER =====
+const getResponsiveDuration = (desktop, mobile = desktop * 0.5) => {
+  if (prefersReducedMotion()) return 0.1;
+  return isMobile() ? mobile : desktop;
+};
+
 // ===== PAGE TRANSITION VARIANTS =====
 export const pageVariants = {
     initial: { 
         opacity: 0, 
-        y: 20 
+        y: isMobile() ? 10 : 20 
     },
     animate: { 
         opacity: 1, 
         y: 0,
         transition: {
-            duration: 0.4,
+            duration: getResponsiveDuration(0.6, 0.3),
             ease: [0.16, 1, 0.3, 1],
         }
     },
     exit: { 
         opacity: 0, 
-        y: -20,
+        y: isMobile() ? -10 : -20,
         transition: {
-            duration: 0.3,
+            duration: getResponsiveDuration(0.4, 0.2),
         }
     },
 };
@@ -34,8 +44,8 @@ export const containerVariants = {
     visible: {
         opacity: 1,
         transition: { 
-            staggerChildren: 0.1,
-            delayChildren: 0.1,
+            staggerChildren: isMobile() ? 0.05 : 0.1,
+            delayChildren: isMobile() ? 0.05 : 0.1,
         }
     },
 };
@@ -44,13 +54,13 @@ export const containerVariants = {
 export const itemVariants = {
     hidden: { 
         opacity: 0, 
-        y: 20 
+        y: isMobile() ? 10 : 20 
     },
     visible: {
         opacity: 1,
         y: 0,
         transition: {
-            duration: 0.4,
+            duration: getResponsiveDuration(0.4, 0.2),
             ease: [0.16, 1, 0.3, 1],
         }
     },
@@ -64,13 +74,13 @@ export const fadeVariants = {
     visible: { 
         opacity: 1,
         transition: {
-            duration: 0.3,
+            duration: 0.5,
         }
     },
     exit: { 
         opacity: 0,
         transition: {
-            duration: 0.2,
+            duration: 0.3,
         }
     },
 };
@@ -103,13 +113,13 @@ export const slideVariants = {
 export const scaleVariants = {
     hidden: { 
         opacity: 0, 
-        scale: 0.9 
+        scale: isMobile() ? 0.95 : 0.9 
     },
     visible: { 
         opacity: 1, 
         scale: 1,
         transition: {
-            duration: 0.3,
+            duration: getResponsiveDuration(0.5, 0.25),
             ease: [0.16, 1, 0.3, 1],
         }
     },
@@ -117,7 +127,7 @@ export const scaleVariants = {
         opacity: 0, 
         scale: 0.9,
         transition: {
-            duration: 0.2,
+            duration: 0.3,
         }
     },
     tap: { 
@@ -140,14 +150,14 @@ export const cardVariants = {
         y: 0, 
         scale: 1,
         transition: {
-            duration: 0.4,
+            duration: 0.6,
             ease: [0.16, 1, 0.3, 1],
         }
     },
     hover: {
         y: -4,
         transition: {
-            duration: 0.2,
+            duration: 0.3,
         }
     },
     tap: {
@@ -165,8 +175,8 @@ export const listItemVariants = {
         opacity: 1,
         x: 0,
         transition: {
-            delay: i * 0.05,
-            duration: 0.3,
+            delay: i * 0.08,
+            duration: 0.5,
             ease: [0.16, 1, 0.3, 1],
         }
     }),
@@ -176,24 +186,24 @@ export const listItemVariants = {
 export const modalVariants = {
     hidden: { 
         opacity: 0, 
-        scale: 0.95,
-        y: 20,
+        scale: isMobile() ? 0.98 : 0.95,
+        y: isMobile() ? 10 : 20,
     },
     visible: { 
         opacity: 1, 
         scale: 1,
         y: 0,
         transition: {
-            duration: 0.3,
+            duration: getResponsiveDuration(0.5, 0.25),
             ease: [0.16, 1, 0.3, 1],
         }
     },
     exit: { 
         opacity: 0, 
-        scale: 0.95,
-        y: 20,
+        scale: isMobile() ? 0.98 : 0.95,
+        y: isMobile() ? 10 : 20,
         transition: {
-            duration: 0.2,
+            duration: getResponsiveDuration(0.3, 0.15),
         }
     },
 };
@@ -206,13 +216,13 @@ export const backdropVariants = {
     visible: { 
         opacity: 1,
         transition: {
-            duration: 0.2,
+            duration: 0.3,
         }
     },
     exit: { 
         opacity: 0,
         transition: {
-            duration: 0.2,
+            duration: 0.3,
             delay: 0.1,
         }
     },
@@ -275,15 +285,31 @@ export const fabVariants = {
 
 // ===== STAGGER CONTAINER OPTIONS =====
 export const staggerOptions = {
-    fast: { staggerChildren: 0.05 },
-    normal: { staggerChildren: 0.1 },
-    slow: { staggerChildren: 0.15 },
+    fast: { staggerChildren: 0.08 },
+    normal: { staggerChildren: 0.15 },
+    slow: { staggerChildren: 0.2 },
 };
 
 // ===== SPRING PRESETS =====
 export const springPresets = {
-    default: { type: 'spring', stiffness: 300, damping: 25 },
-    bouncy: { type: 'spring', stiffness: 500, damping: 20 },
-    stiff: { type: 'spring', stiffness: 700, damping: 30 },
-    gentle: { type: 'spring', stiffness: 200, damping: 20 },
+    default: { 
+        type: 'spring', 
+        stiffness: isMobile() ? 400 : 300, 
+        damping: isMobile() ? 30 : 25 
+    },
+    bouncy: { 
+        type: 'spring', 
+        stiffness: isMobile() ? 600 : 500, 
+        damping: isMobile() ? 25 : 20 
+    },
+    stiff: { 
+        type: 'spring', 
+        stiffness: isMobile() ? 800 : 700, 
+        damping: isMobile() ? 35 : 30 
+    },
+    gentle: { 
+        type: 'spring', 
+        stiffness: isMobile() ? 250 : 200, 
+        damping: isMobile() ? 25 : 20 
+    },
 };
