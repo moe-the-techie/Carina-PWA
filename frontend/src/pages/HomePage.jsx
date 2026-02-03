@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PageFade from '../components/PageFade';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,6 +14,7 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
+import CircularProgress from '@mui/material/CircularProgress';
 import { alpha } from '@mui/material/styles';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
@@ -23,97 +24,111 @@ import { pageTitle } from '../styles/typography';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [backendError, setBackendError] = useState('');
-  const [forms, setForms] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [formCredits, setFormCredits] = useState(null);
-  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Active, 2: Pending
   const theme = useTheme();
 
-  useEffect(() => {
-    fetchData();
-    fetchCredits();
+  // Fetch forms with caching - stale-while-revalidate
+  const fetchFormsData = useCallback(async () => {
+    const response = await fetch(`${apiBaseUrl}/api/forms/my?page=${page}&limit=10`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) return { forms: [], totalPages: 1 };
+      const errorResponse = await response.json();
+      throw new Error(errorResponse?.error || `An error occurred: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const formsWithPlans = data.forms || [];
+    
+    // Fetch plan data for each form
+    const formsWithPlanData = await Promise.all(
+      formsWithPlans.map(async (form) => {
+        try {
+          const planResponse = await fetch(`${apiBaseUrl}/api/forms/my/${form._id}/plan`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+          });
+          
+          if (planResponse.ok) {
+            const planData = await planResponse.json();
+            return { ...form, plan: planData.plan };
+          }
+        } catch (error) {
+          console.log(`No plan found for form ${form._id}`);
+        }
+        return form;
+      })
+    );
+    
+    return { forms: formsWithPlanData, totalPages: data.totalPages || 1 };
   }, [page]);
 
-  async function fetchCredits() {
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFormCredits(data.formCredits);
-        setPaymentsEnabled(data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
-      }
-    } catch (error) {
-      console.error('Error fetching credits:', error);
+  const { 
+    data: formsData, 
+    isLoading: loading, 
+    isRefreshing,
+    error: formsError,
+    refetch: refetchForms
+  } = useCachedData(
+    `home_forms_page_${page}`,
+    fetchFormsData,
+    {
+      cacheTTL: 5 * 60 * 1000, // 5 minutes
+      initialData: { forms: [], totalPages: 1 },
+      dependencies: [page],
+      onError: (err) => setBackendError(err.message),
     }
-  }
+  );
 
-  async function fetchData() {
-    try {
-      setLoading(true);
-      const data = await fetch(`${apiBaseUrl}/api/forms/my?page=${page}&limit=10`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-      });
+  const forms = formsData?.forms || [];
+  const totalPages = formsData?.totalPages || 1;
 
-      if (!data.ok) {
-        if (data.status === 404) return;
-
-        const errorResponse = await data.json();
-        setBackendError(errorResponse?.error || `An error occurred: ${data.status}`);
-        return;
+  // Fetch credits with caching
+  const fetchCreditsData = useCallback(async () => {
+    const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
-
-      const response = await data.json();
-      const formsWithPlans = response.forms || [];
-      setTotalPages(response.totalPages || 1);
-      
-      // Fetch plan data for each form
-      const formsWithPlanData = await Promise.all(
-        formsWithPlans.map(async (form) => {
-          try {
-            const planResponse = await fetch(`${apiBaseUrl}/api/forms/my/${form._id}/plan`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-            });
-            
-            if (planResponse.ok) {
-              const planData = await planResponse.json();
-              return { ...form, plan: planData.plan };
-            }
-          } catch (error) {
-            console.log(`No plan found for form ${form._id}`);
-          }
-          return form;
-        })
-      );
-      
-      setForms(formsWithPlanData);
-    } catch (error) {
-      console.error('Error fetching forms:', error);
-      setBackendError(`An error occurred while fetching forms: ${error.message}`);
-    } finally {
-      setLoading(false);
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        formCredits: data.formCredits,
+        paymentsEnabled: data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false'
+      };
     }
-  }
+    return { formCredits: null, paymentsEnabled: false };
+  }, []);
+
+  const { data: creditsData } = useCachedData(
+    'user_credits',
+    fetchCreditsData,
+    {
+      cacheTTL: 5 * 60 * 1000,
+      initialData: { formCredits: null, paymentsEnabled: false },
+    }
+  );
+
+  const formCredits = creditsData?.formCredits;
+  const paymentsEnabled = creditsData?.paymentsEnabled;
 
   // Filter forms based on selected tab
   const filteredForms = useMemo(() => {
@@ -152,14 +167,19 @@ export default function HomePage() {
           mx: 'auto',
         }}
       >
-        <Typography 
-          variant="h4" 
-          align="start" 
-          gutterBottom
-          sx={pageTitle(theme, { align: 'left' })}
-        >
-          My Forms & Plans
-        </Typography>
+        <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography 
+            variant="h4" 
+            align="start" 
+            gutterBottom
+            sx={pageTitle(theme, { align: 'left' })}
+          >
+            My Forms & Plans
+          </Typography>
+          {isRefreshing && (
+            <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+          )}
+        </Box>
 
         {/* Filter Tabs */}
         <Box sx={{ width: '100%', mb: spacing.md }}>

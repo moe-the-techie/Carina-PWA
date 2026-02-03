@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -15,7 +15,8 @@ import {
     Avatar,
     Pagination,
     Badge,
-    Skeleton
+    Skeleton,
+    CircularProgress
 } from '@mui/material';
 import {
     Campaign as AnnouncementIcon,
@@ -34,9 +35,10 @@ import {
 } from '../services/announcementService';
 import { subscribeToAnnouncements } from '../services/ablyService';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
-import { spacing, borderRadius, transitions, priorityColors as sharedPriorityColors } from '../styles';
+import { spacing, borderRadius, transitions, priorityColors as sharedPriorityColors, accentColors } from '../styles';
 import { glassCard } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
+import { useCachedData } from '../hooks/useCachedData';
 
 const priorityColors = {
     low: 'success',
@@ -47,16 +49,32 @@ const priorityColors = {
 
 export default function AnnouncementsPage({ user }) {
     const theme = useTheme();
-    const [announcements, setAnnouncements] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [expandedCards, setExpandedCards] = useState(new Set());
     const [page, setPage] = useState(1);
     const { unreadCount, markAnnouncementAsRead: contextMarkAsRead } = useAnnouncementNotifications();
 
+    // Fetch announcements with caching - stale-while-revalidate
+    const fetchAnnouncementsData = useCallback(async () => {
+        const data = await getUserAnnouncements();
+        return data;
+    }, []);
+
+    const {
+        data: announcements,
+        isLoading: loading,
+        isRefreshing,
+        setData: setAnnouncements,
+    } = useCachedData(
+        'user_announcements_list',
+        fetchAnnouncementsData,
+        {
+            cacheTTL: 5 * 60 * 1000, // 5 minutes
+            initialData: [],
+        }
+    );
+
     useEffect(() => {
-        fetchAnnouncements();
-        
         // Subscribe to real-time announcement updates
         if (user?._id) {
             subscribeToAnnouncements(user._id, handleNewAnnouncement);
@@ -88,19 +106,6 @@ export default function AnnouncementsPage({ user }) {
         };
     }, [user]);
 
-    const fetchAnnouncements = async () => {
-        try {
-            setLoading(true);
-            const data = await getUserAnnouncements();
-            setAnnouncements(data);
-        } catch (error) {
-            console.error('Error fetching announcements:', error);
-            setError('Failed to load announcements');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const fetchUnreadCount = async () => {
         try {
             const { unreadCount } = await getUnreadAnnouncementsCount();
@@ -114,7 +119,7 @@ export default function AnnouncementsPage({ user }) {
         // Add new announcement to the top of the list
         setAnnouncements(prev => [
             { ...announcementData, isRead: false },
-            ...prev
+            ...(prev || [])
         ]);
     };
 
@@ -124,7 +129,7 @@ export default function AnnouncementsPage({ user }) {
             
             // Update local state
             setAnnouncements(prev =>
-                prev.map(announcement =>
+                (prev || []).map(announcement =>
                     announcement._id === announcementId
                         ? { ...announcement, isRead: true }
                         : announcement
@@ -225,6 +230,9 @@ export default function AnnouncementsPage({ user }) {
                     <Typography variant="h4" sx={{ fontSize: { xs: '1.75rem', sm: '2rem', md: '2.125rem' } }}>
                         Announcements
                     </Typography>
+                    {isRefreshing && (
+                        <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                    )}
                     {unreadCount > 0 && (
                         <Chip
                             label={`${unreadCount} unread`}

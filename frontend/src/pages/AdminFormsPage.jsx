@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -73,6 +73,7 @@ import FormActionsDialog from '../components/FormActionsDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -81,11 +82,8 @@ export default function AdminFormsPage() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
-    const [forms, setForms] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [reviewedFilter, setReviewedFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('new-patient');
     const [selectedForm, setSelectedForm] = useState(null);
@@ -107,41 +105,46 @@ export default function AdminFormsPage() {
     const [selectedChipTitle, setSelectedChipTitle] = useState('');
     const [selectedChipCategory, setSelectedChipCategory] = useState('');
 
-    useEffect(() => {
-        fetchForms();
+    // Fetch forms with caching - stale-while-revalidate
+    const fetchFormsData = useCallback(async () => {
+        let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
+        if (reviewedFilter !== '') {
+            url += `&reviewed=${reviewedFilter}`;
+        }
+        if (typeFilter) {
+            url += `&type=${typeFilter}`;
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch forms');
+        }
+
+        return response.json();
     }, [page, reviewedFilter, typeFilter]);
 
-    const fetchForms = async () => {
-        try {
-            setLoading(true);
-            let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
-            if (reviewedFilter !== '') {
-                url += `&reviewed=${reviewedFilter}`;
-            }
-            if (typeFilter) {
-                url += `&type=${typeFilter}`;
-            }
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch forms');
-            }
-
-            const data = await response.json();
-            setForms(data.forms);
-            setTotalPages(data.totalPages);
-        } catch (error) {
-            console.error('Error fetching forms:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
+    const {
+        data: formsData,
+        isLoading: loading,
+        isRefreshing,
+        refetch: refetchForms,
+    } = useCachedData(
+        `admin_forms_p${page}_r${reviewedFilter}_t${typeFilter}`,
+        fetchFormsData,
+        {
+            cacheTTL: 2 * 60 * 1000, // 2 minutes
+            initialData: { forms: [], totalPages: 1 },
+            dependencies: [page, reviewedFilter, typeFilter],
         }
-    };
+    );
+
+    const forms = formsData?.forms || [];
+    const totalPages = formsData?.totalPages || 1;
 
     useEffect(() => {
         if (formDetailsOpen && selectedForm?.user?._id) {
@@ -395,9 +398,12 @@ export default function AdminFormsPage() {
                         </Box>
                         
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            {isRefreshing && (
+                                <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                            )}
                             <Tooltip title="Refresh">
                                 <IconButton 
-                                    onClick={fetchForms}
+                                    onClick={refetchForms}
                                     sx={{
                                         backgroundColor: theme.palette.mode === 'dark' 
                                             ? 'rgba(255,255,255,0.05)' 

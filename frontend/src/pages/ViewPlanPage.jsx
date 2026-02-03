@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
     Box, 
@@ -31,7 +31,8 @@ import {
     useMediaQuery,
     Slide,
     Tabs,
-    Tab
+    Tab,
+    CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -56,6 +57,7 @@ import ImageViewerDialog from '../components/ImageViewerDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -69,10 +71,7 @@ export default function ViewPlanPage () {
     const navigate = useNavigate();
     const { id } = useParams();
     const form = location.state?.form;
-    
-    const [plan, setPlan] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const formId = form?._id || id;
     
     // Form details state
     const [formData, setFormData] = useState(location.state?.form || null);
@@ -100,22 +99,67 @@ export default function ViewPlanPage () {
     const daysOfWeek = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
     const dayLabels = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
-    useEffect(() => {
-        if (form) {
-            fetchPlan(form._id);
-        } else if (id) {
-            // If no form in state, fetch by form ID from URL
-            fetchPlan(id);
-            fetchForm(id);
-        } else {
-            setError('No form data provided');
-            setLoading(false);
+    // Fetch plan with caching - stale-while-revalidate
+    const fetchPlanData = useCallback(async () => {
+        if (!formId) {
+            throw new Error('No form data provided');
         }
-    }, [form, id]);
 
-    const fetchForm = async (formId) => {
+        const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}/plan`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return { plan: null, noPlan: true };
+            }
+            throw new Error('Failed to fetch plan');
+        }
+
+        const data = await response.json();
+        return { plan: data.plan, noPlan: false };
+    }, [formId]);
+
+    const {
+        data: planData,
+        isLoading: loading,
+        isRefreshing,
+        error: planError,
+        setData: setPlanData,
+    } = useCachedData(
+        `view_plan_${formId}`,
+        fetchPlanData,
+        {
+            cacheTTL: 10 * 60 * 1000, // 10 minutes
+            enabled: !!formId,
+            initialData: null,
+        }
+    );
+
+    const plan = planData?.plan || null;
+    const noPlan = planData?.noPlan || false;
+    const error = planError?.message || (noPlan ? 'No plan available yet. Your form is being reviewed by our nutrition team.' : '');
+
+    // Fetch form details if not in state
+    useEffect(() => {
+        if (!formData && formId) {
+            fetchForm(formId);
+        }
+    }, [formId, formData]);
+
+    // Initialize feedback state when plan loads
+    useEffect(() => {
+        if (plan?.feedback) {
+            setFeedbackRating(plan.feedback.rating || 0);
+            setFeedbackComment(plan.feedback.comment || '');
+        }
+    }, [plan]);
+
+    const fetchForm = async (fId) => {
         try {
-            const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}`, {
+            const response = await fetch(`${apiBaseUrl}/api/forms/my/${fId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
@@ -126,39 +170,6 @@ export default function ViewPlanPage () {
             }
         } catch (err) {
             console.error('Error fetching form details:', err);
-        }
-    };
-
-    const fetchPlan = async (formId) => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}/plan`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setError('No plan available yet. Your form is being reviewed by our nutrition team.');
-                    return;
-                }
-                throw new Error('Failed to fetch plan');
-            }
-
-            const data = await response.json();
-            setPlan(data.plan);
-            
-            // Initialize feedback state if feedback exists
-            if (data.plan.feedback) {
-                setFeedbackRating(data.plan.feedback.rating || 0);
-                setFeedbackComment(data.plan.feedback.comment || '');
-            }
-        } catch (error) {
-            console.error('Error fetching plan:', error);
-            setError('Error loading your plan. Please try again later.');
-        } finally {
-            setLoading(false);
         }
     };
 

@@ -92,8 +92,8 @@ self.addEventListener('fetch', event => {
 
   // Handle different types of requests with different strategies
   if (url.pathname.startsWith('/api/')) {
-    // Network-first strategy for API calls
-    event.respondWith(networkFirstStrategy(request, API_CACHE));
+    // Stale-while-revalidate strategy for API calls - show cached data immediately, update in background
+    event.respondWith(staleWhileRevalidateStrategy(request, API_CACHE));
   } else if (request.destination === 'image') {
     // Cache-first strategy for images
     event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));

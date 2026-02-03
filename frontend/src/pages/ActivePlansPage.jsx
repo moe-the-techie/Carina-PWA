@@ -33,6 +33,7 @@ import { spacing, borderRadius, accentColors, shadows } from '../styles';
 import { glassCard, glassButton, glassDialog } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 // Icons
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
@@ -564,58 +565,68 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
 export default function ActivePlansPage() {
     const theme = useTheme();
     const navigate = useNavigate();
-    const [activePlans, setActivePlans] = useState([]);
     const [todayProgressMap, setTodayProgressMap] = useState({});
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-    useEffect(() => {
-        fetchActivePlans();
-    }, []);
+    // Fetch active plans with caching - stale-while-revalidate
+    const fetchActivePlansData = useCallback(async () => {
+        const response = await fetch(`${apiBaseUrl}/api/plans/my`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
 
-    const fetchActivePlans = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/plans/my`, {
+        if (!response.ok) {
+            throw new Error('Failed to fetch plans');
+        }
+
+        const data = await response.json();
+        const active = (data.plans || []).filter(plan => plan.status === 'active');
+
+        // Fetch today's progress for each active plan
+        const progressPromises = active.map(plan => 
+            fetch(`${apiBaseUrl}/api/plans/${plan._id}/progress/today`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
-            });
+            }).then(res => res.ok ? res.json() : null).catch(() => null)
+        );
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch plans');
+        const progressResults = await Promise.all(progressPromises);
+        const progressMap = {};
+        active.forEach((plan, index) => {
+            if (progressResults[index]) {
+                progressMap[plan._id] = progressResults[index].progress;
             }
+        });
 
-            const data = await response.json();
-            const active = (data.plans || []).filter(plan => plan.status === 'active');
-            setActivePlans(active);
+        return { activePlans: active, progressMap };
+    }, []);
 
-            // Fetch today's progress for each active plan
-            const progressPromises = active.map(plan => 
-                fetch(`${apiBaseUrl}/api/plans/${plan._id}/progress/today`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }).then(res => res.ok ? res.json() : null).catch(() => null)
-            );
-
-            const progressResults = await Promise.all(progressPromises);
-            const progressMap = {};
-            active.forEach((plan, index) => {
-                if (progressResults[index]) {
-                    progressMap[plan._id] = progressResults[index].progress;
-                }
-            });
-            setTodayProgressMap(progressMap);
-        } catch (err) {
-            console.error('Error fetching active plans:', err);
-            setError('Failed to load active plans');
-        } finally {
-            setLoading(false);
+    const {
+        data: plansData,
+        isLoading: loading,
+        isRefreshing,
+        error,
+        setData: setPlansData,
+    } = useCachedData(
+        'active_plans_with_progress',
+        fetchActivePlansData,
+        {
+            cacheTTL: 5 * 60 * 1000, // 5 minutes
+            initialData: { activePlans: [], progressMap: {} },
         }
-    };
+    );
+
+    const activePlans = plansData?.activePlans || [];
+
+    // Sync progressMap from cache to local state
+    useEffect(() => {
+        if (plansData?.progressMap) {
+            setTodayProgressMap(plansData.progressMap);
+        }
+    }, [plansData?.progressMap]);
 
     const handleProgressUpdate = useCallback(async (planId, progressData) => {
         try {
@@ -644,12 +655,19 @@ export default function ActivePlansPage() {
                 [planId]: data.progress
             }));
 
-            // Update plan streaks
-            setActivePlans(prev => prev.map(plan => 
-                plan._id === planId 
-                    ? { ...plan, currentStreak: data.currentStreak, longestStreak: data.longestStreak }
-                    : plan
-            ));
+            // Update plan streaks in cached data
+            setPlansData(prev => ({
+                ...prev,
+                activePlans: prev.activePlans.map(plan => 
+                    plan._id === planId 
+                        ? { ...plan, currentStreak: data.currentStreak, longestStreak: data.longestStreak }
+                        : plan
+                ),
+                progressMap: {
+                    ...prev.progressMap,
+                    [planId]: data.progress
+                }
+            }));
 
             setSnackbar({ open: true, message: 'Progress saved!', severity: 'success' });
         } catch (err) {
@@ -658,7 +676,7 @@ export default function ActivePlansPage() {
         } finally {
             setSaving(false);
         }
-    }, []);
+    }, [setPlansData]);
 
     return (
         <PageFade>
@@ -676,14 +694,19 @@ export default function ActivePlansPage() {
             >
                 {/* Header */}
                 <Box sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <EmojiEventsIcon sx={{ color: accentColors.emerald.main, fontSize: 28 }} />
-                        <Typography 
-                            variant="h4" 
-                            sx={pageTitle(theme, { align: 'left' })}
-                        >
-                            Active Plans
-                        </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <EmojiEventsIcon sx={{ color: accentColors.emerald.main, fontSize: 28 }} />
+                            <Typography 
+                                variant="h4" 
+                                sx={pageTitle(theme, { align: 'left' })}
+                            >
+                                Active Plans
+                            </Typography>
+                        </Box>
+                        {isRefreshing && (
+                            <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                        )}
                     </Box>
                     <Typography variant="body2" color="text.secondary">
                         Track your daily meals and progress
@@ -710,7 +733,7 @@ export default function ActivePlansPage() {
                         ))}
                     </>
                 ) : error ? (
-                    <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+                    <Alert severity="error" sx={{ mb: 2 }}>{error?.message || 'Failed to load active plans'}</Alert>
                 ) : activePlans.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

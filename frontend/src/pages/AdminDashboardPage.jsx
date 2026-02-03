@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -18,7 +18,8 @@ import {
     Avatar,
     useMediaQuery,
     alpha,
-    LinearProgress
+    LinearProgress,
+    CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +31,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import EditIcon from '@mui/icons-material/Edit';
 import PageFade from '../components/PageFade';
+import { useCachedData } from '../hooks/useCachedData';
 import { 
     glassCard, 
     containerVariants, 
@@ -55,43 +57,38 @@ export default function AdminDashboardPage() {
     const theme = useTheme();
     const navigate = useNavigate();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [dashboardData, setDashboardData] = useState({
-        stats: {},
-        recentUsers: [],
-        recentForms: []
-    });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
 
     // Use shared glass card style
     const glassCardStyle = glassCard(theme);
 
-    useEffect(() => {
-        fetchDashboardData();
+    // Fetch dashboard data with caching - stale-while-revalidate
+    const fetchDashboardData = useCallback(async () => {
+        const response = await fetch(`${apiBaseUrl}/api/admin/dashboard`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch dashboard data');
+        }
+
+        return response.json();
     }, []);
 
-    const fetchDashboardData = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/admin/dashboard`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch dashboard data');
-            }
-
-            const data = await response.json();
-            setDashboardData(data);
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
+    const {
+        data: dashboardData,
+        isLoading: loading,
+        isRefreshing,
+        error,
+    } = useCachedData(
+        'admin_dashboard',
+        fetchDashboardData,
+        {
+            cacheTTL: 2 * 60 * 1000, // 2 minutes for admin dashboard
+            initialData: { stats: {}, recentUsers: [], recentForms: [] },
         }
-    };
+    );
 
     const handleMessageUser = (userId) => {
         if (!userId || userId === 'null' || userId === 'undefined') {
@@ -195,15 +192,20 @@ export default function AdminDashboardPage() {
                     transition={{ duration: 0.5 }}
                 >
                     <Box sx={{ mb: 4 }}>
-                        <Typography 
-                            variant="h4" 
-                            sx={{ 
-                                ...gradientText(theme),
-                                mb: 0.5
-                            }}
-                        >
-                            Admin Dashboard
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography 
+                                variant="h4" 
+                                sx={{ 
+                                    ...gradientText(theme),
+                                    mb: 0.5
+                                }}
+                            >
+                                Admin Dashboard
+                            </Typography>
+                            {isRefreshing && (
+                                <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                            )}
+                        </Box>
                         <Typography variant="body2" color="text.secondary">
                             Overview of platform activity and performance
                         </Typography>
