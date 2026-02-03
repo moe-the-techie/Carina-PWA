@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -43,7 +43,9 @@ import {
     TextField,
     Fade,
     Zoom,
-    Slide
+    Slide,
+    Tabs,
+    Tab
 } from '@mui/material';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -71,6 +73,7 @@ import FormActionsDialog from '../components/FormActionsDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -79,12 +82,10 @@ export default function AdminFormsPage() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
-    const [forms, setForms] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [reviewedFilter, setReviewedFilter] = useState('');
+    const [typeFilter, setTypeFilter] = useState('new-patient');
     const [selectedForm, setSelectedForm] = useState(null);
     const [formDetailsOpen, setFormDetailsOpen] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
@@ -95,6 +96,8 @@ export default function AdminFormsPage() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
     const [selectedFormForActions, setSelectedFormForActions] = useState(null);
+    const [historyForms, setHistoryForms] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     
     // Chip detail dialog state
     const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
@@ -102,36 +105,72 @@ export default function AdminFormsPage() {
     const [selectedChipTitle, setSelectedChipTitle] = useState('');
     const [selectedChipCategory, setSelectedChipCategory] = useState('');
 
-    useEffect(() => {
-        fetchForms();
-    }, [page, reviewedFilter]);
+    // Fetch forms with caching - stale-while-revalidate
+    const fetchFormsData = useCallback(async () => {
+        let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
+        if (reviewedFilter !== '') {
+            url += `&reviewed=${reviewedFilter}`;
+        }
+        if (typeFilter) {
+            url += `&type=${typeFilter}`;
+        }
 
-    const fetchForms = async () => {
-        try {
-            setLoading(true);
-            let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
-            if (reviewedFilter !== '') {
-                url += `&reviewed=${reviewedFilter}`;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
+        });
 
-            const response = await fetch(url, {
-                headers: {
+        if (!response.ok) {
+            throw new Error('Failed to fetch forms');
+        }
+
+        return response.json();
+    }, [page, reviewedFilter, typeFilter]);
+
+    const {
+        data: formsData,
+        isLoading: loading,
+        isRefreshing,
+        refetch: refetchForms,
+    } = useCachedData(
+        `admin_forms_p${page}_r${reviewedFilter}_t${typeFilter}`,
+        fetchFormsData,
+        {
+            cacheTTL: 2 * 60 * 1000, // 2 minutes
+            initialData: { forms: [], totalPages: 1 },
+            dependencies: [page, reviewedFilter, typeFilter],
+        }
+    );
+
+    const forms = formsData?.forms || [];
+    const totalPages = formsData?.totalPages || 1;
+
+    useEffect(() => {
+        if (formDetailsOpen && selectedForm?.user?._id) {
+            fetchHistoryForms(selectedForm.user._id);
+        }
+    }, [formDetailsOpen, selectedForm]);
+
+    const fetchHistoryForms = async (userId) => {
+        if (!userId) return;
+        setHistoryLoading(true);
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/forms/user/${userId}?limit=20`, {
+                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch forms');
+            if (response.ok) {
+                const data = await response.json();
+                // Filter out the current form
+                const history = data.forms.filter(f => f._id !== selectedForm?._id);
+                setHistoryForms(history);
             }
-
-            const data = await response.json();
-            setForms(data.forms);
-            setTotalPages(data.totalPages);
-        } catch (error) {
-            console.error('Error fetching forms:', error);
-            setError(error.message);
+        } catch (e) {
+            console.error(e);
         } finally {
-            setLoading(false);
+            setHistoryLoading(false);
         }
     };
 
@@ -324,6 +363,7 @@ export default function AdminFormsPage() {
                     ? `linear-gradient(135deg, ${theme.palette.background.default} 0%, #1a1a2e 100%)`
                     : `linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)`,
             }}>
+                <LoadingBackdrop open={loading} />
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -358,9 +398,12 @@ export default function AdminFormsPage() {
                         </Box>
                         
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                            {isRefreshing && (
+                                <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                            )}
                             <Tooltip title="Refresh">
                                 <IconButton 
-                                    onClick={fetchForms}
+                                    onClick={refetchForms}
                                     sx={{
                                         backgroundColor: theme.palette.mode === 'dark' 
                                             ? 'rgba(255,255,255,0.05)' 
@@ -410,6 +453,40 @@ export default function AdminFormsPage() {
                         </Box>
                     </Box>
                 </motion.div>
+
+                {/* Form Type Tabs */}
+                <Paper 
+                    elevation={0}
+                    sx={{ 
+                        mb: 3, 
+                        bgcolor: 'background.paper', 
+                        borderRadius: 2, 
+                        overflow: 'hidden',
+                        border: 1,
+                        borderColor: 'divider'
+                    }}
+                >
+                    <Tabs 
+                        value={typeFilter} 
+                        onChange={(e, newValue) => {
+                            setTypeFilter(newValue);
+                            setPage(1);
+                        }}
+                        variant="fullWidth"
+                        indicatorColor="primary"
+                        textColor="primary"
+                        sx={{
+                            '& .MuiTab-root': {
+                                py: 2,
+                                fontSize: '1rem',
+                                fontWeight: 600
+                            }
+                        }}
+                    >
+                        <Tab label="New Patient Forms" value="new-patient" />
+                        <Tab label="Follow Up Forms" value="follow-up" />
+                    </Tabs>
+                </Paper>
 
                 {/* Stats Cards */}
                 <motion.div
@@ -791,68 +868,40 @@ export default function AdminFormsPage() {
                     <DialogContent sx={{ mt: 2 }}>
                         {selectedForm && (
                             <Grid container spacing={3}>
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        height: '100%',
-                                        borderRadius: 2,
-                                        boxShadow: 'none',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                    }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <PersonIcon color="primary" />
-                                                User Information
-                                            </Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
-                                                <Avatar
-                                                    src={selectedForm.user?.profileImageUrl}
-                                                    alt={selectedForm.user?.name}
-                                                    sx={{ 
-                                                        width: 48, 
-                                                        height: 48,
-                                                        cursor: selectedForm.user?.profileImageUrl ? 'pointer' : 'default',
-                                                        '&:hover': selectedForm.user?.profileImageUrl ? {
-                                                            opacity: 0.8,
-                                                            transition: 'opacity 0.2s'
-                                                        } : {}
-                                                    }}
-                                                    onClick={() => {
-                                                        if (selectedForm.user?.profileImageUrl) {
-                                                            setSelectedImage(selectedForm.user.profileImageUrl);
-                                                            setImageDialogOpen(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    {!selectedForm.user?.profileImageUrl && selectedForm.user?.name?.charAt(0)?.toUpperCase()}
-                                                </Avatar>
-                                                <Box>
-                                                    <Typography variant="subtitle1">{selectedForm.user?.name}</Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {selectedForm.user?.email}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                            <Typography><strong>Name:</strong> {selectedForm.user?.name}</Typography>
-                                            <Typography><strong>Email:</strong> {selectedForm.user?.email}</Typography>
-                                            <Typography><strong>Gender:</strong> {selectedForm.user?.gender}</Typography>
-                                            <Typography><strong>Date of Birth:</strong> {
-                                                selectedForm.user?.dateOfBirth 
-                                                    ? new Date(selectedForm.user.dateOfBirth).toLocaleDateString()
-                                                    : 'Not provided'
-                                            }</Typography>
+                                {/* Personal Information */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">User & Personal Information</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+                                                        <Avatar src={selectedForm.user?.profileImageUrl}>{selectedForm.user?.name?.charAt(0)}</Avatar>
+                                                        <Box>
+                                                            <Typography variant="subtitle1">{selectedForm.user?.name}</Typography>
+                                                            <Typography variant="body2" color="text.secondary">{selectedForm.user?.email}</Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <Typography><strong>Phone:</strong> {selectedForm.phoneNumber || 'N/A'}</Typography>
+                                                    <Typography><strong>DOB:</strong> {selectedForm.dateOfBirth ? new Date(selectedForm.dateOfBirth).toLocaleDateString() : 'N/A'}</Typography>
+                                                    <Typography><strong>Profession:</strong> {selectedForm.profession || 'N/A'}</Typography>
+                                                    <Typography><strong>Height:</strong> {selectedForm.height} cm</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Is Mother:</strong> {selectedForm.isMother ? 'Yes' : 'No'}</Typography>
+                                                    {selectedForm.isMother && <Typography><strong>Cycle:</strong> {selectedForm.menstrualCycle || 'N/A'}</Typography>}
+                                                    <Typography><strong>Bowel Movement:</strong> {selectedForm.bowelMovement || 'N/A'}</Typography>
+                                                    <Typography><strong>Physical Activity:</strong> {selectedForm.physicalActivity || 'N/A'}</Typography>
+                                                    <Typography><strong>Who Cooks:</strong> {selectedForm.whoCooks || 'N/A'}</Typography>
+                                                    <Typography><strong>Smoker:</strong> {selectedForm.currentSmoker ? 'Yes' : 'No'}</Typography>
+                                                </Grid>
+                                            </Grid>
                                         </CardContent>
-                                        <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
+                                        <CardActions sx={{ justifyContent: 'flex-end' }}>
                                             <Button 
-                                                variant="outlined"
-                                                color="primary"
-                                                onClick={() => {
-                                                    setFormDetailsOpen(false);
-                                                    handleMessageUser(selectedForm?.user?._id);
-                                                }}
+                                                variant="outlined" 
                                                 startIcon={<ChatIcon />}
-                                                size="small"
+                                                onClick={() => { setFormDetailsOpen(false); handleMessageUser(selectedForm?.user?._id); }}
                                             >
                                                 Message User
                                             </Button>
@@ -860,62 +909,304 @@ export default function AdminFormsPage() {
                                     </Card>
                                 </Grid>
 
+                                {/* Health History */}
                                 <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Weight Information
-                                            </Typography>
-                                            <Typography><strong>Current Weight:</strong> {selectedForm.currentWeight}kg</Typography>
-                                            <Typography><strong>Min Weight:</strong> {selectedForm.minWeight}kg</Typography>
-                                            <Typography><strong>Max Weight:</strong> {selectedForm.maxWeight}kg</Typography>
-                                            <Typography><strong>Desired Weight:</strong> {selectedForm.desiredWeight}kg</Typography>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Medical Information
-                                            </Typography>
-                                            <Typography><strong>Allergies:</strong> {
-                                                selectedForm.allergies?.length > 0 
-                                                    ? selectedForm.allergies.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                            <Typography><strong>Health Conditions:</strong> {
-                                                selectedForm.healthConditions?.length > 0 
-                                                    ? selectedForm.healthConditions.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                            <Typography><strong>Medications:</strong> {
-                                                selectedForm.medications?.length > 0 
-                                                    ? selectedForm.medications.join(', ') 
-                                                    : 'None'
-                                            }</Typography>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-
-                                <Grid item xs={12} md={6}>
-                                    <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" gutterBottom>
-                                                Lifestyle Information
-                                            </Typography>
-                                            <Typography><strong>Breakfast:</strong> {selectedForm.breakfast}</Typography>
-                                            <Typography><strong>Snack Time:</strong> {selectedForm.snackTime}</Typography>
-                                            <Typography><strong>Sugar Intake:</strong> {selectedForm.sugar} tsp/day</Typography>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
+                                            <Typography><strong>Operations:</strong> {selectedForm.operations || 'None'}</Typography>
+                                            <Typography><strong>Health Conditions:</strong> {selectedForm.healthConditions?.join(', ') || 'None'}</Typography>
+                                            <Typography><strong>Family History:</strong> {selectedForm.familyHistory || 'None'}</Typography>
                                             <Divider sx={{ my: 1 }} />
-                                            <Typography><strong>Current Smoker:</strong> {selectedForm.currentSmoker ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Obesity History:</strong> {selectedForm.obesityHistory ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Stays Hydrated:</strong> {selectedForm.hydrated ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Night Eater:</strong> {selectedForm.nightEater ? 'Yes' : 'No'}</Typography>
-                                            <Typography><strong>Coffee Drinker:</strong> {selectedForm.coffee ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>Medications:</strong> {selectedForm.takeMedication ? selectedForm.medications?.join(', ') : 'None'}</Typography>
+                                            <Typography><strong>Followed Advice:</strong> {selectedForm.followedDietAdvice ? 'Yes' : 'No'}</Typography>
                                         </CardContent>
                                     </Card>
+                                </Grid>
+
+                                {/* Blood Test */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Blood Test</Typography>
+                                            {selectedForm.bloodTest ? (
+                                                <Grid container spacing={1}>
+                                                    {Object.entries(selectedForm.bloodTest).map(([key, val]) => (
+                                                        <Grid item xs={6} key={key}>
+                                                            <Typography variant="body2"><strong>{key}:</strong> {val || '-'}</Typography>
+                                                        </Grid>
+                                                    ))}
+                                                </Grid>
+                                            ) : <Typography>No Data</Typography>}
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Diet History & Measurements */}
+                                <Grid item xs={12} md={6}>
+                                    <Card variant="outlined" sx={{ height: '100%' }}>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Diet History</Typography>
+                                            <Typography><strong>Current Weight:</strong> {selectedForm.currentWeight} kg</Typography>
+                                            <Typography><strong>Min/Max:</strong> {selectedForm.minWeight} / {selectedForm.maxWeight} kg</Typography>
+                                            <Typography><strong>Desired:</strong> {selectedForm.desiredWeight} kg</Typography>
+                                            <Divider sx={{ my: 1 }} />
+                                            <Typography><strong>Tried Diet:</strong> {selectedForm.triedDietBefore ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>Meds for Weight:</strong> {selectedForm.weightLossMedication ? 'Yes' : 'No'}</Typography>
+                                            <Typography><strong>History:</strong> {selectedForm.weightChangeSinceBirth}</Typography>
+                                            <Typography><strong>Always Overweight:</strong> {selectedForm.alwaysOverweight ? 'Yes' : 'No'}</Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Daily Intake & Goals */}
+                                <Grid item xs={12}>
+                                    <Card variant="outlined">
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom color="primary">Daily Intake & Goals</Typography>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Breakfast:</strong> {selectedForm.breakfast}</Typography>
+                                                    <Typography><strong>Lunch:</strong> {selectedForm.lunch}</Typography>
+                                                    <Typography><strong>Dinner:</strong> {selectedForm.dinner}</Typography>
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                    <Typography><strong>Dislikes:</strong> {selectedForm.dislikedFood}</Typography>
+                                                    <Typography><strong>Diet Given:</strong> {selectedForm.dietGiven}</Typography>
+                                                    <Typography><strong>Goals:</strong> {selectedForm.goals?.join(', ')}</Typography>
+                                                    <Divider sx={{ my: 1 }} />
+                                                    <Typography><strong>Night Eater:</strong> {selectedForm.nightEater ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Coffee:</strong> {selectedForm.coffee ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Sugar:</strong> {selectedForm.sugar} spoon(s)</Typography>
+                                                    <Typography><strong>Snack Time:</strong> {selectedForm.snackTime}</Typography>
+                                                </Grid>
+                                            </Grid>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+
+                                {/* Inbody Images Card */}
+                                {(selectedForm.bodyImage || (selectedForm.inbodyImages && selectedForm.inbodyImages.length > 0)) && (
+                                    <Grid item xs={12}>
+                                        <Card>
+                                            <CardContent>
+                                                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    📸 Inbody Images ({
+                                                        (selectedForm.inbodyImages?.length || 0) + (selectedForm.bodyImage ? 1 : 0)
+                                                    })
+                                                </Typography>
+                                                <Box sx={{ 
+                                                    display: 'grid', 
+                                                    gridTemplateColumns: { 
+                                                        xs: '1fr', 
+                                                        sm: 'repeat(2, 1fr)', 
+                                                        md: 'repeat(3, 1fr)' 
+                                                    }, 
+                                                    gap: 2,
+                                                    mt: 2
+                                                }}>
+                                                    {/* Legacy bodyImage */}
+                                                    {selectedForm.bodyImage && (
+                                                        <Paper
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 2,
+                                                                overflow: 'hidden',
+                                                                border: `2px solid ${theme.palette.divider}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.02)',
+                                                                    boxShadow: theme.shadows[8],
+                                                                    borderColor: theme.palette.primary.main,
+                                                                }
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(selectedForm.bodyImage);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={selectedForm.bodyImage}
+                                                                alt="Inbody Legacy"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 200,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                }}
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.parentElement.innerHTML = '<div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #999;">Image failed to load</div>';
+                                                                }}
+                                                            />
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    bottom: 0,
+                                                                    left: 0,
+                                                                    right: 0,
+                                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                                                                    color: 'white',
+                                                                    p: 1,
+                                                                    textAlign: 'center',
+                                                                }}
+                                                            >
+                                                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                                    Legacy Image
+                                                                </Typography>
+                                                            </Box>
+                                                        </Paper>
+                                                    )}
+
+                                                    {/* Array inbodyImages */}
+                                                    {selectedForm.inbodyImages && selectedForm.inbodyImages.map((imageUrl, index) => (
+                                                        <Paper
+                                                            key={index}
+                                                            sx={{
+                                                                position: 'relative',
+                                                                borderRadius: 2,
+                                                                overflow: 'hidden',
+                                                                border: `2px solid ${theme.palette.divider}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.3s ease',
+                                                                '&:hover': {
+                                                                    transform: 'scale(1.02)',
+                                                                    boxShadow: theme.shadows[8],
+                                                                    borderColor: theme.palette.primary.main,
+                                                                }
+                                                            }}
+                                                            onClick={() => {
+                                                                setSelectedImage(imageUrl);
+                                                                setImageDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={imageUrl}
+                                                                alt={`Inbody ${index + 1}`}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: 200,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                }}
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.parentElement.innerHTML = '<div style="height: 200px; display: flex; align-items: center; justify-content: center; color: #999;">Image failed to load</div>';
+                                                                }}
+                                                            />
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    bottom: 0,
+                                                                    left: 0,
+                                                                    right: 0,
+                                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                                                                    color: 'white',
+                                                                    p: 1,
+                                                                    textAlign: 'center',
+                                                                }}
+                                                            >
+                                                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                                                    Image {index + 1}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Paper>
+                                                    ))}
+                                                </Box>
+                                                <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary', textAlign: 'center' }}>
+                                                    Click on any image to view full size
+                                                </Typography>
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )}
+
+                                {/* Previous Forms History */}
+                                <Grid item xs={12}>
+                                    <Accordion defaultExpanded={selectedForm.type === 'follow-up'}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <CalendarTodayIcon color="action" />
+                                                Form History
+                                                {selectedForm.type === 'follow-up' && (
+                                                    <Chip label="Follow Up" size="small" color="secondary" sx={{ ml: 1 }} />
+                                                )}
+                                            </Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            {historyLoading ? (
+                                                <Box sx={{ width: '100%' }}>
+                                                    <LinearProgress />
+                                                </Box>
+                                            ) : historyForms.length === 0 ? (
+                                                <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                                    No other forms found for this user.
+                                                </Typography>
+                                            ) : (
+                                                <TableContainer component={Paper} variant="outlined">
+                                                    <Table size="small">
+                                                        <TableHead>
+                                                            <TableRow>
+                                                                <TableCell>Date</TableCell>
+                                                                <TableCell>Type</TableCell>
+                                                                <TableCell>Weight</TableCell>
+                                                                <TableCell>Status</TableCell>
+                                                                <TableCell align="right">Action</TableCell>
+                                                            </TableRow>
+                                                        </TableHead>
+                                                        <TableBody>
+                                                            {historyForms.map((historyForm) => (
+                                                                <TableRow key={historyForm._id} hover>
+                                                                    <TableCell>{new Date(historyForm.createdAt).toLocaleDateString()}</TableCell>
+                                                                    <TableCell>
+                                                                        <Chip 
+                                                                            label={historyForm.type === 'new-patient' ? 'New' : 'Follow Up'} 
+                                                                            size="small" 
+                                                                            color={historyForm.type === 'new-patient' ? 'primary' : 'secondary'}
+                                                                            variant="outlined"
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell>{historyForm.currentWeight} kg</TableCell>
+                                                                    <TableCell>
+                                                                        <Chip 
+                                                                            label={historyForm.reviewed ? 'Reviewed' : 'Pending'} 
+                                                                            size="small" 
+                                                                            color={historyForm.reviewed ? 'success' : 'warning'}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell align="right">
+                                                                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                                                                            <Button 
+                                                                                size="small" 
+                                                                                onClick={() => setSelectedForm(historyForm)}
+                                                                                startIcon={<DescriptionIcon />}
+                                                                            >
+                                                                                Form
+                                                                            </Button>
+                                                                            {historyForm.planSent && (
+                                                                                <Button
+                                                                                    size="small"
+                                                                                    color="secondary"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        viewPlan(historyForm);
+                                                                                    }}
+                                                                                    startIcon={<FeedbackIcon />}
+                                                                                >
+                                                                                    Plan
+                                                                                </Button>
+                                                                            )}
+                                                                        </Box>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                    </Table>
+                                                </TableContainer>
+                                            )}
+                                        </AccordionDetails>
+                                    </Accordion>
                                 </Grid>
 
                                 {/* Action Buttons Card */}
@@ -1173,15 +1464,15 @@ export default function AdminFormsPage() {
 
                                                     <Box sx={{ mb: { xs: 1.5, sm: 2 } }}>
                                                         <Typography variant="subtitle2" color="success.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
-                                                            Recommended Daily:
+                                                            Allowed:
                                                         </Typography>
                                                         <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap', mb: { xs: 0.5, sm: 1 } }}>
-                                                            {selectedPlan.recommendations?.eatDaily?.length > 0 ? (
-                                                                selectedPlan.recommendations.eatDaily.map((item, index) => (
+                                                            {selectedPlan.recommendations?.allowed?.length > 0 ? (
+                                                                selectedPlan.recommendations.allowed.map((item, index) => (
                                                                     <Chip 
                                                                         key={index} 
                                                                         label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
-                                                                        onClick={() => openChipDetailDialog(item, 'Recommended Daily Item', 'Eat Daily')}
+                                                                        onClick={() => openChipDetailDialog(item, 'Allowed Item', 'Allowed')}
                                                                         color="success" 
                                                                         size="small"
                                                                         sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
@@ -1214,41 +1505,65 @@ export default function AdminFormsPage() {
                                                             )}
                                                         </Box>
                                                     </Box>
+                                                    
+                                                    {selectedPlan.recommendations?.notes && (
+                                                        <Box sx={{ mt: 2 }}>
+                                                            <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                                Notes:
+                                                            </Typography>
+                                                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                                                {selectedPlan.recommendations.notes}
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
                                                 </Grid>
 
-                                                {/* Meal-specific Recommendations */}
+                                                {/* Weekly Meal Plan Preview */}
                                                 <Grid item xs={12} md={6}>
-                                                    {['breakfast', 'lunch', 'dinner'].map((mealType) => (
-                                                        selectedPlan.recommendations?.[mealType]?.some(cat => cat.items?.length > 0) && (
-                                                            <Box key={mealType} sx={{ mb: 2 }}>
-                                                                <Typography variant="subtitle2" color="primary.main" gutterBottom sx={{ textTransform: 'capitalize' }}>
-                                                                    {mealType} Recommendations:
-                                                                </Typography>
-                                                                {selectedPlan.recommendations[mealType].map((category, catIndex) => (
-                                                                    category.items?.length > 0 && (
-                                                                        <Box key={catIndex} sx={{ mb: 1 }}>
-                                                                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                                                                {category.category}:
+                                                    {selectedPlan.weeklyPlan && (
+                                                        <Box>
+                                                            <Typography variant="subtitle2" color="primary.main" gutterBottom>
+                                                                Weekly Meal Plan Preview:
+                                                            </Typography>
+                                                            {['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'].slice(0, 3).map((day) => (
+                                                                selectedPlan.weeklyPlan[day] && (
+                                                                    selectedPlan.weeklyPlan[day].breakfast || 
+                                                                    selectedPlan.weeklyPlan[day].lunch || 
+                                                                    selectedPlan.weeklyPlan[day].dinner || 
+                                                                    selectedPlan.weeklyPlan[day].snack
+                                                                ) && (
+                                                                    <Box key={day} sx={{ mb: 1.5, p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                                                        <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
+                                                                            {day}:
+                                                                        </Typography>
+                                                                        {selectedPlan.weeklyPlan[day]?.breakfast && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🌅 {selectedPlan.weeklyPlan[day].breakfast.substring(0, 50)}{selectedPlan.weeklyPlan[day].breakfast.length > 50 ? '...' : ''}
                                                                             </Typography>
-                                                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                                                                                {category.items.map((item, itemIndex) => (
-                                                                                    <Chip 
-                                                                                        key={itemIndex} 
-                                                                                        label={item.length > 30 ? `${item.substring(0, 30)}...` : item}
-                                                                                        onClick={() => openChipDetailDialog(item, `${category.category} Item`, `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} - ${category.category}`)}
-                                                                                        size="small"
-                                                                                        variant="outlined"
-                                                                                        color="primary"
-                                                                                        sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
-                                                                                    />
-                                                                                ))}
-                                                                            </Box>
-                                                                        </Box>
-                                                                    )
-                                                                ))}
-                                                            </Box>
-                                                        )
-                                                    ))}
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.lunch && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                ☀️ {selectedPlan.weeklyPlan[day].lunch.substring(0, 50)}{selectedPlan.weeklyPlan[day].lunch.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.dinner && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🌙 {selectedPlan.weeklyPlan[day].dinner.substring(0, 50)}{selectedPlan.weeklyPlan[day].dinner.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                        {selectedPlan.weeklyPlan[day]?.snack && (
+                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
+                                                                                🍪 {selectedPlan.weeklyPlan[day].snack.substring(0, 50)}{selectedPlan.weeklyPlan[day].snack.length > 50 ? '...' : ''}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Box>
+                                                                )
+                                                            ))}
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                (Showing first 3 days - view full plan for complete details)
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
                                                 </Grid>
                                             </Grid>
                                         </CardContent>

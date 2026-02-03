@@ -21,9 +21,10 @@ export async function getFormCredits() {
 }
 
 /**
- * Create a payment intention for purchasing form credits
+ * Create a payment invoice for purchasing form credits
+ * Returns checkout URL for redirection to Fawaterk
  */
-export async function createPaymentIntention() {
+export async function createPaymentInvoice() {
     const token = localStorage.getItem('token');
     if (!token) {
         throw new Error('Not authenticated');
@@ -86,33 +87,13 @@ export async function getPaymentHistory(page = 1, limit = 10) {
 }
 
 /**
- * Load Paymob Pixel SDK scripts
+ * Redirect to Fawaterk checkout page
+ * @param {string} checkoutUrl - The Fawaterk checkout URL
  */
-export function loadPaymobPixelSDK() {
-    return new Promise((resolve, reject) => {
-        // Check if already loaded
-        if (document.querySelector('script[src*="paymob-pixel"]')) {
-            resolve();
-            return;
-        }
-
-        // Load CSS
-        const styleLink = document.createElement('link');
-        styleLink.rel = 'stylesheet';
-        styleLink.href = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/styles.css';
-        document.head.appendChild(styleLink);
-
-        const mainCss = document.createElement('link');
-        mainCss.rel = 'stylesheet';
-        mainCss.href = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.css';
-        document.head.appendChild(mainCss);
-
-        // Load JS
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/paymob-pixel@latest/main.js';
-        script.type = 'module';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.body.appendChild(script);
-    });
+export function redirectToCheckout(checkoutUrl) {
+    if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+    } else {
+        throw new Error('No checkout URL provided');
+    }
 }

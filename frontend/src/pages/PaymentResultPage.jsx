@@ -63,7 +63,7 @@ export default function PaymentResultPage() {
     const isSuccess = window.location.pathname.includes('/success');
     const isPending = window.location.pathname.includes('/pending');
     const isFailed = window.location.pathname.includes('/failed');
-    const paymentId = searchParams.get('payment_id');
+    const paymentId = searchParams.get('payment_id') || searchParams.get('invoice_id');
     const errorParam = searchParams.get('error');
 
     const confettiColors = [
@@ -104,7 +104,12 @@ export default function PaymentResultPage() {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
+                console.warn('No token found, user may not be logged in');
                 setLoading(false);
+                // For success page without token, show success anyway
+                if (isSuccess && paymentId) {
+                    setShowConfetti(true);
+                }
                 return;
             }
 
@@ -118,6 +123,8 @@ export default function PaymentResultPage() {
                 if (data.status === 'paid') {
                     setShowConfetti(true);
                 }
+            } else {
+                console.error('Failed to fetch payment status:', response.status);
             }
         } catch (err) {
             console.error('Error fetching payment status:', err);

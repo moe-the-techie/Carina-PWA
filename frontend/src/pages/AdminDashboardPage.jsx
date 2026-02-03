@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -17,7 +17,9 @@ import {
     Skeleton,
     Avatar,
     useMediaQuery,
-    alpha
+    alpha,
+    LinearProgress,
+    CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,7 +28,10 @@ import PeopleIcon from '@mui/icons-material/People';
 import DescriptionIcon from '@mui/icons-material/Description';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
+import EditIcon from '@mui/icons-material/Edit';
 import PageFade from '../components/PageFade';
+import { useCachedData } from '../hooks/useCachedData';
 import { 
     glassCard, 
     containerVariants, 
@@ -38,47 +43,52 @@ import {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
+// Helper to calculate plan progress
+const calculatePlanProgress = (plan) => {
+    if (!plan?.activatedAt || !plan?.duration) return 0;
+    const activatedDate = new Date(plan.activatedAt);
+    const now = new Date();
+    const durationInDays = plan.duration * 7;
+    const daysPassed = Math.floor((now - activatedDate) / (1000 * 60 * 60 * 24));
+    return Math.min(Math.round((daysPassed / durationInDays) * 100), 100);
+};
+
 export default function AdminDashboardPage() {
     const theme = useTheme();
     const navigate = useNavigate();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [dashboardData, setDashboardData] = useState({
-        stats: {},
-        recentUsers: [],
-        recentForms: []
-    });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
 
     // Use shared glass card style
     const glassCardStyle = glassCard(theme);
 
-    useEffect(() => {
-        fetchDashboardData();
+    // Fetch dashboard data with caching - stale-while-revalidate
+    const fetchDashboardData = useCallback(async () => {
+        const response = await fetch(`${apiBaseUrl}/api/admin/dashboard`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch dashboard data');
+        }
+
+        return response.json();
     }, []);
 
-    const fetchDashboardData = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/admin/dashboard`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch dashboard data');
-            }
-
-            const data = await response.json();
-            setDashboardData(data);
-        } catch (error) {
-            console.error('Error fetching dashboard data:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
+    const {
+        data: dashboardData,
+        isLoading: loading,
+        isRefreshing,
+        error,
+    } = useCachedData(
+        'admin_dashboard',
+        fetchDashboardData,
+        {
+            cacheTTL: 2 * 60 * 1000, // 2 minutes for admin dashboard
+            initialData: { stats: {}, recentUsers: [], recentForms: [] },
         }
-    };
+    );
 
     const handleMessageUser = (userId) => {
         if (!userId || userId === 'null' || userId === 'undefined') {
@@ -104,7 +114,7 @@ export default function AdminDashboardPage() {
                     </Box>
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         {[1, 2, 3, 4].map((i) => (
-                            <Grid item xs={6} md={3} key={i}>
+                            <Grid size={{ xs: 6, md: 3 }} key={i}>
                                 <Paper sx={{ ...glassCardStyle, p: 3 }}>
                                     <Skeleton variant="circular" width={48} height={48} sx={{ mb: 2 }} />
                                     <Skeleton variant="text" width="60%" height={32} />
@@ -114,13 +124,13 @@ export default function AdminDashboardPage() {
                         ))}
                     </Grid>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} lg={6}>
+                        <Grid size={{ xs: 12, lg: 6 }}>
                             <Paper sx={{ ...glassCardStyle, p: 3, height: 400 }}>
                                 <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
                                 <Skeleton variant="rectangular" width="100%" height={300} />
                             </Paper>
                         </Grid>
-                        <Grid item xs={12} lg={6}>
+                        <Grid size={{ xs: 12, lg: 6 }}>
                             <Paper sx={{ ...glassCardStyle, p: 3, height: 400 }}>
                                 <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
                                 <Skeleton variant="rectangular" width="100%" height={300} />
@@ -138,28 +148,32 @@ export default function AdminDashboardPage() {
             value: dashboardData.totalUsers || 0,
             icon: PeopleIcon,
             color: theme.palette.primary.main,
-            gradient: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`
+            gradient: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            link: '/admin/users'
         },
         {
             label: 'Total Forms',
             value: dashboardData.totalForms || 0,
             icon: DescriptionIcon,
             color: theme.palette.secondary.main,
-            gradient: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`
+            gradient: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.secondary.dark})`,
+            link: '/admin/forms'
         },
         {
             label: 'Pending Forms',
             value: dashboardData.pendingForms || 0,
             icon: PendingActionsIcon,
             color: accentColors.amber.main,
-            gradient: `linear-gradient(135deg, ${accentColors.amber.main}, ${accentColors.amber.dark})`
+            gradient: `linear-gradient(135deg, ${accentColors.amber.main}, ${accentColors.amber.dark})`,
+            link: '/admin/forms'
         },
         {
             label: 'Active Plans',
             value: dashboardData.activePlans || 0,
             icon: AssignmentTurnedInIcon,
             color: accentColors.emerald.main,
-            gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`
+            gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`,
+            link: '/admin/active-plans'
         }
     ];
 
@@ -178,15 +192,20 @@ export default function AdminDashboardPage() {
                     transition={{ duration: 0.5 }}
                 >
                     <Box sx={{ mb: 4 }}>
-                        <Typography 
-                            variant="h4" 
-                            sx={{ 
-                                ...gradientText(theme),
-                                mb: 0.5
-                            }}
-                        >
-                            Admin Dashboard
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography 
+                                variant="h4" 
+                                sx={{ 
+                                    ...gradientText(theme),
+                                    mb: 0.5
+                                }}
+                            >
+                                Admin Dashboard
+                            </Typography>
+                            {isRefreshing && (
+                                <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                            )}
+                        </Box>
                         <Typography variant="body2" color="text.secondary">
                             Overview of platform activity and performance
                         </Typography>
@@ -201,14 +220,17 @@ export default function AdminDashboardPage() {
                 >
                     <Grid container spacing={2} sx={{ mb: 4 }}>
                         {stats.map((stat, index) => (
-                            <Grid item xs={6} md={3} key={index}>
+                            <Grid size={{ xs: 6, md: 3 }} key={index}>
                                 <motion.div variants={itemVariants}>
                                     <Paper 
+                                        onClick={() => stat.link && navigate(stat.link)}
                                         sx={{ 
                                             ...glassCardStyle, 
                                             p: { xs: 2, sm: 3 },
                                             position: 'relative',
                                             overflow: 'hidden',
+                                            cursor: stat.link ? 'pointer' : 'default',
+                                            transition: 'all 0.3s ease',
                                             '&:hover': {
                                                 transform: 'translateY(-4px)',
                                                 boxShadow: theme.palette.mode === 'dark'
@@ -289,7 +311,7 @@ export default function AdminDashboardPage() {
                 >
                     <Grid container spacing={2} alignItems="stretch" sx={{ flexGrow: 1 }}>
                         {/* Recent Users */}
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <motion.div variants={itemVariants} style={{ height: '100%' }}>
                                 <Paper sx={{ ...glassCardStyle, p: 0, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                                     <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -354,7 +376,7 @@ export default function AdminDashboardPage() {
                         </Grid>
 
                         {/* Recent Forms */}
-                        <Grid item xs={12} md={6}>
+                        <Grid size={{ xs: 12, md: 6 }}>
                             <motion.div variants={itemVariants} style={{ height: '100%' }}>
                                 <Paper sx={{ ...glassCardStyle, p: 0, height: '100%', minHeight: 400, display: 'flex', flexDirection: 'column' }}>
                                     <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -419,6 +441,97 @@ export default function AdminDashboardPage() {
                             </motion.div>
                         </Grid>
                     </Grid>
+
+                    {/* Recent Active Plans */}
+                    {dashboardData.recentActivePlans && dashboardData.recentActivePlans.length > 0 && (
+                        <motion.div variants={itemVariants}>
+                            <Paper sx={{ ...glassCardStyle, p: 0, mt: 2, display: 'flex', flexDirection: 'column' }}>
+                                <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}`, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <PlayCircleFilledIcon sx={{ color: accentColors.emerald.main }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        Recently Activated Plans
+                                    </Typography>
+                                </Box>
+                                <TableContainer>
+                                    <Table>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>User</TableCell>
+                                                <TableCell>Plan</TableCell>
+                                                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Progress</TableCell>
+                                                <TableCell align="right">Activated</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {dashboardData.recentActivePlans.map((plan) => {
+                                                const progress = calculatePlanProgress(plan);
+                                                return (
+                                                    <TableRow key={plan._id} hover>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                                <Avatar 
+                                                                    sx={{ 
+                                                                        background: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`,
+                                                                        fontWeight: 600,
+                                                                        width: 36,
+                                                                        height: 36
+                                                                    }}
+                                                                >
+                                                                    {plan.user?.name?.charAt(0).toUpperCase() || '?'}
+                                                                </Avatar>
+                                                                <Box>
+                                                                    <Typography variant="subtitle2">
+                                                                        {plan.user?.name || 'Unknown'}
+                                                                    </Typography>
+                                                                    <Typography variant="caption" color="text.secondary">
+                                                                        {plan.user?.email || ''}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Typography variant="body2" fontWeight={500}>
+                                                                {plan.title || 'Nutrition Plan'}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {plan.duration} week{plan.duration > 1 ? 's' : ''}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, minWidth: 120 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                <LinearProgress 
+                                                                    variant="determinate" 
+                                                                    value={progress}
+                                                                    sx={{
+                                                                        flex: 1,
+                                                                        height: 6,
+                                                                        borderRadius: 3,
+                                                                        backgroundColor: alpha(accentColors.emerald.main, 0.2),
+                                                                        '& .MuiLinearProgress-bar': {
+                                                                            borderRadius: 3,
+                                                                            backgroundColor: accentColors.emerald.main
+                                                                        }
+                                                                    }}
+                                                                />
+                                                                <Typography variant="caption" sx={{ color: accentColors.emerald.main, fontWeight: 600, minWidth: 35 }}>
+                                                                    {progress}%
+                                                                </Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell align="right">
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {plan.activatedAt ? new Date(plan.activatedAt).toLocaleDateString() : '-'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Paper>
+                        </motion.div>
+                    )}
                 </Box>
             </Box>
         </PageFade>

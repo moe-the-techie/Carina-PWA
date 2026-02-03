@@ -10,6 +10,7 @@ import ViewPlanPage from './pages/ViewPlanPage';
 import FormSuccessPage from './pages/FormSuccessPage';
 import PaymentPage from './pages/PaymentPage';
 import PaymentResultPage from './pages/PaymentResultPage';
+import ActivePlansPage from './pages/ActivePlansPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminLayout from './components/AdminLayout';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -20,12 +21,15 @@ import AdminPlanBuilderPage from './pages/AdminPlanBuilderPage';
 import AdminChatsPage from './pages/AdminChatsPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
+import AdminPaymentsPage from './pages/AdminPaymentsPage';
+import AdminActivePlansPage from './pages/AdminActivePlansPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import OfflineIndicator from './components/OfflineIndicator';
 import { disconnectAbly } from './services/ablyService';
+import { cleanupPushNotifications } from './services/ablyPushService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -92,6 +96,7 @@ function App() {
     setUserId(null);
     setUser(null);
     disconnectAbly();
+    cleanupPushNotifications().catch(console.error);
    }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
@@ -107,6 +112,7 @@ function App() {
                 <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <SignUpPage onLogin={handleLogin} />} />
                 <Route path="/forgot-password" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <ForgotPasswordPage />} />
                 <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/active-plans" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><ActivePlansPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogout={handleLogout} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/announcements" element={isLoggedIn && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AuthenticatedLayout><AnnouncementsPage user={user} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
@@ -114,9 +120,9 @@ function App() {
                 <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
                 <Route path="/view-plan/:id" element={isLoggedIn ? <ViewPlanPage /> : <Navigate to="/" replace/>} />
                 <Route path="/payment" element={isLoggedIn ? <PaymentPage /> : <Navigate to="/" replace/>} />
-                <Route path="/payment/success" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
-                <Route path="/payment/failed" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
-                <Route path="/payment/pending" element={isLoggedIn ? <PaymentResultPage /> : <Navigate to="/" replace/>} />
+                <Route path="/payment/success" element={<PaymentResultPage />} />
+                <Route path="/payment/failed" element={<PaymentResultPage />} />
+                <Route path="/payment/pending" element={<PaymentResultPage />} />
                 
                 {/* Admin*/}
                 <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />
@@ -127,6 +133,8 @@ function App() {
                 <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPaymentsPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminActivePlansPage /></AdminLayout> : <Navigate to="/" replace/>} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { 
     Box, 
@@ -9,6 +9,7 @@ import {
     useTheme, 
     Grid, 
     Chip, 
+    Avatar, 
     Accordion, 
     AccordionSummary, 
     AccordionDetails, 
@@ -28,11 +29,15 @@ import {
     alpha,
     Tooltip,
     useMediaQuery,
-    Slide
+    Slide,
+    Tabs,
+    Tab,
+    CircularProgress
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackIos';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import DescriptionIcon from '@mui/icons-material/Description';
 import FlagIcon from '@mui/icons-material/Flag';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -40,12 +45,19 @@ import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import WbSunnyIcon from '@mui/icons-material/WbSunny';
+import WbTwilightIcon from '@mui/icons-material/WbTwilight';
+import NightsStayIcon from '@mui/icons-material/NightsStay';
+import CookieIcon from '@mui/icons-material/Cookie';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import ImageViewerDialog from '../components/ImageViewerDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
-import { glassCard, glassDialog } from '../styles/glassmorphism';
+import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -59,11 +71,14 @@ export default function ViewPlanPage () {
     const navigate = useNavigate();
     const { id } = useParams();
     const form = location.state?.form;
+    const formId = form?._id || id;
     
-    const [plan, setPlan] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    
+    // Form details state
+    const [formData, setFormData] = useState(location.state?.form || null);
+    const [formDetailsOpen, setFormDetailsOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
     // Chip detail dialog state
     const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
     const [selectedChipContent, setSelectedChipContent] = useState('');
@@ -79,48 +94,82 @@ export default function ViewPlanPage () {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-    useEffect(() => {
-        if (form) {
-            fetchPlan(form._id);
-        } else if (id) {
-            // If no form in state, fetch by form ID from URL
-            fetchPlan(id);
-        } else {
-            setError('No form data provided');
-            setLoading(false);
-        }
-    }, [form, id]);
+    // Weekly plan state
+    const [selectedDayTab, setSelectedDayTab] = useState(0);
+    const daysOfWeek = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const dayLabels = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
-    const fetchPlan = async (formId) => {
+    // Fetch plan with caching - stale-while-revalidate
+    const fetchPlanData = useCallback(async () => {
+        if (!formId) {
+            throw new Error('No form data provided');
+        }
+
+        const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}/plan`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                return { plan: null, noPlan: true };
+            }
+            throw new Error('Failed to fetch plan');
+        }
+
+        const data = await response.json();
+        return { plan: data.plan, noPlan: false };
+    }, [formId]);
+
+    const {
+        data: planData,
+        isLoading: loading,
+        isRefreshing,
+        error: planError,
+        setData: setPlanData,
+    } = useCachedData(
+        `view_plan_${formId}`,
+        fetchPlanData,
+        {
+            cacheTTL: 10 * 60 * 1000, // 10 minutes
+            enabled: !!formId,
+            initialData: null,
+        }
+    );
+
+    const plan = planData?.plan || null;
+    const noPlan = planData?.noPlan || false;
+    const error = planError?.message || (noPlan ? 'No plan available yet. Your form is being reviewed by our nutrition team.' : '');
+
+    // Fetch form details if not in state
+    useEffect(() => {
+        if (!formData && formId) {
+            fetchForm(formId);
+        }
+    }, [formId, formData]);
+
+    // Initialize feedback state when plan loads
+    useEffect(() => {
+        if (plan?.feedback) {
+            setFeedbackRating(plan.feedback.rating || 0);
+            setFeedbackComment(plan.feedback.comment || '');
+        }
+    }, [plan]);
+
+    const fetchForm = async (fId) => {
         try {
-            setLoading(true);
-            const response = await fetch(`${apiBaseUrl}/api/forms/my/${formId}/plan`, {
+            const response = await fetch(`${apiBaseUrl}/api/forms/my/${fId}`, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setError('No plan available yet. Your form is being reviewed by our nutrition team.');
-                    return;
-                }
-                throw new Error('Failed to fetch plan');
+            if (response.ok) {
+                const data = await response.json();
+                setFormData(data.form);
             }
-
-            const data = await response.json();
-            setPlan(data.plan);
-            
-            // Initialize feedback state if feedback exists
-            if (data.plan.feedback) {
-                setFeedbackRating(data.plan.feedback.rating || 0);
-                setFeedbackComment(data.plan.feedback.comment || '');
-            }
-        } catch (error) {
-            console.error('Error fetching plan:', error);
-            setError('Error loading your plan. Please try again later.');
-        } finally {
-            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching form details:', err);
         }
     };
 
@@ -418,6 +467,39 @@ export default function ViewPlanPage () {
                                     Your personalized dietary guidance
                                 </Typography>
                             </Box>
+                            
+                            {/* View Form Button */}
+                            {formData && (
+                                <>
+                                    <Button
+                                        startIcon={<DescriptionIcon />}
+                                        onClick={() => setFormDetailsOpen(true)}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            display: { xs: 'none', sm: 'flex' },
+                                            ...glassButton(theme, 'primary'),
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        View Submission
+                                    </Button>
+                                    <IconButton
+                                        onClick={() => setFormDetailsOpen(true)}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            display: { xs: 'flex', sm: 'none' },
+                                            backgroundColor: theme.palette.mode === 'dark' 
+                                                ? 'rgba(255,255,255,0.05)' 
+                                                : 'rgba(0,0,0,0.04)',
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        <DescriptionIcon />
+                                    </IconButton>
+                                </>
+                            )}
                         </Box>
                     </motion.div>
 
@@ -773,7 +855,7 @@ export default function ViewPlanPage () {
                                             {[
                                                 { label: 'Avoid', items: plan.recommendations.avoid, color: '#EF4444', bgColor: alpha('#EF4444', 0.08), icon: '🚫' },
                                                 { label: 'Use Carefully', items: plan.recommendations.useCarefully, color: '#F59E0B', bgColor: alpha('#F59E0B', 0.08), icon: '⚠️' },
-                                                { label: 'Eat Daily', items: plan.recommendations.eatDaily, color: '#10B981', bgColor: alpha('#10B981', 0.08), icon: '✅' },
+                                                { label: 'Allowed', items: plan.recommendations.allowed, color: '#10B981', bgColor: alpha('#10B981', 0.08), icon: '✅' },
                                                 { label: 'Exercise', items: plan.recommendations.exercise, color: '#3B82F6', bgColor: alpha('#3B82F6', 0.08), icon: '💪' },
                                             ].map((category, idx) => (
                                                 <Box 
@@ -844,10 +926,8 @@ export default function ViewPlanPage () {
                                 </motion.div>
                             )}
 
-                            {/* Meal Guidelines */}
-                            {(plan.recommendations?.breakfast?.length > 0 || 
-                              plan.recommendations?.lunch?.length > 0 || 
-                              plan.recommendations?.dinner?.length > 0) && (
+                            {/* Weekly Meal Plan */}
+                            {plan.weeklyPlan && (
                                 <motion.div variants={itemVariants}>
                                     <Paper sx={{ ...glassCardStyle, p: 3, mb: 3 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
@@ -857,105 +937,162 @@ export default function ViewPlanPage () {
                                                 borderRadius: 2,
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'space-evenly',
+                                                justifyContent: 'center',
                                                 background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
                                                 boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                                             }}>
-                                                <RestaurantIcon sx={{ color: 'white', fontSize: 20 }} />
+                                                <CalendarTodayIcon sx={{ color: 'white', fontSize: 20 }} />
                                             </Box>
                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                                                Meal Guidelines
+                                                Weekly Meal Plan
                                             </Typography>
                                         </Box>
                                         
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                            {[
-                                                { label: 'Breakfast', data: plan.recommendations.breakfast, color: '#F59E0B', icon: '☀️' },
-                                                { label: 'Lunch', data: plan.recommendations.lunch, color: '#10B981', icon: '🌤️' },
-                                                { label: 'Dinner', data: plan.recommendations.dinner, color: '#6366F1', icon: '🌙' },
-                                            ].map((meal, idx) => (
-                                                <Box key={idx} sx={{
-                                                    p: 3,
-                                                    borderRadius: 3,
-                                                    backgroundColor: theme.palette.mode === 'dark' 
-                                                        ? alpha(meal.color, 0.08)
-                                                        : alpha(meal.color, 0.08),
-                                                    border: `2px solid ${alpha(meal.color, 0.3)}`,
-                                                    transition: 'transform 0.2s, box-shadow 0.2s',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow: `0 8px 24px ${alpha(meal.color, 0.2)}`,
-                                                    }
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
-                                                        <Typography variant="h5" sx={{ fontSize: '2rem' }}>
-                                                            {meal.icon}
-                                                        </Typography>
-                                                        <Typography 
-                                                            variant="h5" 
-                                                            sx={{ 
-                                                                color: meal.color, 
-                                                                fontWeight: 700,
-                                                                fontSize: '1.5rem'
-                                                            }}
-                                                        >
-                                                            {meal.label}
-                                                        </Typography>
-                                                    </Box>
-                                                    
-                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                                                        {meal.data?.map((category, catIdx) => (
-                                                            category.items && category.items.length > 0 && (
-                                                                <Box key={catIdx}>
-                                                                    <Typography 
-                                                                        variant="subtitle1" 
-                                                                        sx={{ 
-                                                                            fontWeight: 600, 
-                                                                            mb: 1.5,
-                                                                            color: meal.color,
-                                                                            fontSize: '1rem'
-                                                                        }}
-                                                                    >
-                                                                        {category.category}
-                                                                    </Typography>
-                                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                                        {category.items.map((item, itemIdx) => (
-                                                                            <Chip 
-                                                                                key={itemIdx} 
-                                                                                label={item} 
-                                                                                size="medium"
-                                                                                onClick={() => openChipDetailDialog(item, `${category.category} Item`, meal.label)}
-                                                                                sx={{ 
-                                                                                    cursor: 'pointer',
-                                                                                    fontSize: '0.9rem',
-                                                                                    py: 2.5,
-                                                                                    px: 1.5,
-                                                                                    backgroundColor: theme.palette.mode === 'dark' ? alpha(meal.color, 0.15) : 'white',
-                                                                                    color: theme.palette.mode === 'dark' ? 'white' : meal.color,
-                                                                                    border: `1px solid ${alpha(meal.color, 0.3)}`,
-                                                                                    fontWeight: 500,
-                                                                                    '&:hover': { 
-                                                                                        backgroundColor: alpha(meal.color, 0.2),
-                                                                                        transform: 'scale(1.05)',
-                                                                                        boxShadow: `0 4px 12px ${alpha(meal.color, 0.3)}`,
-                                                                                    },
-                                                                                    transition: 'all 0.2s'
-                                                                                }}
-                                                                            />
-                                                                        ))}
-                                                                    </Box>
-                                                                </Box>
-                                                            )
-                                                        ))}
-                                                        {(!meal.data || meal.data.every(c => !c.items || c.items.length === 0)) && (
-                                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', textAlign: 'center', py: 2 }}>
-                                                                No specific guidelines
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                </Box>
+                                        {/* Day Tabs */}
+                                        <Tabs
+                                            value={selectedDayTab}
+                                            onChange={(e, newValue) => setSelectedDayTab(newValue)}
+                                            variant="scrollable"
+                                            scrollButtons="auto"
+                                            sx={{
+                                                mb: 3,
+                                                borderBottom: 1,
+                                                borderColor: 'divider',
+                                                '& .MuiTab-root': {
+                                                    minWidth: 'auto',
+                                                    px: 2,
+                                                    py: 1.5,
+                                                    fontWeight: 600,
+                                                    textTransform: 'none',
+                                                },
+                                                '& .Mui-selected': {
+                                                    color: '#3B82F6',
+                                                }
+                                            }}
+                                        >
+                                            {daysOfWeek.map((day, index) => (
+                                                <Tab 
+                                                    key={day} 
+                                                    label={dayLabels[index]} 
+                                                    sx={{
+                                                        fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                                                    }}
+                                                />
                                             ))}
-                                        </Box>
+                                        </Tabs>
+
+                                        {/* Day Content */}
+                                        {daysOfWeek.map((day, dayIndex) => (
+                                            <Box
+                                                key={day}
+                                                role="tabpanel"
+                                                hidden={selectedDayTab !== dayIndex}
+                                            >
+                                                {selectedDayTab === dayIndex && (
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                                                        {/* Breakfast */}
+                                                        <Box sx={{
+                                                            p: 2.5,
+                                                            borderRadius: 3,
+                                                            backgroundColor: alpha('#F59E0B', 0.08),
+                                                            border: `2px solid ${alpha('#F59E0B', 0.3)}`,
+                                                        }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                <WbSunnyIcon sx={{ color: '#F59E0B', fontSize: 24 }} />
+                                                                <Typography variant="h6" sx={{ color: '#F59E0B', fontWeight: 600 }}>
+                                                                    Breakfast
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography 
+                                                                variant="body1" 
+                                                                sx={{ 
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    lineHeight: 1.7,
+                                                                    color: theme.palette.text.primary
+                                                                }}
+                                                            >
+                                                                {plan.weeklyPlan[day]?.breakfast || 'Not specified'}
+                                                            </Typography>
+                                                        </Box>
+
+                                                        {/* Lunch */}
+                                                        <Box sx={{
+                                                            p: 2.5,
+                                                            borderRadius: 3,
+                                                            backgroundColor: alpha('#10B981', 0.08),
+                                                            border: `2px solid ${alpha('#10B981', 0.3)}`,
+                                                        }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                <WbTwilightIcon sx={{ color: '#10B981', fontSize: 24 }} />
+                                                                <Typography variant="h6" sx={{ color: '#10B981', fontWeight: 600 }}>
+                                                                    Lunch
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography 
+                                                                variant="body1" 
+                                                                sx={{ 
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    lineHeight: 1.7,
+                                                                    color: theme.palette.text.primary
+                                                                }}
+                                                            >
+                                                                {plan.weeklyPlan[day]?.lunch || 'Not specified'}
+                                                            </Typography>
+                                                        </Box>
+
+                                                        {/* Dinner */}
+                                                        <Box sx={{
+                                                            p: 2.5,
+                                                            borderRadius: 3,
+                                                            backgroundColor: alpha('#6366F1', 0.08),
+                                                            border: `2px solid ${alpha('#6366F1', 0.3)}`,
+                                                        }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                <NightsStayIcon sx={{ color: '#6366F1', fontSize: 24 }} />
+                                                                <Typography variant="h6" sx={{ color: '#6366F1', fontWeight: 600 }}>
+                                                                    Dinner
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography 
+                                                                variant="body1" 
+                                                                sx={{ 
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    lineHeight: 1.7,
+                                                                    color: theme.palette.text.primary
+                                                                }}
+                                                            >
+                                                                {plan.weeklyPlan[day]?.dinner || 'Not specified'}
+                                                            </Typography>
+                                                        </Box>
+
+                                                        {/* Snack */}
+                                                        <Box sx={{
+                                                            p: 2.5,
+                                                            borderRadius: 3,
+                                                            backgroundColor: alpha('#EC4899', 0.08),
+                                                            border: `2px solid ${alpha('#EC4899', 0.3)}`,
+                                                        }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                <CookieIcon sx={{ color: '#EC4899', fontSize: 24 }} />
+                                                                <Typography variant="h6" sx={{ color: '#EC4899', fontWeight: 600 }}>
+                                                                    Snack
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography 
+                                                                variant="body1" 
+                                                                sx={{ 
+                                                                    whiteSpace: 'pre-wrap',
+                                                                    lineHeight: 1.7,
+                                                                    color: theme.palette.text.primary
+                                                                }}
+                                                            >
+                                                                {plan.weeklyPlan[day]?.snack || 'Not specified'}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                )}
+                                            </Box>
+                                        ))}
                                     </Paper>
                                 </motion.div>
                             )}
@@ -1157,6 +1294,251 @@ export default function ViewPlanPage () {
                     {snackbarMessage}
                 </Alert>
             </Snackbar>
+
+             {/* Form Details Dialog */}
+             <Dialog 
+                open={formDetailsOpen} 
+                onClose={() => setFormDetailsOpen(false)}
+                maxWidth="md"
+                fullWidth
+                TransitionComponent={Transition}
+                sx={{
+                    '& .MuiDialog-paper': {
+                        borderRadius: 3,
+                        background: theme.palette.mode === 'dark'
+                            ? 'rgba(26, 26, 46, 0.95)'
+                            : 'rgba(255, 255, 255, 0.98)',
+                        backdropFilter: 'blur(20px)',
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}10)`,
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    py: 2.5,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        📋 Submission Details
+                    </Typography>
+                    <IconButton onClick={() => setFormDetailsOpen(false)} size="small">
+                            <ExpandMoreIcon sx={{ transform: 'rotate(180deg)' }} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ mt: 2 }}>
+                    {formData && (
+                            <Grid container spacing={3}>
+                            {/* Personal Information */}
+                            <Grid item xs={12}>
+                                <Card variant="outlined">
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Personal Information</Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Name:</strong> {formData.user?.name || formData.name || 'N/A'}</Typography>
+                                                <Typography><strong>Age:</strong> {formData.age}</Typography>
+                                                <Typography><strong>Gender:</strong> {formData.gender}</Typography>
+                                                <Typography><strong>Phone:</strong> {formData.phoneNumber || 'N/A'}</Typography>
+                                                <Typography><strong>Profession:</strong> {formData.profession || 'N/A'}</Typography>
+                                                <Typography><strong>Height:</strong> {formData.height} cm</Typography>
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Is Mother:</strong> {formData.isMother ? 'Yes' : 'No'}</Typography>
+                                                {formData.isMother && <Typography><strong>Cycle:</strong> {formData.menstrualCycle || 'N/A'}</Typography>}
+                                                <Typography><strong>Bowel Movement:</strong> {formData.bowelMovement || 'N/A'}</Typography>
+                                                <Typography><strong>Physical Activity:</strong> {formData.physicalActivity || 'N/A'}</Typography>
+                                                <Typography><strong>Who Cooks:</strong> {formData.whoCooks || 'N/A'}</Typography>
+                                                <Typography><strong>Smoker:</strong> {formData.currentSmoker ? 'Yes' : 'No'}</Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Health History */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
+                                        <Typography><strong>Operations:</strong> {formData.operations || 'None'}</Typography>
+                                        <Typography><strong>Health Conditions:</strong> {formData.healthConditions?.join(', ') || 'None'}</Typography>
+                                        <Typography><strong>Family History:</strong> {formData.familyHistory || 'None'}</Typography>
+                                        <Divider sx={{ my: 1 }} />
+                                        <Typography><strong>Medications:</strong> {formData.takeMedication ? formData.medications?.join(', ') : 'None'}</Typography>
+                                        <Typography><strong>Followed Advice:</strong> {formData.followedDietAdvice ? 'Yes' : 'No'}</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Blood Test */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Blood Test</Typography>
+                                        {formData.bloodTest ? (
+                                            <Grid container spacing={1}>
+                                                {Object.entries(formData.bloodTest).map(([key, val]) => (
+                                                    <Grid item xs={6} key={key}>
+                                                        <Typography variant="body2"><strong>{key}:</strong> {val || '-'}</Typography>
+                                                    </Grid>
+                                                ))}
+                                            </Grid>
+                                        ) : <Typography>No Data</Typography>}
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Diet History & Measurements */}
+                            <Grid item xs={12} md={6}>
+                                <Card variant="outlined" sx={{ height: '100%' }}>
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Diet History</Typography>
+                                        <Typography><strong>Current Weight:</strong> {formData.currentWeight} kg</Typography>
+                                        <Typography><strong>Min/Max:</strong> {formData.minWeight} / {formData.maxWeight} kg</Typography>
+                                        <Typography><strong>Desired:</strong> {formData.desiredWeight} kg</Typography>
+                                        <Divider sx={{ my: 1 }} />
+                                        <Typography><strong>Tried Diet:</strong> {formData.triedDietBefore ? 'Yes' : 'No'}</Typography>
+                                        <Typography><strong>Meds for Weight:</strong> {formData.weightLossMedication ? 'Yes' : 'No'}</Typography>
+                                        <Typography><strong>History:</strong> {formData.weightChangeSinceBirth}</Typography>
+                                        <Typography><strong>Always Overweight:</strong> {formData.alwaysOverweight ? 'Yes' : 'No'}</Typography>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                            {/* Daily Intake & Goals */}
+                            <Grid item xs={12}>
+                                <Card variant="outlined">
+                                    <CardContent>
+                                        <Typography variant="h6" gutterBottom color="primary">Daily Intake & Goals</Typography>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Breakfast:</strong> {formData.breakfast}</Typography>
+                                                <Typography><strong>Lunch:</strong> {formData.lunch}</Typography>
+                                                <Typography><strong>Dinner:</strong> {formData.dinner}</Typography>
+                                            </Grid>
+                                            <Grid item xs={12} md={6}>
+                                                <Typography><strong>Dislikes:</strong> {formData.dislikedFood}</Typography>
+                                                <Typography><strong>Diet Given:</strong> {formData.dietGiven}</Typography>
+                                                <Typography><strong>Goals:</strong> {formData.goals?.join(', ')}</Typography>
+                                                <Divider sx={{ my: 1 }} />
+                                                <Typography><strong>Night Eater:</strong> {formData.nightEater ? 'Yes' : 'No'}</Typography>
+                                                <Typography><strong>Coffee:</strong> {formData.coffee ? 'Yes' : 'No'}</Typography>
+                                                <Typography><strong>Sugar:</strong> {formData.sugar} spoon(s)</Typography>
+                                                <Typography><strong>Snack Time:</strong> {formData.snackTime}</Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+
+                                {/* Inbody Images */}
+                            {(formData.bodyImage || (formData.inbodyImages && formData.inbodyImages.length > 0)) && (
+                                <Grid item xs={12}>
+                                    <Card>
+                                        <CardContent>
+                                            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                📸 Inbody Images ({
+                                                    (formData.inbodyImages?.length || 0) + (formData.bodyImage ? 1 : 0)
+                                                })
+                                            </Typography>
+                                            <Box sx={{ 
+                                                display: 'grid', 
+                                                gridTemplateColumns: { 
+                                                    xs: '1fr', 
+                                                    sm: 'repeat(2, 1fr)', 
+                                                    md: 'repeat(3, 1fr)' 
+                                                }, 
+                                                gap: 2,
+                                                mt: 2
+                                            }}>
+                                                {/* Legacy bodyImage */}
+                                                {formData.bodyImage && (
+                                                    <Paper
+                                                        sx={{
+                                                            position: 'relative',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            border: `2px solid ${theme.palette.divider}`,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.02)',
+                                                                boxShadow: theme.shadows[8],
+                                                                borderColor: theme.palette.primary.main,
+                                                            }
+                                                        }}
+                                                        onClick={() => {
+                                                            setSelectedImage(formData.bodyImage);
+                                                            setImageDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={formData.bodyImage}
+                                                            alt="Inbody Legacy"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 200,
+                                                                objectFit: 'cover',
+                                                                display: 'block',
+                                                            }}
+                                                        />
+                                                    </Paper>
+                                                )}
+
+                                                {/* Array inbodyImages */}
+                                                {formData.inbodyImages && formData.inbodyImages.map((imageUrl, index) => (
+                                                    <Paper
+                                                        key={index}
+                                                        sx={{
+                                                            position: 'relative',
+                                                            borderRadius: 2,
+                                                            overflow: 'hidden',
+                                                            border: `2px solid ${theme.palette.divider}`,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.3s ease',
+                                                            '&:hover': {
+                                                                transform: 'scale(1.02)',
+                                                                boxShadow: theme.shadows[8],
+                                                                borderColor: theme.palette.primary.main,
+                                                            }
+                                                        }}
+                                                        onClick={() => {
+                                                            setSelectedImage(imageUrl);
+                                                            setImageDialogOpen(true);
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={`Inbody ${index + 1}`}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 200,
+                                                                objectFit: 'cover',
+                                                                display: 'block',
+                                                            }}
+                                                        />
+                                                    </Paper>
+                                                ))}
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            )}
+                        </Grid>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setFormDetailsOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            <ImageViewerDialog
+                open={imageDialogOpen}
+                imageUrl={selectedImage}
+                onClose={() => setImageDialogOpen(false)}
+            />
         </PageFade>
     );
 };

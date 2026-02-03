@@ -100,6 +100,29 @@ const userSchema = new Schema({
         type: Date,
         default: null
     },
+    pushDevices: [{
+        deviceId: {
+            type: String,
+            required: true
+        },
+        platform: {
+            type: String,
+            enum: ['web', 'android', 'ios'],
+            default: 'web'
+        },
+        userAgent: {
+            type: String,
+            default: ''
+        },
+        registeredAt: {
+            type: Date,
+            default: Date.now
+        },
+        lastActiveAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now,

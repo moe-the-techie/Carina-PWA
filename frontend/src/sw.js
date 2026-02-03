@@ -4,6 +4,9 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
+// ===== ABLY PUSH NOTIFICATIONS =====
+// This handles push notifications even when the app is closed
+
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
@@ -25,9 +28,20 @@ self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
+      .then(async cache => {
         console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS.map(url => new Request(url, { cache: 'reload' })));
+        // Cache assets individually to handle missing assets gracefully
+        const cachePromises = STATIC_ASSETS.map(async url => {
+          try {
+            const response = await fetch(new Request(url, { cache: 'reload' }));
+            if (response.ok) {
+              await cache.put(url, response);
+            }
+          } catch (err) {
+            console.log('[SW] Could not cache:', url);
+          }
+        });
+        return Promise.all(cachePromises);
       })
       .then(() => {
         console.log('[SW] Service worker installed');
@@ -78,8 +92,8 @@ self.addEventListener('fetch', event => {
 
   // Handle different types of requests with different strategies
   if (url.pathname.startsWith('/api/')) {
-    // Network-first strategy for API calls
-    event.respondWith(networkFirstStrategy(request, API_CACHE));
+    // Stale-while-revalidate strategy for API calls - show cached data immediately, update in background
+    event.respondWith(staleWhileRevalidateStrategy(request, API_CACHE));
   } else if (request.destination === 'image') {
     // Cache-first strategy for images
     event.respondWith(cacheFirstStrategy(request, IMAGE_CACHE));
@@ -95,9 +109,12 @@ async function networkFirstStrategy(request, cacheName) {
     const networkResponse = await fetch(request);
     
     // Only cache successful responses
-    if (networkResponse && networkResponse.status === 200) {
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     
     return networkResponse;
@@ -137,9 +154,12 @@ async function cacheFirstStrategy(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     
-    if (networkResponse && networkResponse.status === 200) {
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
       const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     
     return networkResponse;
@@ -156,8 +176,13 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
   const cachedResponse = await caches.match(request);
   
   const fetchPromise = fetch(request).then(networkResponse => {
-    if (networkResponse && networkResponse.status === 200) {
-      cache.put(request, networkResponse.clone());
+    // Only cache successful GET responses with valid status
+    if (networkResponse && networkResponse.ok && networkResponse.status === 200) {
+      // Clone before putting in cache
+      const responseToCache = networkResponse.clone();
+      cache.put(request, responseToCache).catch(err => {
+        console.log('[SW] Failed to cache:', request.url, err.message);
+      });
     }
     return networkResponse;
   }).catch(() => {
@@ -176,16 +201,25 @@ async function handleRequest(request) {
     const contentType = reqClone.headers.get('Content-Type');
 
     if (contentType && contentType.includes('application/json')) {
-      const body = await reqClone.json();
-      const userName = body.name || body.username || '';
+      // Check if there's actually a body to parse
+      const text = await reqClone.text();
+      if (text && text.trim()) {
+        try {
+          const body = JSON.parse(text);
+          const userName = body.name || body.username || '';
 
-      if (userName) {
-        console.log('[SW] Storing username:', userName);
-        self.localStorageSet('username', userName);
+          if (userName) {
+            console.log('[SW] Storing username:', userName);
+            self.localStorageSet('username', userName);
+          }
+        } catch (parseErr) {
+          // JSON parse failed - body is not valid JSON, ignore silently
+        }
       }
     }
   } catch (err) {
-    console.error('[SW] Error handling request:', err);
+    // Silently ignore request handling errors - they're not critical
+    console.log('[SW] Could not process request body');
   }
 
   // Pass through the original fetch
@@ -341,34 +375,142 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
+// Handle push events from Ably Web Push
 self.addEventListener('push', event => {
-  const data = event.data?.json() || {};
-  const title = data.title || 'New Message';
+  console.log('[SW] Push event received:', event);
+  
+  let data = {};
+  try {
+    const payload = event.data?.json() || {};
+    console.log('[SW] Push payload:', payload);
+    
+    // Ably sends push notifications with a 'notification' object
+    // and optionally a 'data' object for custom data
+    if (payload.notification) {
+      data = {
+        title: payload.notification.title || 'New Notification',
+        body: payload.notification.body || '',
+        icon: payload.notification.icon || '/icons/manifest-icon-192.maskable.png',
+        badge: payload.notification.badge || '/icons/manifest-icon-192.maskable.png',
+        ...payload.notification,
+        // Custom data from Ably
+        customData: payload.data || payload.notification.data || {}
+      };
+    } else {
+      // Fallback for direct data payload
+      data = {
+        title: payload.title || 'New Notification',
+        body: payload.body || 'You have a new notification',
+        icon: payload.icon || '/icons/manifest-icon-192.maskable.png',
+        badge: payload.badge || '/icons/manifest-icon-192.maskable.png',
+        customData: payload.data || payload
+      };
+    }
+  } catch (err) {
+    console.error('[SW] Error parsing push data:', err);
+    data = {
+      title: 'New Notification',
+      body: event.data?.text() || 'You have a new notification',
+      icon: '/icons/manifest-icon-192.maskable.png',
+      badge: '/icons/manifest-icon-192.maskable.png',
+      customData: {}
+    };
+  }
+  
+  const customData = data.customData || {};
+  const notificationType = customData.type || 'general';
+  
+  // Determine URL based on notification type
+  let url = '/';
+  let tag = 'notification';
+  let requireInteraction = false;
+  let actions = [];
+  
+  switch (notificationType) {
+    case 'chat':
+    case 'message':
+      url = customData.senderRole === 'user' ? '/admin/chats' : '/chat';
+      tag = `chat-${customData.chatId || 'message'}`;
+      actions = [
+        { action: 'open', title: 'Open Chat' },
+        { action: 'close', title: 'Dismiss' }
+      ];
+      break;
+    case 'announcement':
+      url = '/announcements';
+      tag = `announcement-${customData.announcementId || Date.now()}`;
+      requireInteraction = customData.priority === 'urgent';
+      actions = [
+        { action: 'open', title: 'View Announcement' },
+        { action: 'close', title: 'Dismiss' }
+      ];
+      break;
+    case 'plan':
+      url = customData.planId ? `/view-plan/${customData.planId}` : '/';
+      tag = `plan-${customData.planId || Date.now()}`;
+      actions = [
+        { action: 'open', title: 'View Plan' },
+        { action: 'close', title: 'Dismiss' }
+      ];
+      break;
+    default:
+      url = customData.url || '/';
+      tag = `notification-${Date.now()}`;
+      actions = [
+        { action: 'open', title: 'Open' },
+        { action: 'close', title: 'Dismiss' }
+      ];
+  }
+  
   const options = {
-    body: data.body || 'You have a new message',
-    icon: '/icons/manifest-icon-192.maskable.png',
-    badge: '/icons/manifest-icon-192.maskable.png',
-    tag: `chat-${data.chatId || 'message'}`,
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: tag,
     renotify: true,
-    requireInteraction: false,
-    vibrate: [200, 100, 200],
-    actions: [
-      {
-        action: 'open',
-        title: 'Open Chat'
-      },
-      {
-        action: 'close',
-        title: 'Dismiss'
-      }
-    ],
+    requireInteraction: requireInteraction,
+    vibrate: requireInteraction ? [200, 100, 200, 100, 200] : [200, 100, 200],
+    actions: actions,
     data: {
-      url: data.url || '/chat',
-      chatId: data.chatId
+      url: url,
+      type: notificationType,
+      ...customData
     }
   };
   
+  console.log('[SW] Showing notification:', data.title, options);
+  
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    self.registration.showNotification(data.title, options)
   );
 });
+
+// Handle push subscription change (browser may renew subscription)
+self.addEventListener('pushsubscriptionchange', event => {
+  console.log('[SW] Push subscription changed');
+  
+  event.waitUntil(
+    (async () => {
+      try {
+        // Get the new subscription
+        const newSubscription = await self.registration.pushManager.subscribe(
+          event.oldSubscription.options
+        );
+        
+        // Notify all clients about the subscription change
+        const clients = await self.clients.matchAll({ type: 'window' });
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'PUSH_SUBSCRIPTION_CHANGED',
+            subscription: newSubscription.toJSON()
+          });
+        });
+        
+        console.log('[SW] Push subscription renewed');
+      } catch (error) {
+        console.error('[SW] Failed to renew push subscription:', error);
+      }
+    })()
+  );
+});
+

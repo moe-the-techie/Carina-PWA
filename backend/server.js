@@ -2,6 +2,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { startPlanReminderService } from './services/planReminderService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -14,12 +21,14 @@ import templateRoutes from './routes/templates.js';
 import chatRoutes from './routes/chat.js';
 import announcementRoutes from './routes/announcements.js';
 import paymentRoutes from './routes/payments.js';
+import pushRoutes from './routes/push.js';
 
 dotenv.config();
 connectDB();
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
@@ -60,9 +69,28 @@ app.use('/api', templateRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', announcementRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api', pushRoutes);
+
+// Debug logging route
+app.post('/api/debug-log', (req, res) => {
+  const { message, timestamp } = req.body;
+  const logMessage = `[${new Date(timestamp).toISOString()}] ${message}\n`;
+  
+  fs.appendFile(path.join(__dirname, 'debug_log.txt'), logMessage, (err) => {
+    if (err) {
+      console.error('Error writing to debug log:', err);
+      return res.status(500).json({ error: 'Failed to write log' });
+    }
+    res.status(200).json({ success: true });
+  });
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // Start plan reminder and status update service
+  startPlanReminderService();
 });

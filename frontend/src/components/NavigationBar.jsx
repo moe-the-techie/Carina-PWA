@@ -9,6 +9,8 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineOutlined
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import Badge from '@mui/material/Badge';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -16,7 +18,7 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
-import { spacing, transitions, zIndex } from '../styles';
+import { spacing, transitions, zIndex, accentColors } from '../styles';
 
 export default function NavigationBar() {
   const location = useLocation();
@@ -25,7 +27,8 @@ export default function NavigationBar() {
   const { unreadCount: announcementUnreadCount } = useAnnouncementNotifications();
 
   const navItems = [
-    { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Home' },
+    { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Forms' },
+    { to: '/active-plans', outlinedIcon: <PlayCircleOutlineIcon />, filledIcon: <PlayCircleFilledIcon />, label: 'Active', activeColor: accentColors.emerald.main },
     { to: '/announcements', outlinedIcon: <CampaignOutlinedIcon />, filledIcon: <CampaignIcon />, label: 'News', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
     { to: '/chat', outlinedIcon: <ChatBubbleOutlineIcon />, filledIcon: <ChatBubbleIcon />, label: 'Chat' },
     { to: '/settings', outlinedIcon: <SettingsOutlinedIcon />, filledIcon: <SettingsIcon />, label: 'Settings' }
@@ -66,8 +69,9 @@ export default function NavigationBar() {
           maxWidth: { xs: '100%', md: '600px' }
         }}
       >
-        {navItems.map(({ to, outlinedIcon, filledIcon, label }) => {
+        {navItems.map(({ to, outlinedIcon, filledIcon, label, activeColor }) => {
           const isActive = location.pathname === to;
+          const itemColor = isActive ? (activeColor || theme.palette.primary.main) : theme.palette.text.secondary;
           return (
             <li key={to}>
               <Link to={to} style={{ textDecoration: 'none' }}>
@@ -92,7 +96,7 @@ export default function NavigationBar() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       transition: transitions.fast,
-                      color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+                      color: itemColor,
                       '&:hover': {
                         backgroundColor: theme.palette.action.hover
                       }
@@ -123,7 +127,7 @@ export default function NavigationBar() {
                     variant="caption" 
                     sx={{ 
                       fontSize: { xs: '10px', md: '12px' },
-                      color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+                      color: itemColor,
                       mt: { xs: 0.25, md: 0.5 },
                       fontWeight: isActive ? 600 : 400,
                       transition: transitions.fast,

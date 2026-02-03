@@ -1,5 +1,6 @@
 import Form from '../models/Form.js';
 import User from '../models/User.js';
+import { uploadBodyImageToCloudinary } from '../config/cloudinary.js';
 
 // TODO: Add route for admin to get all forms that were not reviewed
 
@@ -10,16 +11,41 @@ export async function getAllForms (req, res) {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const forms = await Form.find()
+        const query = {};
+        if (req.query.reviewed) {
+            query.reviewed = req.query.reviewed === 'true';
+        }
+        if (req.query.type) {
+            if (req.query.type === 'new-patient') {
+                // Include forms without type field for backward compatibility (assuming they are new-patient)
+                query.$or = [
+                    { type: 'new-patient' },
+                    { type: { $exists: false } },
+                    { type: null }
+                ];
+            } else {
+                query.type = req.query.type;
+            }
+        }
+
+        const forms = await Form.find(query)
             .populate('user', 'name email dateOfBirth isMother gender')
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await Form.countDocuments();
+        const total = await Form.countDocuments(query);
 
         if (!forms || forms.length === 0) {
             if (total === 0) {
-                return res.status(404).json({ error: '404: No forms found' });
+                // If filtering by type/reviewed, return empty list instead of 404 to avoid error on frontend
+                 return res.status(200).json({ 
+                    message: 'No forms found', 
+                    forms: [],
+                    totalPages: 0,
+                    currentPage: page,
+                    totalForms: 0
+                });
             }
         }
 
@@ -109,8 +135,11 @@ export async function newForm(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Check for form credits (admins have unlimited credits)
-        if (user.role !== 'admin' && (!user.formCredits || user.formCredits <= 0)) {
+        // Check if payments are enabled
+        const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
+
+        // Check for form credits (admins have unlimited credits, skip if payments disabled)
+        if (paymentsEnabled && user.role !== 'admin' && (!user.formCredits || user.formCredits <= 0)) {
             return res.status(403).json({ 
                 error: 'No form credits available',
                 code: 'NO_CREDITS',
@@ -120,11 +149,15 @@ export async function newForm(req, res) {
 
         const formData = { ...req.body, user: userId };
 
+        // Determine form type based on user's history
+        const previousFormsCount = await Form.countDocuments({ user: userId });
+        formData.type = previousFormsCount > 0 ? 'follow-up' : 'new-patient';
+
         const newForm = new Form(formData);
         await newForm.save();
 
-        // Deduct one form credit (only for non-admin users)
-        if (user.role !== 'admin') {
+        // Deduct one form credit (only for non-admin users when payments are enabled)
+        if (paymentsEnabled && user.role !== 'admin') {
             user.formCredits -= 1;
             await user.save();
         }
@@ -136,6 +169,30 @@ export async function newForm(req, res) {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+}
+
+// Upload body image to Cloudinary
+export async function uploadBodyImage(req, res) {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image file provided' });
+        }
+
+        const imageName = `body-image-${req.user._id}-${Date.now()}`;
+        const uploadResult = await uploadBodyImageToCloudinary(req.file.buffer, imageName);
+
+        res.status(200).json({
+            imageUrl: uploadResult.secure_url,
+            publicId: uploadResult.public_id,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            format: uploadResult.format,
+            size: uploadResult.bytes
+        });
+    } catch (error) {
+        console.error('Error in uploadBodyImage:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload body image' });
     }
 }
 

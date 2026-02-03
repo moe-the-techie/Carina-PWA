@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PageFade from '../components/PageFade';
 import Fab from '@mui/material/Fab';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,101 +12,144 @@ import CardContent from '@mui/material/CardContent';
 import Pagination from '@mui/material/Pagination';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import CircularProgress from '@mui/material/CircularProgress';
+import { alpha } from '@mui/material/styles';
 import PlanListItem from '../components/PlanListItem';
 import { useNavigate } from 'react-router-dom';
-import { spacing, borderRadius, shadows, zIndex, gradients } from '../styles';
+import { spacing, borderRadius, shadows, zIndex, gradients, accentColors } from '../styles';
 import { glassCard, glassButton } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
+import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
+import ListAltIcon from '@mui/icons-material/ListAlt';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [backendError, setBackendError] = useState('');
-  const [forms, setForms] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [formCredits, setFormCredits] = useState(null);
-  const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Active, 2: Pending
   const theme = useTheme();
 
-  useEffect(() => {
-    fetchData();
-    fetchCredits();
+  // Fetch forms with caching - stale-while-revalidate
+  const fetchFormsData = useCallback(async () => {
+    const response = await fetch(`${apiBaseUrl}/api/forms/my?page=${page}&limit=10`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) return { forms: [], totalPages: 1 };
+      const errorResponse = await response.json();
+      throw new Error(errorResponse?.error || `An error occurred: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const formsWithPlans = data.forms || [];
+    
+    // Fetch plan data for each form
+    const formsWithPlanData = await Promise.all(
+      formsWithPlans.map(async (form) => {
+        try {
+          const planResponse = await fetch(`${apiBaseUrl}/api/forms/my/${form._id}/plan`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+          });
+          
+          if (planResponse.ok) {
+            const planData = await planResponse.json();
+            return { ...form, plan: planData.plan };
+          }
+        } catch (error) {
+          console.log(`No plan found for form ${form._id}`);
+        }
+        return form;
+      })
+    );
+    
+    return { forms: formsWithPlanData, totalPages: data.totalPages || 1 };
   }, [page]);
 
-  async function fetchCredits() {
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFormCredits(data.formCredits);
-        setPaymentsEnabled(data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
-      }
-    } catch (error) {
-      console.error('Error fetching credits:', error);
+  const { 
+    data: formsData, 
+    isLoading: loading, 
+    isRefreshing,
+    error: formsError,
+    refetch: refetchForms
+  } = useCachedData(
+    `home_forms_page_${page}`,
+    fetchFormsData,
+    {
+      cacheTTL: 5 * 60 * 1000, // 5 minutes
+      initialData: { forms: [], totalPages: 1 },
+      dependencies: [page],
+      onError: (err) => setBackendError(err.message),
     }
-  }
+  );
 
-  async function fetchData() {
-    try {
-      setLoading(true);
-      const data = await fetch(`${apiBaseUrl}/api/forms/my?page=${page}&limit=10`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-      });
+  const forms = formsData?.forms || [];
+  const totalPages = formsData?.totalPages || 1;
 
-      if (!data.ok) {
-        if (data.status === 404) return;
-
-        const errorResponse = await data.json();
-        setBackendError(errorResponse?.error || `An error occurred: ${data.status}`);
-        return;
+  // Fetch credits with caching
+  const fetchCreditsData = useCallback(async () => {
+    const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       }
-
-      const response = await data.json();
-      const formsWithPlans = response.forms || [];
-      setTotalPages(response.totalPages || 1);
-      
-      // Fetch plan data for each form
-      const formsWithPlanData = await Promise.all(
-        formsWithPlans.map(async (form) => {
-          try {
-            const planResponse = await fetch(`${apiBaseUrl}/api/forms/my/${form._id}/plan`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-            });
-            
-            if (planResponse.ok) {
-              const planData = await planResponse.json();
-              return { ...form, plan: planData.plan };
-            }
-          } catch (error) {
-            console.log(`No plan found for form ${form._id}`);
-          }
-          return form;
-        })
-      );
-      
-      setForms(formsWithPlanData);
-    } catch (error) {
-      console.error('Error fetching forms:', error);
-      setBackendError(`An error occurred while fetching forms: ${error.message}`);
-    } finally {
-      setLoading(false);
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        formCredits: data.formCredits,
+        paymentsEnabled: data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false'
+      };
     }
-  }
+    return { formCredits: null, paymentsEnabled: false };
+  }, []);
+
+  const { data: creditsData } = useCachedData(
+    'user_credits',
+    fetchCreditsData,
+    {
+      cacheTTL: 5 * 60 * 1000,
+      initialData: { formCredits: null, paymentsEnabled: false },
+    }
+  );
+
+  const formCredits = creditsData?.formCredits;
+  const paymentsEnabled = creditsData?.paymentsEnabled;
+
+  // Filter forms based on selected tab
+  const filteredForms = useMemo(() => {
+    switch (filterTab) {
+      case 1: // Active Plans
+        return forms.filter(form => form.plan?.status === 'active');
+      case 2: // Pending
+        return forms.filter(form => !form.plan || !form.reviewed);
+      default: // All
+        return forms;
+    }
+  }, [forms, filterTab]);
+
+  // Count active and pending for tab badges
+  const activePlansCount = useMemo(() => 
+    forms.filter(form => form.plan?.status === 'active').length, 
+  [forms]);
+  
+  const pendingCount = useMemo(() => 
+    forms.filter(form => !form.plan || !form.reviewed).length, 
+  [forms]);
 
   return (
     <PageFade>
@@ -124,14 +167,81 @@ export default function HomePage() {
           mx: 'auto',
         }}
       >
-        <Typography 
-          variant="h4" 
-          align="start" 
-          gutterBottom
-          sx={pageTitle(theme, { align: 'left' })}
-        >
-          My Forms
-        </Typography>
+        <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography 
+            variant="h4" 
+            align="start" 
+            gutterBottom
+            sx={pageTitle(theme, { align: 'left' })}
+          >
+            My Forms & Plans
+          </Typography>
+          {isRefreshing && (
+            <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+          )}
+        </Box>
+
+        {/* Filter Tabs */}
+        <Box sx={{ width: '100%', mb: spacing.md }}>
+          <Tabs
+            value={filterTab}
+            onChange={(e, newValue) => setFilterTab(newValue)}
+            variant="fullWidth"
+            sx={{
+              backgroundColor: theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.9)',
+              borderRadius: borderRadius.md,
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 500,
+                minHeight: 48,
+              },
+              '& .Mui-selected': {
+                fontWeight: 600,
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+              }
+            }}
+          >
+            <Tab 
+              icon={<ListAltIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label={`All (${forms.length})`}
+            />
+            <Tab 
+              icon={<PlayCircleFilledIcon sx={{ fontSize: 18, color: filterTab === 1 ? accentColors.emerald.main : 'inherit' }} />}
+              iconPosition="start"
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  Active
+                  {activePlansCount > 0 && (
+                    <Chip 
+                      label={activePlansCount} 
+                      size="small" 
+                      sx={{ 
+                        height: 20, 
+                        fontSize: '0.7rem',
+                        backgroundColor: alpha(accentColors.emerald.main, 0.2),
+                        color: accentColors.emerald.main,
+                        fontWeight: 600
+                      }} 
+                    />
+                  )}
+                </Box>
+              }
+            />
+            <Tab 
+              icon={<HourglassEmptyIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label={`Pending (${pendingCount})`}
+            />
+          </Tabs>
+        </Box>
 
         {/* Credits Banner */}
         {paymentsEnabled && (
@@ -211,17 +321,48 @@ export default function HomePage() {
           </>
         ) : (
           <>
-            {forms.length === 0 && (
-              <Typography align="center" color="textSecondary">
-                No forms submitted yet.
-              </Typography>
+            {filteredForms.length === 0 && (
+              <Box sx={{ 
+                textAlign: 'center', 
+                py: 4,
+                px: 2,
+                ...glassCard(theme),
+                width: '100%',
+                borderRadius: borderRadius.md
+              }}>
+                {filterTab === 1 ? (
+                  <>
+                    <PlayCircleFilledIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 1 }} />
+                    <Typography color="textSecondary" gutterBottom>
+                      No active plans
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Your active plans will appear here once activated by our team.
+                    </Typography>
+                  </>
+                ) : filterTab === 2 ? (
+                  <>
+                    <HourglassEmptyIcon sx={{ fontSize: 48, color: theme.palette.text.disabled, mb: 1 }} />
+                    <Typography color="textSecondary" gutterBottom>
+                      No pending forms
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      All your forms have been reviewed!
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography color="textSecondary">
+                    No forms submitted yet.
+                  </Typography>
+                )}
+              </Box>
             )}
 
-            {forms.map((form) => (
+            {filteredForms.map((form) => (
               <PlanListItem key={form._id} form={form} plan={form.plan} onClick={() => navigate(`/view-plan/${form._id}`, { state: { form } })} />
             ))}
 
-            {totalPages > 1 && (
+            {totalPages > 1 && filterTab === 0 && (
               <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 8 }}>
                 <Pagination 
                   count={totalPages} 

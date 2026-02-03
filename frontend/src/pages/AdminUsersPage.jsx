@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -37,7 +37,8 @@ import {
     Container,
     alpha,
     FormControlLabel,
-    Checkbox
+    Checkbox,
+    CircularProgress
 } from '@mui/material';
 import {
     Circle as CircleIcon,
@@ -59,6 +60,7 @@ import UserActionsDialog from '../components/UserActionsDialog';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -67,14 +69,11 @@ export default function AdminUsersPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [classFilter, setClassFilter] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [selectedUser, setSelectedUser] = useState(null);
     const [userDetailsOpen, setUserDetailsOpen] = useState(false);
     const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -102,10 +101,47 @@ export default function AdminUsersPage() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    useEffect(() => {
-        fetchUsers();
-        fetchClasses();
+    // Fetch users with caching - stale-while-revalidate
+    const fetchUsersData = useCallback(async () => {
+        const response = await fetch(
+            `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}&classFilter=${classFilter}&includeUnverified=${includeUnverified}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+
+        return response.json();
     }, [page, debouncedSearch, classFilter, includeUnverified]);
+
+    const {
+        data: usersData,
+        isLoading: loading,
+        isRefreshing,
+        refetch: refetchUsers,
+        setData: setUsersData,
+    } = useCachedData(
+        `admin_users_p${page}_s${debouncedSearch}_c${classFilter}_u${includeUnverified}`,
+        fetchUsersData,
+        {
+            cacheTTL: 2 * 60 * 1000, // 2 minutes
+            initialData: { users: [], totalPages: 1 },
+            dependencies: [page, debouncedSearch, classFilter, includeUnverified],
+        }
+    );
+
+    const users = usersData?.users || [];
+    const totalPages = usersData?.totalPages || 1;
+
+    // Fetch classes
+    useEffect(() => {
+        fetchClasses();
+    }, []);
 
     const fetchClasses = async () => {
         if (import.meta.env.VITE_ENABLE_USER_CLASSES === 'false') return;
@@ -122,33 +158,6 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             console.error('Error fetching classes:', error);
-        }
-    };
-
-    const fetchUsers = async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(
-                `${apiBaseUrl}/api/admin/users?page=${page}&limit=10&search=${debouncedSearch}&classFilter=${classFilter}&includeUnverified=${includeUnverified}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch users');
-            }
-
-            const data = await response.json();
-            setUsers(data.users);
-            setTotalPages(data.totalPages);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -233,7 +242,7 @@ export default function AdminUsersPage() {
             
             setDeleteDialogOpen(false);
             setUserToDelete(null);
-            fetchUsers(); // Refresh the list
+            refetchUsers(); // Refresh the list
         } catch (error) {
             console.error('Error deleting user:', error);
             setSnackbar({
@@ -266,7 +275,7 @@ export default function AdminUsersPage() {
             
             setBanDialogOpen(false);
             setUserToBan(null);
-            fetchUsers(); // Refresh the list
+            refetchUsers(); // Refresh the list
         } catch (error) {
             console.error('Error banning user:', error);
             setSnackbar({
@@ -319,7 +328,7 @@ export default function AdminUsersPage() {
             setClassDialogOpen(false);
             setUserToAssignClass(null);
             setSelectedClassId('');
-            fetchUsers();
+            refetchUsers();
         } catch (error) {
             console.error('Error assigning class:', error);
             setSnackbar({
@@ -358,19 +367,24 @@ export default function AdminUsersPage() {
                             Manage your users, assign classes, and monitor activity.
                         </Typography>
                     </Box>
-                    <Button 
-                        variant="outlined" 
-                        startIcon={<RefreshIcon />}
-                        onClick={fetchUsers}
-                        sx={{ 
-                            borderRadius: 3,
-                            textTransform: 'none',
-                            borderWidth: 2,
-                            '&:hover': { borderWidth: 2 }
-                        }}
-                    >
-                        Refresh List
-                    </Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {isRefreshing && (
+                            <CircularProgress size={20} sx={{ color: accentColors.emerald.main }} />
+                        )}
+                        <Button 
+                            variant="outlined" 
+                            startIcon={<RefreshIcon />}
+                            onClick={refetchUsers}
+                            sx={{ 
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                borderWidth: 2,
+                                '&:hover': { borderWidth: 2 }
+                            }}
+                        >
+                            Refresh List
+                        </Button>
+                    </Box>
                 </Box>
 
                 {/* Search and Filter Bar */}

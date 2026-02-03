@@ -38,6 +38,8 @@ const steps = [
     title: 'Welcome to Carina! 🎉',
     description: 'Your personalized fitness and nutrition planning assistant. Let us show you around and help you get the most out of your experience.',
     icon: <HomeIcon sx={{ fontSize: 60 }} />,
+    hasVideo: true,
+    videoUrl: import.meta.env.VITE_INTRO_VIDEO_URL || 'https://www.youtube.com/embed/dQw4w9WgXcQ?si=b8YRqncV6Pobj1mo', 
   },
   {
     label: 'Forms',
@@ -330,6 +332,47 @@ export default function OnboardingOverlay({ forceShow = false, onClose }) {
           >
             {currentStep.description}
           </Typography>
+
+          {/* Introduction Video */}
+          {currentStep.hasVideo && (
+            <Box
+              sx={{
+                width: '100%',
+                maxWidth: 500,
+                mb: 2,
+                borderRadius: borderRadius.md,
+                overflow: 'hidden',
+                boxShadow: theme.palette.mode === 'dark'
+                  ? '0 8px 32px rgba(0, 0, 0, 0.4)'
+                  : '0 8px 32px rgba(0, 0, 0, 0.1)',
+                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'relative',
+                  paddingBottom: '56.25%', // 16:9 aspect ratio
+                  height: 0,
+                  overflow: 'hidden',
+                }}
+              >
+                <iframe
+                  src={currentStep.videoUrl}
+                  title="Introduction Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 0,
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
 
           {/* PWA Install Instructions */}
           {currentStep.isPWAStep && <PWAInstallInstructions />}

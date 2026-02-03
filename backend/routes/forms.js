@@ -1,13 +1,50 @@
 import express from 'express';
 const router = express.Router();
-import { getAllForms, getUserForms, newForm, getMyForms } from '../controllers/formController.js';
+import multer from 'multer';
+import { getAllForms, getUserForms, newForm, getMyForms, uploadBodyImage } from '../controllers/formController.js';
 import { protect } from '../middleware/auth.js';
 import Plan from '../models/Plan.js';
+
+// Configure multer for body image upload
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
+        }
+    }
+});
 
 router.get('/forms',  protect, getAllForms);
 router.get('/forms/user/:id', protect, getUserForms);
 router.get('/forms/my', protect, getMyForms);
+
+// Get specific form for the user
+router.get('/forms/my/:id', protect, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const Form = (await import('../models/Form.js')).default;
+        const form = await Form.findOne({ _id: id, user: req.user._id })
+            .populate('user', 'name email dateOfBirth isMother gender'); // Populate user details as needed
+
+        if (!form) {
+            return res.status(404).json({ error: 'Form not found' });
+        }
+
+        res.status(200).json({ form });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/forms', protect, newForm);
+router.post('/forms/upload-body-image', protect, upload.single('image'), uploadBodyImage);
 
 // Get user's plan associated with a specific form
 router.get('/forms/my/:formId/plan', protect, async (req, res) => {

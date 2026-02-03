@@ -147,7 +147,7 @@ export const glassButton = (theme, variant = 'primary') => {
         borderRadius: borderRadius.sm,
         textTransform: 'none',
         fontWeight: 600,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all var(--transition-normal, 0.3s) cubic-bezier(0.4, 0, 0.2, 1)',
         ...variants[variant],
     };
 };

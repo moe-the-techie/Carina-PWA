@@ -1,6 +1,30 @@
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
+// Schema for a single day's meal plan (same as Plan model)
+const dayMealSchema = new Schema({
+    breakfast: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    lunch: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    dinner: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    snack: {
+        type: String,
+        trim: true,
+        default: ''
+    }
+}, { _id: false });
+
 const planTemplateSchema = new Schema({
     name: {
         type: String,
@@ -28,6 +52,17 @@ const planTemplateSchema = new Schema({
         targetCarbs: Number,
         targetFats: Number
     },
+    // Weekly meal plan template - 7 days with breakfast, lunch, dinner, snack
+    defaultWeeklyPlan: {
+        saturday: dayMealSchema,
+        sunday: dayMealSchema,
+        monday: dayMealSchema,
+        tuesday: dayMealSchema,
+        wednesday: dayMealSchema,
+        thursday: dayMealSchema,
+        friday: dayMealSchema
+    },
+    // General recommendations
     defaultRecommendations: {
         avoid: [{
             type: String,
@@ -37,47 +72,18 @@ const planTemplateSchema = new Schema({
             type: String,
             trim: true
         }],
-        eatDaily: [{
+        allowed: [{
             type: String,
             trim: true
-        }],
-        breakfast: [{
-            category: {
-                type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Fruits', 'Dairy', 'Healthy Fats', 'Beverages'],
-                required: true
-            },
-            items: [{
-                type: String,
-                trim: true
-            }]
-        }],
-        lunch: [{
-            category: {
-                type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
-                required: true
-            },
-            items: [{
-                type: String,
-                trim: true
-            }]
-        }],
-        dinner: [{
-            category: {
-                type: String,
-                enum: ['Proteins', 'Carbohydrates', 'Vegetables', 'Healthy Fats', 'Dairy', 'Beverages'],
-                required: true
-            },
-            items: [{
-                type: String,
-                trim: true
-            }]
         }],
         exercise: [{
             type: String,
             trim: true
-        }]
+        }],
+        notes: {
+            type: String,
+            trim: true
+        }
     },
     defaultWarnings: [{
         type: String,
