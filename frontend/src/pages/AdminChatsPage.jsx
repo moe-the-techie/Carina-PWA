@@ -114,6 +114,11 @@ export default function AdminChatsPage() {
     const recordingIntervalRef = useRef(null);
     const audioChunksRef = useRef([]);
     const audioRefs = useRef({});
+    const selectedChatRef = useRef(selectedChat);
+
+    useEffect(() => {
+        selectedChatRef.current = selectedChat;
+    }, [selectedChat]);
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -639,7 +644,7 @@ export default function AdminChatsPage() {
                 if (eventType === 'messages-read') {
                     console.log('Handling read receipt:', messageData);
                     
-                    if (selectedChat && messageData.chatId === selectedChat.chatId && messageData.readBy === 'user') {
+                    if (selectedChatRef.current && messageData.chatId === selectedChatRef.current.chatId && messageData.readBy === 'user') {
                         setMessages(prev => 
                             prev.map(msg => ({
                                 ...msg,
@@ -650,7 +655,7 @@ export default function AdminChatsPage() {
                     return;
                 }
                 // Update messages if this is the selected chat
-                if (selectedChat && String(messageData.chatId).trim() === String(selectedChat.chatId).trim()) {
+                if (selectedChatRef.current && String(messageData.chatId).trim() === String(selectedChatRef.current.chatId).trim()) {
                     setMessages(prev => {
                         const exists = prev.some(m => m._id === messageData._id);
                         if (exists) return prev;
@@ -658,7 +663,7 @@ export default function AdminChatsPage() {
                     });
 
                     // Mark as read if viewing this chat
-                    markMessagesAsRead(selectedChat.chatId)
+                    markMessagesAsRead(selectedChatRef.current.chatId)
                         .then(() => {
                             // Refresh the global unread count after marking as read
                             fetchUnreadCount();
@@ -700,7 +705,7 @@ export default function AdminChatsPage() {
                                     createdAt: messageData.createdAt
                                 },
                                 lastMessageAt: messageData.createdAt,
-                                unreadByAdmins: messageData.senderRole === 'user' && (!selectedChat || String(selectedChat.chatId).trim() !== String(messageData.chatId).trim())
+                                unreadByAdmins: messageData.senderRole === 'user' && (!selectedChatRef.current || String(selectedChatRef.current.chatId).trim() !== String(messageData.chatId).trim())
                                     ? messageData.unreadByAdmins
                                     : chat.unreadByAdmins
                             }
@@ -723,7 +728,7 @@ export default function AdminChatsPage() {
                 hasSubscribed.current = false;
             };
         }
-    }, [selectedChat]);
+    }, []);
 
     useEffect(() => {
         if (selectedChat?.chatId) {
