@@ -584,8 +584,22 @@ export const getVoiceAudio = async (req, res) => {
 
         const audioBuffer = await extractAudioFromImage(message.voiceUrl);
 
+        // Determine content type based on magic numbers
+        let contentType = 'audio/webm'; // Default
+        if (audioBuffer.length > 8) {
+            const header = audioBuffer.toString('hex', 0, 4);
+            if (header === '1a45dfa3') {
+                contentType = 'audio/webm';
+            } else {
+                const ftyp = audioBuffer.toString('ascii', 4, 8);
+                if (ftyp === 'ftyp') {
+                    contentType = 'audio/mp4';
+                }
+            }
+        }
+
         // Send as audio file
-        res.setHeader('Content-Type', 'audio/webm');
+        res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Length', audioBuffer.length);
         res.send(audioBuffer);
     } catch (error) {
