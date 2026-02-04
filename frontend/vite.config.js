@@ -12,8 +12,90 @@ export default defineConfig({
       "date-fns/addSeconds"
     ]
   },
+  build: {
+    // Enable source maps for debugging in production
+    sourcemap: false,
+    // Increase chunk size warning limit (MUI is large)
+    chunkSizeWarningLimit: 1000,
+    // Rollup options for better code splitting
+    rollupOptions: {
+      output: {
+        // Manual chunk splitting for optimal caching
+        manualChunks: (id) => {
+          // Vendor chunks - cached separately and rarely change
+          if (id.includes('node_modules')) {
+            // React ecosystem - core runtime
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // MUI - large UI framework, separate chunk
+            if (id.includes('@mui') || id.includes('@emotion')) {
+              return 'mui-vendor';
+            }
+            // Animation library
+            if (id.includes('framer-motion')) {
+              return 'animation-vendor';
+            }
+            // Real-time communication
+            if (id.includes('ably')) {
+              return 'realtime-vendor';
+            }
+            // Date utilities
+            if (id.includes('date-fns') || id.includes('dayjs')) {
+              return 'date-vendor';
+            }
+            // Other vendor code
+            return 'vendor';
+          }
+          // Admin pages - only loaded by admins
+          if (id.includes('/pages/Admin')) {
+            return 'admin';
+          }
+        },
+        // Optimize chunk file names for better caching
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId;
+          if (facadeModuleId && facadeModuleId.includes('/pages/')) {
+            // Page chunks get content hash for cache busting
+            return 'pages/[name]-[hash].js';
+          }
+          return 'chunks/[name]-[hash].js';
+        },
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const extType = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            return `assets/images/[name]-[hash][extname]`;
+          }
+          if (/woff|woff2|eot|ttf|otf/i.test(extType)) {
+            return `assets/fonts/[name]-[hash][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        },
+      },
+    },
+    // Minification settings
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        // Remove console.log in production (keep errors/warnings)
+        drop_console: false,
+        pure_funcs: ['console.log', 'console.debug'],
+        // Additional optimizations
+        passes: 2,
+      },
+      mangle: {
+        safari10: true,
+      },
+    },
+    // Target modern browsers for smaller bundles
+    target: 'es2020',
+  },
   plugins: [
-    react(),
+    react({
+      // Enable React Fast Refresh in development
+      fastRefresh: true,
+    }),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',

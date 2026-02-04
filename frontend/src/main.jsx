@@ -9,6 +9,7 @@ import './responsive.css'
 import App from './App.jsx'
 import { ThemeContextProvider } from './contexts/ThemeContext.jsx';
 import { registerSW } from 'virtual:pwa-register';
+import { initializePerformanceOptimizations } from './utils/performanceUtils';
 
 // Register service worker using Vite PWA plugin
 const updateSW = registerSW({
@@ -42,6 +43,15 @@ if ('serviceWorker' in navigator) {
       localStorage.setItem(key, value);
       console.log('[PWA] Stored in localStorage:', key, value);
     }
+  });
+}
+
+// Initialize performance optimizations after initial paint
+if (typeof window !== 'undefined') {
+  // Use requestIdleCallback for non-critical initialization
+  const scheduleInit = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+  scheduleInit(() => {
+    initializePerformanceOptimizations();
   });
 }
 

@@ -1,39 +1,71 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, data } from 'react-router-dom';
+import { CircularProgress, Box } from '@mui/material';
+
+// Eagerly load critical path components (landing, login)
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
-import LandingPage from './pages/LandingPage'
-import SignUpPage from './pages/SignUpPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import AddFormPage from './pages/NewFormPage';
-import ViewPlanPage from './pages/ViewPlanPage';
-import FormSuccessPage from './pages/FormSuccessPage';
-import PaymentPage from './pages/PaymentPage';
-import PaymentResultPage from './pages/PaymentResultPage';
-import ActivePlansPage from './pages/ActivePlansPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+
+// Lazy load all other pages for code splitting
+const SignUpPage = lazy(() => import('./pages/SignUpPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AddFormPage = lazy(() => import('./pages/NewFormPage'));
+const ViewPlanPage = lazy(() => import('./pages/ViewPlanPage'));
+const FormSuccessPage = lazy(() => import('./pages/FormSuccessPage'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
+const PaymentResultPage = lazy(() => import('./pages/PaymentResultPage'));
+const ActivePlansPage = lazy(() => import('./pages/ActivePlansPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
+
+// Admin pages - lazy loaded since they're only accessed by admins
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
+const AdminClassesPage = lazy(() => import('./pages/AdminClassesPage'));
+const AdminFormsPage = lazy(() => import('./pages/AdminFormsPage'));
+const AdminTemplatesPage = lazy(() => import('./pages/AdminTemplatesPage'));
+const AdminPlanBuilderPage = lazy(() => import('./pages/AdminPlanBuilderPage'));
+const AdminChatsPage = lazy(() => import('./pages/AdminChatsPage'));
+const AdminAnnouncementsPage = lazy(() => import('./pages/AdminAnnouncementsPage'));
+const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage'));
+const AdminActivePlansPage = lazy(() => import('./pages/AdminActivePlansPage'));
+
+// Eagerly load layout components (used on every authenticated route)
 import AdminLayout from './components/AdminLayout';
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminClassesPage from './pages/AdminClassesPage';
-import AdminFormsPage from './pages/AdminFormsPage';
-import AdminTemplatesPage from './pages/AdminTemplatesPage';
-import AdminPlanBuilderPage from './pages/AdminPlanBuilderPage';
-import AdminChatsPage from './pages/AdminChatsPage';
-import AnnouncementsPage from './pages/AnnouncementsPage';
-import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
-import AdminPaymentsPage from './pages/AdminPaymentsPage';
-import AdminActivePlansPage from './pages/AdminActivePlansPage';
 import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
-import SettingsPage from './pages/SettingsPage';
-import ChatPage from './pages/ChatPage';
 import OfflineIndicator from './components/OfflineIndicator';
 import { clearAllCache } from './utils/offlineCache';
 import { disconnectAbly } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 import { UserProvider } from './contexts/UserContext';
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// Loading fallback component - minimal spinner for route transitions
+const PageLoader = () => (
+    <Box 
+        sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            minHeight: '50vh',
+            width: '100%'
+        }}
+    >
+        <CircularProgress size={40} />
+    </Box>
+);
+
+// Suspense wrapper for lazy-loaded routes
+const LazyRoute = ({ children }) => (
+    <Suspense fallback={<PageLoader />}>
+        {children}
+    </Suspense>
+);
 
 const isFeatureEnabled = (featureName) => {
     return import.meta.env[featureName] !== 'false';
@@ -131,32 +163,32 @@ function App() {
                     <Routes>
                 <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
-                <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <SignUpPage onLogin={handleLogin} />} />
-                <Route path="/forgot-password" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <ForgotPasswordPage />} />
-                <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><HomePage onLogin={handleLogin} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/active-plans" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><ActivePlansPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><SettingsPage onLogout={handleLogout} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><ChatPage /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/announcements" element={isLoggedIn && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AuthenticatedLayout><AnnouncementsPage user={user} /></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/new-form" element={isLoggedIn ? <AddFormPage /> : <Navigate to="/" replace/>} />
-                <Route path="/form-success" element={isLoggedIn ? <FormSuccessPage /> : <Navigate to="/" replace/>} />
-                <Route path="/view-plan/:id" element={isLoggedIn ? <ViewPlanPage /> : <Navigate to="/" replace/>} />
-                <Route path="/payment" element={isLoggedIn ? <PaymentPage /> : <Navigate to="/" replace/>} />
-                <Route path="/payment/success" element={<PaymentResultPage />} />
-                <Route path="/payment/failed" element={<PaymentResultPage />} />
-                <Route path="/payment/pending" element={<PaymentResultPage />} />
+                <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LazyRoute><SignUpPage onLogin={handleLogin} /></LazyRoute>} />
+                <Route path="/forgot-password" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LazyRoute><ForgotPasswordPage /></LazyRoute>} />
+                <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><HomePage onLogin={handleLogin} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/active-plans" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><ActivePlansPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><LazyRoute><SettingsPage onLogout={handleLogout} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><LazyRoute><ChatPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/announcements" element={isLoggedIn && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AuthenticatedLayout><LazyRoute><AnnouncementsPage user={user} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/new-form" element={isLoggedIn ? <LazyRoute><AddFormPage /></LazyRoute> : <Navigate to="/" replace/>} />
+                <Route path="/form-success" element={isLoggedIn ? <LazyRoute><FormSuccessPage /></LazyRoute> : <Navigate to="/" replace/>} />
+                <Route path="/view-plan/:id" element={isLoggedIn ? <LazyRoute><ViewPlanPage /></LazyRoute> : <Navigate to="/" replace/>} />
+                <Route path="/payment" element={isLoggedIn ? <LazyRoute><PaymentPage /></LazyRoute> : <Navigate to="/" replace/>} />
+                <Route path="/payment/success" element={<LazyRoute><PaymentResultPage /></LazyRoute>} />
+                <Route path="/payment/failed" element={<LazyRoute><PaymentResultPage /></LazyRoute>} />
+                <Route path="/payment/pending" element={<LazyRoute><PaymentResultPage /></LazyRoute>} />
                 
                 {/* Admin*/}
-                <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminDashboardPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminUsersPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/classes" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_USER_CLASSES') ? <AdminLayout onLogout={handleLogout}><AdminClassesPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminFormsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/templates" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_PLAN_TEMPLATES') ? <AdminLayout onLogout={handleLogout}><AdminTemplatesPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPlanBuilderPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminChatsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><AdminAnnouncementsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminPaymentsPage /></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><AdminActivePlansPage /></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminDashboardPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminUsersPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/classes" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_USER_CLASSES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminClassesPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminFormsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/templates" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_PLAN_TEMPLATES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminTemplatesPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPlanBuilderPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminChatsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminAnnouncementsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPaymentsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminActivePlansPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

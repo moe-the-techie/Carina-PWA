@@ -7,15 +7,43 @@
  * Features:
  * - Instant display of cached data (no loading state for returning users)
  * - Background refresh with automatic state updates
+ * - Request deduplication (prevents duplicate in-flight requests)
  * - Optimistic updates support
  * - Cache invalidation helpers
  * - Offline support
+ * - Smart refetch strategies
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCacheData, setCacheData, removeCacheData } from '../utils/offlineCache';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// Global request deduplication store
+const inFlightRequests = new Map();
+
+// Global cache subscription store for cross-component updates
+const cacheSubscribers = new Map();
+
+/**
+ * Subscribe to cache updates for a specific key
+ */
+const subscribeToCacheKey = (cacheKey, callback) => {
+  if (!cacheSubscribers.has(cacheKey)) {
+    cacheSubscribers.set(cacheKey, new Set());
+  }
+  cacheSubscribers.get(cacheKey).add(callback);
+  return () => {
+    cacheSubscribers.get(cacheKey)?.delete(callback);
+  };
+};
+
+/**
+ * Notify all subscribers of cache update
+ */
+const notifyCacheUpdate = (cacheKey, data) => {
+  cacheSubscribers.get(cacheKey)?.forEach(callback => callback(data));
+};
 
 /**
  * Custom hook for data fetching with stale-while-revalidate caching
@@ -32,6 +60,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
  * @param {boolean} options.refetchOnFocus - Refetch when window gains focus (default: false)
  * @param {number} options.staleTime - Time before data is considered stale (default: 0)
  * @param {Array} options.dependencies - Dependencies that trigger refetch
+ * @param {boolean} options.deduplicate - Enable request deduplication (default: true)
+ * @param {boolean} options.syncAcrossComponents - Sync data across components using same key (default: true)
  * 
  * @returns {Object} { data, isLoading, isRefreshing, error, refetch, setData, invalidate }
  */
@@ -46,6 +76,8 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
     refetchOnFocus = false,
     staleTime = 0,
     dependencies = [],
+    deduplicate = true,
+    syncAcrossComponents = true,
   } = options;
 
   // Try to get cached data immediately (synchronously)
@@ -71,9 +103,36 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
   const isMounted = useRef(true);
   const fetchInProgress = useRef(false);
 
-  // Core fetch function
+  // Subscribe to cross-component updates
+  useEffect(() => {
+    if (!syncAcrossComponents) return;
+    
+    const unsubscribe = subscribeToCacheKey(cacheKey, (newData) => {
+      if (isMounted.current) {
+        setData(newData);
+      }
+    });
+    
+    return unsubscribe;
+  }, [cacheKey, syncAcrossComponents]);
+
+  // Core fetch function with deduplication
   const fetchData = useCallback(async (showLoadingState = false) => {
     if (!enabled || fetchInProgress.current) return;
+
+    // Check for in-flight request (deduplication)
+    if (deduplicate && inFlightRequests.has(cacheKey)) {
+      // Wait for existing request
+      try {
+        const result = await inFlightRequests.get(cacheKey);
+        if (isMounted.current) {
+          setData(result);
+        }
+        return result;
+      } catch (err) {
+        // Fall through to make new request
+      }
+    }
 
     fetchInProgress.current = true;
     
@@ -85,41 +144,61 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
       setIsRefreshing(true);
     }
 
-    try {
-      const freshData = await fetchFn();
-      
-      if (!isMounted.current) return;
+    // Create the fetch promise for deduplication
+    const fetchPromise = (async () => {
+      try {
+        const freshData = await fetchFn();
+        
+        if (!isMounted.current) return freshData;
 
-      // Update state with fresh data
-      setData(freshData);
-      setError(null);
-      setLastFetchTime(Date.now());
-      
-      // Cache the fresh data
-      setCacheData(cacheKey, freshData, cacheTTL);
-      
-      // Call success callback
-      if (onSuccess) {
-        onSuccess(freshData);
+        // Update state with fresh data
+        setData(freshData);
+        setError(null);
+        setLastFetchTime(Date.now());
+        
+        // Cache the fresh data
+        setCacheData(cacheKey, freshData, cacheTTL);
+        
+        // Notify other components using the same cache key
+        if (syncAcrossComponents) {
+          notifyCacheUpdate(cacheKey, freshData);
+        }
+        
+        // Call success callback
+        if (onSuccess) {
+          onSuccess(freshData);
+        }
+        
+        return freshData;
+      } catch (err) {
+        if (!isMounted.current) throw err;
+        
+        console.error(`[useCachedData] Error fetching ${cacheKey}:`, err);
+        setError(err);
+        
+        // If we have cached data, keep showing it even on error
+        if (onError) {
+          onError(err);
+        }
+        throw err;
+      } finally {
+        if (isMounted.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+          fetchInProgress.current = false;
+        }
+        // Remove from in-flight after a small delay
+        setTimeout(() => inFlightRequests.delete(cacheKey), 100);
       }
-    } catch (err) {
-      if (!isMounted.current) return;
-      
-      console.error(`[useCachedData] Error fetching ${cacheKey}:`, err);
-      setError(err);
-      
-      // If we have cached data, keep showing it even on error
-      if (onError) {
-        onError(err);
-      }
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-        setIsRefreshing(false);
-        fetchInProgress.current = false;
-      }
+    })();
+
+    // Store for deduplication
+    if (deduplicate) {
+      inFlightRequests.set(cacheKey, fetchPromise);
     }
-  }, [enabled, cacheKey, cacheTTL, fetchFn, onSuccess, onError, data]);
+
+    return fetchPromise;
+  }, [enabled, cacheKey, cacheTTL, fetchFn, onSuccess, onError, data, deduplicate, syncAcrossComponents]);
 
   // Manual refetch function
   const refetch = useCallback(() => {
@@ -129,6 +208,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
   // Invalidate cache and refetch
   const invalidate = useCallback(() => {
     removeCacheData(cacheKey);
+    inFlightRequests.delete(cacheKey);
     setData(null);
     return fetchData(true);
   }, [cacheKey, fetchData]);
