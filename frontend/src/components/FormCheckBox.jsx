@@ -11,7 +11,9 @@ export default function FormCheckBox({ label, name, checked, onChange }) {
             sx={{
                 backgroundColor: checked
                 ? theme.palette.primary.main
-                : theme.palette.background.darker,
+                : theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.1)' 
+                    : 'rgba(255, 255, 255, 0.9)',
                 borderRadius: borderRadius.xl,
                 py: spacing.sm,
                 px: spacing.md,
