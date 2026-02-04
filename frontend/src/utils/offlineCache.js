@@ -107,7 +107,7 @@ export const clearAllCache = () => {
     let clearedCount = 0;
     
     keys.forEach(key => {
-      if (key.startsWith(CACHE_PREFIX)) {
+      if (key.startsWith(CACHE_PREFIX) || key.startsWith(VOICE_CACHE_PREFIX)) {
         localStorage.removeItem(key);
         clearedCount++;
       }

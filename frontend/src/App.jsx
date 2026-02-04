@@ -28,6 +28,7 @@ import ScrollToTop from './components/ScrollToTop';
 import SettingsPage from './pages/SettingsPage';
 import ChatPage from './pages/ChatPage';
 import OfflineIndicator from './components/OfflineIndicator';
+import { clearAllCache } from './utils/offlineCache';
 import { disconnectAbly } from './services/ablyService';
 import { cleanupPushNotifications } from './services/ablyPushService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
@@ -89,8 +90,29 @@ function App() {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
 
-   const handleLogout = () => {
+   const handleLogout = async () => {
     localStorage.removeItem('token');
+    
+    // Clear application cache
+    clearAllCache();
+    
+    // Clear Service Worker caches (API, Runtime, and Images)
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys.map(key => {
+            if (key.includes('api-cache') || key.includes('runtime') || key.includes('image-cache')) {
+              return caches.delete(key);
+            }
+            return Promise.resolve();
+          })
+        );
+      } catch (e) {
+        console.error('Error clearing caches:', e);
+      }
+    }
+
     setIsLoggedIn(false);
     setIsAdmin(false);
     setUserId(null);
