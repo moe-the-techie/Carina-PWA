@@ -300,7 +300,7 @@ export async function getPlanByForm(req, res) {
         const { formId } = req.params;
         
         const plan = await Plan.findOne({ form: formId })
-            .populate('user', 'name email')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
             .populate('form', 'currentWeight desiredWeight createdAt')
             .populate('createdBy', 'name email');
 

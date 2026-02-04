@@ -31,7 +31,7 @@ router.get('/forms/my/:id', protect, async (req, res) => {
         const { id } = req.params;
         const Form = (await import('../models/Form.js')).default;
         const form = await Form.findOne({ _id: id, user: req.user._id })
-            .populate('user', 'name email dateOfBirth isMother gender'); // Populate user details as needed
+            .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession');
 
         if (!form) {
             return res.status(404).json({ error: 'Form not found' });
@@ -59,7 +59,8 @@ router.get('/forms/my/:formId/plan', protect, async (req, res) => {
         }
         
         const plan = await Plan.findOne({ form: formId, user: req.user._id })
-            .populate('createdBy', 'name')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
+            .populate('createdBy', 'name email')
             .populate('form', 'createdAt currentWeight desiredWeight');
         
         if (!plan) {

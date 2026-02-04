@@ -23,13 +23,13 @@ export async function getDashboardStats(req, res) {
             .select('name email createdAt profileImageUrl');
 
         const recentForms = await Form.find()
-            .populate('user', 'name email')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
             .sort({ createdAt: -1 })
             .limit(5);
 
         // Get recent active plans
         const recentActivePlans = await Plan.find({ status: 'active' })
-            .populate('user', 'name email')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
             .sort({ activatedAt: -1 })
             .limit(5);
 
@@ -142,7 +142,7 @@ export async function getAllFormsAdmin(req, res) {
         }
 
         const forms = await Form.find(query)
-            .populate('user', 'name email dateOfBirth gender profileImageUrl')
+            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
             .sort({ createdAt: -1 })
             .limit(limit * 1)
             .skip((page - 1) * limit);
@@ -631,9 +631,9 @@ export async function getAllActivePlansAdmin(req, res) {
         }
 
         const plans = await Plan.find(query)
-            .populate('user', 'name email profileImageUrl')
-            .populate('createdBy', 'name')
-            .populate('form', 'currentWeight desiredWeight createdAt')
+            .populate('user', 'name email profileImageUrl dateOfBirth gender isMother phoneNumber profession')
+            .populate('createdBy', 'name email')
+            .populate('form', 'currentWeight desiredWeight createdAt type')
             .sort({ activatedAt: -1, createdAt: -1 })
             .skip((parseInt(page) - 1) * parseInt(limit))
             .limit(parseInt(limit));
@@ -698,9 +698,9 @@ export async function getPlanProgressAdmin(req, res) {
         const { startDate, endDate } = req.query;
 
         const plan = await Plan.findById(planId)
-            .populate('user', 'name email profileImageUrl')
-            .populate('createdBy', 'name')
-            .populate('form', 'currentWeight desiredWeight createdAt');
+            .populate('user', 'name email profileImageUrl dateOfBirth gender isMother phoneNumber profession')
+            .populate('createdBy', 'name email')
+            .populate('form', 'currentWeight desiredWeight createdAt type');
 
         if (!plan) {
             return res.status(404).json({ error: 'Plan not found' });

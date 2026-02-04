@@ -29,7 +29,7 @@ export async function getAllForms (req, res) {
         }
 
         const forms = await Form.find(query)
-            .populate('user', 'name email dateOfBirth isMother gender')
+            .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
@@ -69,7 +69,7 @@ export async function getMyForms (req, res) {
         const skip = (page - 1) * limit;
 
         const forms = await Form.find({ user: userId })
-            .populate('user', 'name email dateOfBirth isMother gender')
+            .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
             .skip(skip)
             .limit(limit);
 
