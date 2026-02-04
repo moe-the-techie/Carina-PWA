@@ -37,14 +37,10 @@ const updateSW = registerSW({
 // Listen for SW messages to write to localStorage
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', event => {
-    const { type, key, value, subscription } = event.data;
+    const { type, key, value } = event.data;
     if (type === 'SET_LOCALSTORAGE') {
       localStorage.setItem(key, value);
       console.log('[PWA] Stored in localStorage:', key, value);
-    } else if (type === 'PUSH_SUBSCRIPTION_CHANGED') {
-      // Handle push subscription renewal
-      console.log('[PWA] Push subscription changed, will re-register on next login');
-      // The ablyPushService will handle re-registration
     }
   });
 }

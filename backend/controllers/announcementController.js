@@ -1,7 +1,7 @@
 import Announcement from '../models/Announcement.js';
 import User from '../models/User.js';
 import UserClass from '../models/UserClass.js';
-import { publishMessage, sendPushNotification } from '../config/ably.js';
+import { publishMessage } from '../config/ably.js';
 
 // Get all announcements for current user
 export const getUserAnnouncements = async (req, res) => {
@@ -309,28 +309,9 @@ const publishAnnouncementNotification = async (announcement) => {
             
             //channel for real-time updates and notifications
             await publishMessage(`user:${user._id}:announcements`, 'new-announcement', userNotificationData);
-
-            // Send push notification (works even when app is closed)
-            const pushTitle = announcement.priority === 'urgent' 
-                ? `🚨 ${announcement.title}` 
-                : `📢 ${announcement.title}`;
-            const pushBody = announcement.message.length > 100 
-                ? announcement.message.substring(0, 100) + '...' 
-                : announcement.message;
-
-            sendPushNotification(user._id.toString(), {
-                title: pushTitle,
-                body: pushBody,
-                data: {
-                    type: 'announcement',
-                    announcementId: announcement._id.toString(),
-                    priority: announcement.priority,
-                    url: '/announcements'
-                }
-            }).catch(err => console.error('Push notification error for user:', user._id, err));
         }
 
-        console.log(`Published announcement ${announcement._id} to ${targetUsers.length} users (with push notifications)`);
+        console.log(`Published announcement ${announcement._id} to ${targetUsers.length} users`);
     } catch (error) {
         console.error('Error publishing announcement notification:', error);
     }

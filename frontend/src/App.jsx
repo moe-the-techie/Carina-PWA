@@ -30,7 +30,6 @@ import ChatPage from './pages/ChatPage';
 import OfflineIndicator from './components/OfflineIndicator';
 import { clearAllCache } from './utils/offlineCache';
 import { disconnectAbly } from './services/ablyService';
-import { cleanupPushNotifications } from './services/ablyPushService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 import { UserProvider } from './contexts/UserContext';
@@ -119,7 +118,6 @@ function App() {
     setUserId(null);
     setUser(null);
     disconnectAbly();
-    cleanupPushNotifications().catch(console.error);
    }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done

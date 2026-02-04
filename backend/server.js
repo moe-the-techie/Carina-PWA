@@ -21,7 +21,6 @@ import templateRoutes from './routes/templates.js';
 import chatRoutes from './routes/chat.js';
 import announcementRoutes from './routes/announcements.js';
 import paymentRoutes from './routes/payments.js';
-import pushRoutes from './routes/push.js';
 
 dotenv.config();
 connectDB();
@@ -69,7 +68,6 @@ app.use('/api', templateRoutes);
 app.use('/api', chatRoutes);
 app.use('/api', announcementRoutes);
 app.use('/api', paymentRoutes);
-app.use('/api', pushRoutes);
 
 // Debug logging route
 app.post('/api/debug-log', (req, res) => {

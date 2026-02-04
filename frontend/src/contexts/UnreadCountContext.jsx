@@ -8,7 +8,6 @@ import {
     requestNotificationPermission,
     getCurrentlyViewingChat
 } from '../services/ablyService';
-import { setupUserPushNotifications, cleanupPushNotifications } from '../services/ablyPushService';
 
 const UnreadCountContext = createContext();
 
@@ -48,28 +47,8 @@ export const UnreadCountProvider = ({ children, user }) => {
     useEffect(() => {
         if (user) {
             requestNotificationPermission();
-            
-            // Setup Ably Push Notifications for background/closed app notifications
-            setupUserPushNotifications(user._id, user.role === 'admin')
-                .then(result => {
-                    if (result.success) {
-                        console.log('[Push] Push notifications activated successfully');
-                    } else {
-                        console.warn('[Push] Could not activate push notifications:', result.reason || result.error);
-                    }
-                })
-                .catch(error => {
-                    console.warn('[Push] Error setting up push notifications:', error);
-                });
         }
         fetchUnreadCount();
-        
-        // Cleanup push notifications when user logs out
-        return () => {
-            if (!user) {
-                cleanupPushNotifications().catch(console.error);
-            }
-        };
     }, [fetchUnreadCount, user]);
 
     // Subscribe to real-time updates for unread count

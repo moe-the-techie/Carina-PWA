@@ -4,9 +4,6 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-// ===== ABLY PUSH NOTIFICATIONS =====
-// This handles push notifications even when the app is closed
-
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
@@ -244,29 +241,6 @@ self.addEventListener('message', event => {
         client.postMessage({ type: 'UPDATE_LOCALSTORAGE', key, value });
       });
     });
-  } else if (type === 'SHOW_PUSH_NOTIFICATION') {
-    console.log('[SW] Showing push notification:', data);
-    
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon || '/icons/manifest-icon-192.maskable.png',
-      badge: data.badge || '/icons/manifest-icon-192.maskable.png',
-      tag: data.tag,
-      renotify: true,
-      requireInteraction: data.requireInteraction || false,
-      vibrate: data.vibrate || [200, 100, 200],
-      actions: [
-        {
-          action: 'open',
-          title: data.data?.type === 'announcement' ? 'View Announcement' : 'Open'
-        },
-        {
-          action: 'close',
-          title: 'Dismiss'
-        }
-      ],
-      data: data.data
-    });
   } else if (type === 'ABLY_MESSAGE') {
     console.log('[SW] Ably message received:', event.data);
     
@@ -372,145 +346,6 @@ self.addEventListener('notificationclick', event => {
         return self.clients.openWindow(urlToOpen);
       }
     })
-  );
-});
-
-// Handle push events from Ably Web Push
-self.addEventListener('push', event => {
-  console.log('[SW] Push event received:', event);
-  
-  let data = {};
-  try {
-    const payload = event.data?.json() || {};
-    console.log('[SW] Push payload:', payload);
-    
-    // Ably sends push notifications with a 'notification' object
-    // and optionally a 'data' object for custom data
-    if (payload.notification) {
-      data = {
-        title: payload.notification.title || 'New Notification',
-        body: payload.notification.body || '',
-        icon: payload.notification.icon || '/icons/manifest-icon-192.maskable.png',
-        badge: payload.notification.badge || '/icons/manifest-icon-192.maskable.png',
-        ...payload.notification,
-        // Custom data from Ably
-        customData: payload.data || payload.notification.data || {}
-      };
-    } else {
-      // Fallback for direct data payload
-      data = {
-        title: payload.title || 'New Notification',
-        body: payload.body || 'You have a new notification',
-        icon: payload.icon || '/icons/manifest-icon-192.maskable.png',
-        badge: payload.badge || '/icons/manifest-icon-192.maskable.png',
-        customData: payload.data || payload
-      };
-    }
-  } catch (err) {
-    console.error('[SW] Error parsing push data:', err);
-    data = {
-      title: 'New Notification',
-      body: event.data?.text() || 'You have a new notification',
-      icon: '/icons/manifest-icon-192.maskable.png',
-      badge: '/icons/manifest-icon-192.maskable.png',
-      customData: {}
-    };
-  }
-  
-  const customData = data.customData || {};
-  const notificationType = customData.type || 'general';
-  
-  // Determine URL based on notification type
-  let url = '/';
-  let tag = 'notification';
-  let requireInteraction = false;
-  let actions = [];
-  
-  switch (notificationType) {
-    case 'chat':
-    case 'message':
-      url = customData.senderRole === 'user' ? '/admin/chats' : '/chat';
-      tag = `chat-${customData.chatId || 'message'}`;
-      actions = [
-        { action: 'open', title: 'Open Chat' },
-        { action: 'close', title: 'Dismiss' }
-      ];
-      break;
-    case 'announcement':
-      url = '/announcements';
-      tag = `announcement-${customData.announcementId || Date.now()}`;
-      requireInteraction = customData.priority === 'urgent';
-      actions = [
-        { action: 'open', title: 'View Announcement' },
-        { action: 'close', title: 'Dismiss' }
-      ];
-      break;
-    case 'plan':
-      url = customData.planId ? `/view-plan/${customData.planId}` : '/';
-      tag = `plan-${customData.planId || Date.now()}`;
-      actions = [
-        { action: 'open', title: 'View Plan' },
-        { action: 'close', title: 'Dismiss' }
-      ];
-      break;
-    default:
-      url = customData.url || '/';
-      tag = `notification-${Date.now()}`;
-      actions = [
-        { action: 'open', title: 'Open' },
-        { action: 'close', title: 'Dismiss' }
-      ];
-  }
-  
-  const options = {
-    body: data.body,
-    icon: data.icon,
-    badge: data.badge,
-    tag: tag,
-    renotify: true,
-    requireInteraction: requireInteraction,
-    vibrate: requireInteraction ? [200, 100, 200, 100, 200] : [200, 100, 200],
-    actions: actions,
-    data: {
-      url: url,
-      type: notificationType,
-      ...customData
-    }
-  };
-  
-  console.log('[SW] Showing notification:', data.title, options);
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// Handle push subscription change (browser may renew subscription)
-self.addEventListener('pushsubscriptionchange', event => {
-  console.log('[SW] Push subscription changed');
-  
-  event.waitUntil(
-    (async () => {
-      try {
-        // Get the new subscription
-        const newSubscription = await self.registration.pushManager.subscribe(
-          event.oldSubscription.options
-        );
-        
-        // Notify all clients about the subscription change
-        const clients = await self.clients.matchAll({ type: 'window' });
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'PUSH_SUBSCRIPTION_CHANGED',
-            subscription: newSubscription.toJSON()
-          });
-        });
-        
-        console.log('[SW] Push subscription renewed');
-      } catch (error) {
-        console.error('[SW] Failed to renew push subscription:', error);
-      }
-    })()
   );
 });
 

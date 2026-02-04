@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import Plan from '../models/Plan.js';
 import User from '../models/User.js';
-import { sendPushNotification } from '../config/ably.js';
+import { publishMessage } from '../config/ably.js';
 
 /**
  * Check for plans that need reminders (6 days old) and send notifications
@@ -26,7 +26,7 @@ async function sendPlanReminders() {
                 $lte: sixDaysAgoEnd
             },
             reminderSentAt: { $exists: false }
-        }).populate('user', 'name email pushDevices');
+        }).populate('user', 'name email');
 
         console.log(`[Plan Reminder Service] Found ${plansNeedingReminder.length} plans needing reminders`);
 
@@ -36,20 +36,18 @@ async function sendPlanReminders() {
                 continue;
             }
 
-            // Send push notification
+            // Send notification via Ably real-time messaging
             const notification = {
                 title: '⏰ Plan Reminder',
                 body: `Your current plan "${plan.title}" is ending soon! Submit a new form to get your next week's plan.`,
                 icon: '/icons/manifest-icon-192.maskable.png',
-                data: {
-                    type: 'plan-reminder',
-                    planId: plan._id.toString(),
-                    url: '/active-plans'
-                }
+                type: 'plan-reminder',
+                planId: plan._id.toString(),
+                url: '/active-plans'
             };
 
             try {
-                await sendPushNotification(plan.user._id.toString(), notification);
+                await publishMessage(`plans:${plan.user._id}`, 'plan-reminder', notification);
                 
                 // Mark reminder as sent
                 plan.reminderSentAt = now;
@@ -109,7 +107,7 @@ async function updateExpiredPlans() {
 
             await plan.save();
 
-            // Send notification about plan status change
+            // Send notification about plan status change via Ably real-time messaging
             if (plan.user) {
                 const notification = {
                     title: plan.status === 'completed' ? '🎉 Plan Completed!' : '⏸️ Plan Paused',
@@ -117,16 +115,14 @@ async function updateExpiredPlans() {
                         ? `Great job! Your plan "${plan.title}" has been completed. Ready for your next challenge?`
                         : `Your plan "${plan.title}" has been paused. Submit a new form to get a fresh plan!`,
                     icon: '/icons/manifest-icon-192.maskable.png',
-                    data: {
-                        type: 'plan-status-update',
-                        planId: plan._id.toString(),
-                        status: plan.status,
-                        url: '/active-plans'
-                    }
+                    type: 'plan-status-update',
+                    planId: plan._id.toString(),
+                    status: plan.status,
+                    url: '/active-plans'
                 };
 
                 try {
-                    await sendPushNotification(plan.user._id.toString(), notification);
+                    await publishMessage(`plans:${plan.user._id}`, 'plan-status-update', notification);
                     console.log(`[Plan Reminder Service] Sent status update notification to user ${plan.user.email}`);
                 } catch (error) {
                     console.error(`[Plan Reminder Service] Error sending status update to user ${plan.user._id}:`, error);
