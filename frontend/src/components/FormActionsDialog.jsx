@@ -18,7 +18,8 @@ import {
     useTheme,
     CircularProgress,
     Backdrop,
-    Slide
+    Slide,
+    Alert
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
@@ -26,7 +27,8 @@ import {
     Assignment as PlanIcon,
     Edit as EditIcon,
     Message as MessageIcon,
-    Feedback as FeedbackIcon
+    Feedback as FeedbackIcon,
+    Delete as DeleteIcon
 } from '@mui/icons-material';
 import { spacing, transitions } from '../styles';
 import { glassDialog } from '../styles/glassmorphism';
@@ -45,11 +47,14 @@ export default function FormActionsDialog({
     onEditPlan,
     onMessageUser,
     onViewFeedback,
-    planLoading
+    onDeleteForm,
+    planLoading,
+    deleteLoading
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [selectedAction, setSelectedAction] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleActionClick = async (action) => {
         setSelectedAction(action);
@@ -74,12 +79,29 @@ export default function FormActionsDialog({
             case 'viewFeedback':
                 await onViewFeedback(form);
                 break;
+            case 'delete':
+                setShowDeleteConfirm(true);
+                return; // Don't close dialog yet
             default:
                 break;
         }
         
         // Close dialog after action completes
         onClose();
+    };
+
+    const handleConfirmDelete = async () => {
+        setSelectedAction('delete');
+        if (onDeleteForm) {
+            await onDeleteForm(form);
+        }
+        setShowDeleteConfirm(false);
+        onClose();
+    };
+
+    const handleCancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setSelectedAction(null);
     };
 
     const showSendPlan = !form?.reviewed;
@@ -263,7 +285,84 @@ export default function FormActionsDialog({
                             </ListItem>
                         </>
                     )}
+
+                    {/* Delete Form Action */}
+                    {onDeleteForm && (
+                        <>
+                            <Divider sx={{ mt: 1 }} />
+                            <ListItem disablePadding>
+                                <ListItemButton 
+                                    onClick={() => handleActionClick('delete')}
+                                    disabled={deleteLoading}
+                                    sx={{ 
+                                        py: { xs: 2, sm: 1.5 },
+                                        '&:hover': {
+                                            backgroundColor: 'error.light',
+                                            '& .MuiListItemIcon-root': {
+                                                color: 'error.contrastText'
+                                            },
+                                            '& .MuiListItemText-primary': {
+                                                color: 'error.contrastText'
+                                            },
+                                            '& .MuiListItemText-secondary': {
+                                                color: 'error.contrastText'
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                        <DeleteIcon color="error" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="Delete Form" 
+                                        secondary={!isMobile ? "Permanently delete form and associated plan" : null}
+                                        primaryTypographyProps={{ 
+                                            variant: isMobile ? 'body1' : 'body2',
+                                            color: 'error'
+                                        }}
+                                        secondaryTypographyProps={{
+                                            color: 'error'
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                        </>
+                    )}
                 </List>
+
+                {/* Delete Confirmation */}
+                {showDeleteConfirm && (
+                    <Box sx={{ p: 2 }}>
+                        <Alert 
+                            severity="warning" 
+                            sx={{ mb: 2 }}
+                        >
+                            <Typography variant="body2" fontWeight="medium">
+                                Are you sure you want to delete this form?
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                This will permanently delete the form and its associated plan (if any). This action cannot be undone.
+                            </Typography>
+                        </Alert>
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                            <Button 
+                                onClick={handleCancelDelete}
+                                disabled={deleteLoading}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                color="error"
+                                onClick={handleConfirmDelete}
+                                disabled={deleteLoading}
+                                startIcon={deleteLoading ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+                            >
+                                {deleteLoading ? 'Deleting...' : 'Delete'}
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
             </DialogContent>
             <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 1 } }}>
                 <Button onClick={onClose} fullWidth={isMobile} size={isMobile ? "large" : "medium"}>Cancel</Button>

@@ -98,6 +98,7 @@ export default function AdminFormsPage() {
     const [selectedFormForActions, setSelectedFormForActions] = useState(null);
     const [historyForms, setHistoryForms] = useState([]);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     
     // Chip detail dialog state
     const [chipDetailDialogOpen, setChipDetailDialogOpen] = useState(false);
@@ -265,6 +266,42 @@ export default function AdminFormsPage() {
                 });
             }
         }, 500);
+    };
+
+    const handleDeleteForm = async (form) => {
+        if (!form?._id) {
+            setError('Invalid form');
+            return;
+        }
+        
+        try {
+            setDeleteLoading(true);
+            setError('');
+            
+            const response = await fetch(`${apiBaseUrl}/api/admin/forms/${form._id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Failed to delete form');
+            }
+
+            // Close the actions dialog
+            setActionsDialogOpen(false);
+            setSelectedFormForActions(null);
+            
+            // Refetch forms to update the list
+            await refetchForms();
+        } catch (error) {
+            console.error('Error deleting form:', error);
+            setError(error.message);
+        } finally {
+            setDeleteLoading(false);
+        }
     };
 
     const handleOpenActionsDialog = (form) => {
@@ -836,7 +873,9 @@ export default function AdminFormsPage() {
                     onEditPlan={sendPlan}
                     onMessageUser={handleMessageUser}
                     onViewFeedback={viewFeedback}
+                    onDeleteForm={handleDeleteForm}
                     planLoading={planLoading}
+                    deleteLoading={deleteLoading}
                 />
 
                 {/* Form Details Dialog */}
