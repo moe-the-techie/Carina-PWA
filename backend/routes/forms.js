@@ -1,8 +1,8 @@
 import express from 'express';
 const router = express.Router();
 import multer from 'multer';
-import { getAllForms, getUserForms, newForm, getMyForms, uploadBodyImage } from '../controllers/formController.js';
-import { protect } from '../middleware/auth.js';
+import { getAllForms, getUserForms, newForm, getMyForms, uploadBodyImage, deleteFormAdmin, deleteMyForm } from '../controllers/formController.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 import { expensiveOperationLimiter, uploadLimiter } from '../middleware/rateLimiter.js';
 import Plan from '../models/Plan.js';
 
@@ -46,6 +46,12 @@ router.get('/forms/my/:id', protect, async (req, res) => {
 
 router.post('/forms', protect, expensiveOperationLimiter, newForm);
 router.post('/forms/upload-body-image', protect, uploadLimiter, upload.single('image'), uploadBodyImage);
+
+// Delete user's own unreviewed form (refunds credit)
+router.delete('/forms/my/:formId', protect, deleteMyForm);
+
+// Admin: Delete any form and its corresponding plan
+router.delete('/admin/forms/:formId', adminOnly, deleteFormAdmin);
 
 // Get user's plan associated with a specific form
 router.get('/forms/my/:formId/plan', protect, async (req, res) => {

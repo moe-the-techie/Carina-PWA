@@ -1,6 +1,8 @@
 import Form from '../models/Form.js';
+import Plan from '../models/Plan.js';
 import User from '../models/User.js';
-import { uploadBodyImageToCloudinary } from '../config/cloudinary.js';
+import { uploadBodyImageToCloudinary, deleteImage } from '../config/cloudinary.js';
+import cache, { CacheKeys } from '../config/cache.js';
 
 // TODO: Add route for admin to get all forms that were not reviewed
 
@@ -212,6 +214,138 @@ export async function uploadBodyImage(req, res) {
     } catch (error) {
         console.error('Error in uploadBodyImage:', error);
         res.status(500).json({ error: error.message || 'Failed to upload body image' });
+    }
+}
+
+/**
+ * Delete a form and its corresponding plan (Admin only)
+ * Also cleans up any associated images from Cloudinary
+ */
+export async function deleteFormAdmin(req, res) {
+    try {
+        const { formId } = req.params;
+
+        // Find the form first
+        const form = await Form.findById(formId);
+        if (!form) {
+            return res.status(404).json({ error: 'Form not found' });
+        }
+
+        // Find and delete the corresponding plan if it exists
+        const plan = await Plan.findOne({ form: formId });
+        
+        // Collect promises for parallel deletion
+        const deletePromises = [];
+
+        // Delete inbody images from Cloudinary if they exist
+        if (form.inbodyImages && form.inbodyImages.length > 0) {
+            for (const imageUrl of form.inbodyImages) {
+                // Extract public ID from Cloudinary URL
+                const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.\w+$/);
+                if (publicIdMatch && publicIdMatch[1]) {
+                    deletePromises.push(
+                        deleteImage(publicIdMatch[1]).catch(err => 
+                            console.error(`Failed to delete image ${publicIdMatch[1]}:`, err)
+                        )
+                    );
+                }
+            }
+        }
+
+        // Delete the plan if it exists
+        if (plan) {
+            deletePromises.push(Plan.findByIdAndDelete(plan._id));
+        }
+
+        // Delete the form
+        deletePromises.push(Form.findByIdAndDelete(formId));
+
+        // Execute all deletions in parallel
+        await Promise.all(deletePromises);
+
+        // Invalidate dashboard cache since counts changed
+        cache.delete(CacheKeys.dashboardStats());
+
+        res.status(200).json({ 
+            message: 'Form deleted successfully',
+            deletedPlan: plan ? true : false
+        });
+    } catch (error) {
+        console.error('Error in deleteFormAdmin:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete form' });
+    }
+}
+
+/**
+ * Delete user's own form (only if not reviewed/no plan sent)
+ * Users can only delete their own unreviewed forms
+ */
+export async function deleteMyForm(req, res) {
+    try {
+        const { formId } = req.params;
+        const userId = req.user._id;
+
+        // Find the form and verify ownership
+        const form = await Form.findOne({ _id: formId, user: userId });
+        if (!form) {
+            return res.status(404).json({ error: 'Form not found or does not belong to you' });
+        }
+
+        // Check if form has been reviewed or has a plan
+        if (form.reviewed || form.planSent) {
+            return res.status(403).json({ 
+                error: 'Cannot delete a form that has been reviewed or has a plan attached',
+                code: 'FORM_PROCESSED'
+            });
+        }
+
+        // Check if there's an associated plan (extra safety check)
+        const existingPlan = await Plan.findOne({ form: formId });
+        if (existingPlan) {
+            return res.status(403).json({ 
+                error: 'Cannot delete a form that has a plan attached',
+                code: 'HAS_PLAN'
+            });
+        }
+
+        // Delete inbody images from Cloudinary if they exist
+        const deletePromises = [];
+        if (form.inbodyImages && form.inbodyImages.length > 0) {
+            for (const imageUrl of form.inbodyImages) {
+                const publicIdMatch = imageUrl.match(/\/v\d+\/(.+)\.\w+$/);
+                if (publicIdMatch && publicIdMatch[1]) {
+                    deletePromises.push(
+                        deleteImage(publicIdMatch[1]).catch(err => 
+                            console.error(`Failed to delete image ${publicIdMatch[1]}:`, err)
+                        )
+                    );
+                }
+            }
+        }
+
+        // Delete form and images in parallel
+        deletePromises.push(Form.findByIdAndDelete(formId));
+        await Promise.all(deletePromises);
+
+        // Refund form credit if payments are enabled
+        const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
+        let creditsRefunded = false;
+        
+        if (paymentsEnabled && req.user.role !== 'admin') {
+            await User.findByIdAndUpdate(userId, { $inc: { formCredits: 1 } });
+            creditsRefunded = true;
+        }
+
+        // Invalidate dashboard cache
+        cache.delete(CacheKeys.dashboardStats());
+
+        res.status(200).json({ 
+            message: 'Form deleted successfully',
+            creditsRefunded
+        });
+    } catch (error) {
+        console.error('Error in deleteMyForm:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete form' });
     }
 }
 
