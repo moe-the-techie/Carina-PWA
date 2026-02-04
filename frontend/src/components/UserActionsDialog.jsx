@@ -15,14 +15,18 @@ import {
     Box,
     Avatar,
     useMediaQuery,
-    useTheme
+    useTheme,
+    TextField,
+    Alert,
+    CircularProgress
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
     Message as MessageIcon,
     Block as BanIcon,
     Delete as DeleteIcon,
-    Category as CategoryIcon
+    Category as CategoryIcon,
+    CardGiftcard as CreditsIcon
 } from '@mui/icons-material';
 import { spacing, transitions } from '../styles';
 import { glassDialog } from '../styles/glassmorphism';
@@ -35,36 +39,63 @@ export default function UserActionsDialog({
     onMessage,
     onBan,
     onDelete,
-    onAssignClass
+    onAssignClass,
+    onGiveCredits,
+    creditsLoading
 }) {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [selectedAction, setSelectedAction] = useState(null);
+    const [showCreditsForm, setShowCreditsForm] = useState(false);
+    const [creditsAmount, setCreditsAmount] = useState(1);
 
     const handleActionClick = (action) => {
         setSelectedAction(action);
-        onClose();
         
         // Execute the action
         switch(action) {
             case 'view':
+                onClose();
                 onViewDetails(user);
                 break;
             case 'message':
+                onClose();
                 onMessage(user._id);
                 break;
             case 'assignClass':
+                onClose();
                 onAssignClass(user);
                 break;
             case 'ban':
+                onClose();
                 onBan(user);
                 break;
             case 'delete':
+                onClose();
                 onDelete(user);
                 break;
+            case 'giveCredits':
+                setShowCreditsForm(true);
+                return; // Don't close dialog yet
             default:
                 break;
         }
+    };
+
+    const handleConfirmGiveCredits = async () => {
+        setSelectedAction('giveCredits');
+        if (onGiveCredits && user?._id) {
+            await onGiveCredits(user._id, creditsAmount);
+        }
+        setShowCreditsForm(false);
+        setCreditsAmount(1);
+        onClose();
+    };
+
+    const handleCancelCredits = () => {
+        setShowCreditsForm(false);
+        setCreditsAmount(1);
+        setSelectedAction(null);
     };
 
     return (
@@ -160,6 +191,30 @@ export default function UserActionsDialog({
                             <Divider />
                         </>
                     )}
+                    {/* Give Form Credits Action */}
+                    {onGiveCredits && (
+                        <>
+                            <ListItem disablePadding>
+                                <ListItemButton 
+                                    onClick={() => handleActionClick('giveCredits')}
+                                    disabled={creditsLoading}
+                                    sx={{ py: { xs: 2, sm: 1.5 } }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: { xs: 40, sm: 56 } }}>
+                                        <CreditsIcon color="success" />
+                                    </ListItemIcon>
+                                    <ListItemText 
+                                        primary="Give Form Credits" 
+                                        secondary={!isMobile ? "Add form submission credits" : null}
+                                        primaryTypographyProps={{ 
+                                            variant: isMobile ? 'body1' : 'body2' 
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                            <Divider />
+                        </>
+                    )}
                     <ListItem disablePadding>
                         <ListItemButton 
                             onClick={() => handleActionClick('ban')}
@@ -196,6 +251,50 @@ export default function UserActionsDialog({
                         </ListItemButton>
                     </ListItem>
                 </List>
+
+                {/* Give Credits Form */}
+                {showCreditsForm && (
+                    <Box sx={{ p: 2 }}>
+                        <Alert 
+                            severity="info" 
+                            sx={{ mb: 2 }}
+                        >
+                            <Typography variant="body2" fontWeight="medium">
+                                Give form credits to {user?.name || 'this user'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                Credits allow users to submit new forms.
+                            </Typography>
+                        </Alert>
+                        <TextField
+                            type="number"
+                            label="Number of Credits"
+                            value={creditsAmount}
+                            onChange={(e) => setCreditsAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                            inputProps={{ min: 1 }}
+                            fullWidth
+                            size="small"
+                            sx={{ mb: 2 }}
+                        />
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                            <Button 
+                                onClick={handleCancelCredits}
+                                disabled={creditsLoading}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                color="success"
+                                onClick={handleConfirmGiveCredits}
+                                disabled={creditsLoading || creditsAmount < 1}
+                                startIcon={creditsLoading ? <CircularProgress size={16} color="inherit" /> : <CreditsIcon />}
+                            >
+                                {creditsLoading ? 'Adding...' : `Give ${creditsAmount} Credit${creditsAmount > 1 ? 's' : ''}`}
+                            </Button>
+                        </Box>
+                    </Box>
+                )}
             </DialogContent>
             <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 1 } }}>
                 <Button onClick={onClose} fullWidth={isMobile} size={isMobile ? "large" : "medium"}>Cancel</Button>

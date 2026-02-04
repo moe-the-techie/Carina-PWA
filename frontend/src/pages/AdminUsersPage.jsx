@@ -91,6 +91,7 @@ export default function AdminUsersPage() {
     const [selectedClassId, setSelectedClassId] = useState('');
     const [includeUnverified, setIncludeUnverified] = useState(false);
     const [userDetailsLoading, setUserDetailsLoading] = useState(false);
+    const [creditsLoading, setCreditsLoading] = useState(false);
 
     // Debounce search input
     useEffect(() => {
@@ -218,6 +219,49 @@ export default function AdminUsersPage() {
     const handleBanClick = (user) => {
         setUserToBan(user);
         setBanDialogOpen(true);
+    };
+
+    const handleGiveCredits = async (userId, credits) => {
+        if (!userId) {
+            setSnackbar({ open: true, message: 'Invalid user', severity: 'error' });
+            return;
+        }
+        
+        try {
+            setCreditsLoading(true);
+            
+            const response = await fetch(`${apiBaseUrl}/api/admin/users/${userId}/credits`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ credits, mode: 'add' })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to give credits');
+            }
+
+            const data = await response.json();
+            
+            // Close the actions dialog
+            setActionsDialogOpen(false);
+            setSelectedUserForActions(null);
+            
+            // Show success snackbar
+            setSnackbar({ 
+                open: true, 
+                message: `Added ${credits} credit${credits > 1 ? 's' : ''} to ${data.user.name}. New total: ${data.user.formCredits}`, 
+                severity: 'success' 
+            });
+        } catch (error) {
+            console.error('Error giving credits:', error);
+            setSnackbar({ open: true, message: error.message, severity: 'error' });
+        } finally {
+            setCreditsLoading(false);
+        }
     };
 
     const handleDeleteConfirm = async () => {
@@ -1063,6 +1107,8 @@ export default function AdminUsersPage() {
                     onAssignClass={handleAssignClassClick}
                     onBan={handleBanClick}
                     onDelete={handleDeleteClick}
+                    onGiveCredits={handleGiveCredits}
+                    creditsLoading={creditsLoading}
                 />
 
                 {/* Class Assignment Dialog */}
