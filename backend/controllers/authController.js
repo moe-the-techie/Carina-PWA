@@ -18,7 +18,7 @@ const generateToken = (userId) => {
 
 export async function register(req, res) {
     try {
-        let { email, password, name, dateOfBirth, isMother, gender } = req.body;
+        let { email, password, name, dateOfBirth, isMother, gender, phoneNumber, profession } = req.body;
         email = email.trim().toLowerCase();
 
         const existingUser = await User.findOne({ email: email });
@@ -46,7 +46,9 @@ export async function register(req, res) {
             email: email,
             dateOfBirth: dateOfBirth,
             isMother: isMother,
-            gender: gender
+            gender: gender,
+            phoneNumber: phoneNumber || '',
+            profession: profession || ''
         });
 
         await newUser.save();

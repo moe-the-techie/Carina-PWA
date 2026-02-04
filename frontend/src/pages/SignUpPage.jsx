@@ -31,6 +31,8 @@ export default function SignUpPage({ onLogin }) {
   const theme = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [profession, setProfession] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [gender, setGender] = useState('');
@@ -82,6 +84,7 @@ export default function SignUpPage({ onLogin }) {
             email, password, passwordConfirmation, name, gender,
             isMother: isMother === 'yes',
             dateOfBirth: dob?.toISOString(),
+            phoneNumber, profession
           }),
         });
 
@@ -110,6 +113,7 @@ export default function SignUpPage({ onLogin }) {
       }
 
       setEmail(''); setPassword(''); setPasswordConfirmation('');
+      setPhoneNumber(''); setProfession('');
       setGender(''); setIsMother(''); setDob(null);
     }
   };
@@ -169,6 +173,12 @@ export default function SignUpPage({ onLogin }) {
             label="Email" fullWidth variant="outlined" value={email}
             onChange={(e) => setEmail(e.target.value)}
             error={!!formErrors.email} helperText={formErrors.email}
+            sx={inputStyles}
+          />
+
+          <TextField
+            label="Phone Number" fullWidth variant="outlined" value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
             sx={inputStyles}
           />
 
@@ -242,6 +252,12 @@ export default function SignUpPage({ onLogin }) {
               }}
             />
           </LocalizationProvider>
+
+          <TextField
+            label="Profession" fullWidth variant="outlined" value={profession}
+            onChange={(e) => setProfession(e.target.value)}
+            sx={inputStyles}
+          />
 
           <Box sx={{ minHeight: 48 }}>
             {backendError && (

@@ -42,6 +42,8 @@ router.get('/profile', protect, async (req, res) => {
             dateOfBirth: req.user.dateOfBirth,
             isMother: req.user.isMother,
             gender: req.user.gender,
+            phoneNumber: req.user.phoneNumber,
+            profession: req.user.profession,
             role: req.user.role,
             profileImageUrl: req.user.profileImageUrl,
             createdAt: req.user.createdAt
@@ -52,7 +54,7 @@ router.get('/profile', protect, async (req, res) => {
 router.put('/profile', protect, async (req, res) => {
     try {
         const userId = req.user._id;
-        const { name, dateOfBirth, isMother, gender, currentPassword, newPassword } = req.body;
+        const { name, dateOfBirth, isMother, gender, phoneNumber, profession, currentPassword, newPassword } = req.body;
         
         const user = await User.findById(userId).select('+password');
         if (!user) {
@@ -65,6 +67,8 @@ router.put('/profile', protect, async (req, res) => {
         if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
         if (isMother !== undefined) updateData.isMother = isMother;
         if (gender !== undefined) updateData.gender = gender;
+        if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+        if (profession !== undefined) updateData.profession = profession;
 
         if (newPassword && user.isFirebaseUser === false) {
             if (!currentPassword) {
@@ -96,6 +100,8 @@ router.put('/profile', protect, async (req, res) => {
             dateOfBirth: updatedUser.dateOfBirth,
             isMother: updatedUser.isMother,
             gender: updatedUser.gender,
+            phoneNumber: updatedUser.phoneNumber,
+            profession: updatedUser.profession,
             role: updatedUser.role,
             profileImageUrl: updatedUser.profileImageUrl
         };

@@ -115,6 +115,8 @@ export default function SettingsPage({ onLogout }) {
     
     const parts = [user.name];
     if (user.email) parts.push(user.email);
+    if (user.phoneNumber) parts.push(user.phoneNumber);
+    if (user.profession) parts.push(user.profession);
     
     return parts.join(' • ');
   };

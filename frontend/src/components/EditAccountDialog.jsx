@@ -54,6 +54,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
   
   const [formData, setFormData] = useState({
     name: '',
+    phoneNumber: '',
+    profession: '',
     dateOfBirth: null,
     gender: '',
     isMother: false,
@@ -85,6 +87,8 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
     if (user) {
       setFormData({
         name: user.name || '',
+        phoneNumber: user.phoneNumber || '',
+        profession: user.profession || '',
         dateOfBirth: user.dateOfBirth ? dayjs(user.dateOfBirth) : null,
         gender: user.gender || '',
         isMother: user.isMother || false,
@@ -366,7 +370,9 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
         name: formData.name,
         dateOfBirth: formData.dateOfBirth ? formData.dateOfBirth.toISOString() : null,
         gender: formData.gender,
-        isMother: formData.isMother
+        isMother: formData.isMother,
+        phoneNumber: formData.phoneNumber,
+        profession: formData.profession
       };
 
       if (formData.newPassword) {
@@ -679,6 +685,24 @@ export default function EditAccountDialog({ open, onClose, user, onUserUpdate })
               disabled
               size={isMobile ? "small" : "medium"}
               helperText="Email cannot be changed"
+              sx={{ mb: { xs: 1, sm: 0 } }}
+            />
+
+            <TextField
+              label="Phone Number"
+              value={formData.phoneNumber}
+              onChange={handleInputChange('phoneNumber')}
+              fullWidth
+              size={isMobile ? "small" : "medium"}
+              sx={{ mb: { xs: 1, sm: 0 } }}
+            />
+
+            <TextField
+              label="Profession"
+              value={formData.profession}
+              onChange={handleInputChange('profession')}
+              fullWidth
+              size={isMobile ? "small" : "medium"}
               sx={{ mb: { xs: 1, sm: 0 } }}
             />
 

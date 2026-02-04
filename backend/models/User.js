@@ -33,6 +33,16 @@ const userSchema = new Schema({
         required: true,
         trim: true,
     },
+    phoneNumber: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    profession: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     plans: [{
         type: Schema.Types.ObjectId,
         default: []
