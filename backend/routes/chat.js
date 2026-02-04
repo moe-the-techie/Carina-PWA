@@ -2,6 +2,7 @@ import express from 'express';
 const router = express.Router();
 import multer from 'multer';
 import { protect, adminOnly } from '../middleware/auth.js';
+import { chatLimiter, uploadLimiter, adminLimiter } from '../middleware/rateLimiter.js';
 import {
     getOrCreateChat,
     sendMessage,
@@ -52,19 +53,19 @@ const voiceUpload = multer({
     }
 });
 
-// User routes (protected)
+// User routes (protected) with chat rate limiting
 router.get('/chat', protect, getOrCreateChat);
-router.post('/chat/messages', protect, sendMessage);
-router.post('/chat/upload-image', protect, upload.single('image'), uploadImage);
-router.post('/chat/upload-voice', protect, voiceUpload.single('voice'), uploadVoice);
+router.post('/chat/messages', protect, chatLimiter, sendMessage);
+router.post('/chat/upload-image', protect, uploadLimiter, upload.single('image'), uploadImage);
+router.post('/chat/upload-voice', protect, uploadLimiter, voiceUpload.single('voice'), uploadVoice);
 router.get('/chat/voice/:messageId', protect, getVoiceAudio);
 router.get('/chat/:chatId/messages', protect, getMessages);
 router.put('/chat/:chatId/read', protect, markMessagesAsRead);
 router.get('/chat/unread/count', protect, getUnreadCount);
 router.get('/chat/ably/auth', protect, getAblyAuthToken);
 
-// Admin routes
-router.get('/admin/chats', adminOnly, getAllChats);
+// Admin routes with admin rate limiting
+router.get('/admin/chats', adminOnly, adminLimiter, getAllChats);
 router.get('/admin/chats/unread/count', adminOnly, getAdminUnreadCount);
 router.get('/admin/chat/:chatId', adminOnly, getChatById);
 router.get('/admin/chat/user/:userId', adminOnly, getChatByUserId);

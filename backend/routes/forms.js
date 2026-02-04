@@ -3,6 +3,7 @@ const router = express.Router();
 import multer from 'multer';
 import { getAllForms, getUserForms, newForm, getMyForms, uploadBodyImage } from '../controllers/formController.js';
 import { protect } from '../middleware/auth.js';
+import { expensiveOperationLimiter, uploadLimiter } from '../middleware/rateLimiter.js';
 import Plan from '../models/Plan.js';
 
 // Configure multer for body image upload
@@ -43,8 +44,8 @@ router.get('/forms/my/:id', protect, async (req, res) => {
     }
 });
 
-router.post('/forms', protect, newForm);
-router.post('/forms/upload-body-image', protect, upload.single('image'), uploadBodyImage);
+router.post('/forms', protect, expensiveOperationLimiter, newForm);
+router.post('/forms/upload-body-image', protect, uploadLimiter, upload.single('image'), uploadBodyImage);
 
 // Get user's plan associated with a specific form
 router.get('/forms/my/:formId/plan', protect, async (req, res) => {

@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { startPlanReminderService } from './services/planReminderService.js';
+import { generalLimiter } from './middleware/rateLimiter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +29,9 @@ connectDB();
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxies (Vercel, nginx, etc.)
+app.set('trust proxy', 1);
+
 // Enable gzip compression for all responses - reduces bandwidth significantly
 app.use(compression({
     level: 6, // Balance between compression ratio and CPU usage
@@ -44,6 +48,9 @@ app.use(compression({
 // Body parsing with size limits to prevent abuse
 app.use(express.json({ limit: '10mb' })); // Limit JSON body size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Apply general rate limiting to all API routes
+app.use('/api', generalLimiter);
 
 const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
