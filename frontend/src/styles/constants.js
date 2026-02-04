@@ -107,7 +107,7 @@ export const shadows = {
     glow: (color) => `0 0 20px ${color}40`,
     card: {
         light: '0 2px 12px rgba(0, 0, 0, 0.08)',
-        dark: '0 4px 20px rgba(0, 0, 0, 0.4)',
+        dark: '0 4px 24px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05)',
     },
     button: '0 4px 6px rgba(0, 0, 0, 0.12)',
 };
@@ -136,10 +136,10 @@ export const gradients = {
     sky: `linear-gradient(135deg, ${accentColors.sky.main}, ${accentColors.sky.dark})`,
     background: {
         light: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-        dark: 'linear-gradient(135deg, #121212 0%, #1a1a2e 100%)',
+        dark: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)',
     },
     page: (theme) => theme.palette.mode === 'dark'
-        ? 'linear-gradient(135deg, #121212 0%, #1a1a2e 100%)'
+        ? 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)'
         : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
 };
 

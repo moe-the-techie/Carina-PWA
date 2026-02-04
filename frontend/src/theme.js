@@ -130,11 +130,11 @@ const createSharedComponents = (mode) => ({
                 '&::-webkit-scrollbar': { width: '8px', height: '8px' },
                 '&::-webkit-scrollbar-track': { background: 'transparent' },
                 '&::-webkit-scrollbar-thumb': {
-                    backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+                    backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
                     borderRadius: '4px',
                 },
                 '&::-webkit-scrollbar-thumb:hover': {
-                    backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+                    backgroundColor: mode === 'dark' ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.2)',
                 },
             },
         },
@@ -159,9 +159,10 @@ const createSharedComponents = (mode) => ({
     MuiCard: {
         styleOverrides: {
             root: {
-                boxShadow: mode === 'dark' ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.08)',
+                boxShadow: mode === 'dark' ? '0 4px 16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)' : '0 2px 12px rgba(0,0,0,0.08)',
                 borderRadius: sharedShape.borderRadiusMd,
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                backgroundColor: mode === 'dark' ? '#1f1f1f' : undefined,
                 '@media (max-width:600px)': { borderRadius: sharedShape.borderRadiusSm },
             },
         },
@@ -304,11 +305,27 @@ export const darkTheme = createTheme({
         mode: 'dark',
         ...sharedPalette,
         secondary: { main: '#8B43C0', dark: '#6E14B1', darker: '#6E14B1', light: '#A865D1', lighter: '#A865D1', contrastText: '#FFFFFF' },
-        background: { default: '#121212', paper: '#1e1e1e', container: '#2a2a2a', gradient: 'linear-gradient(135deg, #121212 0%, #1a1a2e 100%)' },
-        text: { primary: '#ffffff', secondary: '#aaaaaa', disabled: '#666666' },
-        divider: 'rgba(255, 255, 255, 0.08)',
-        action: { hover: 'rgba(255, 255, 255, 0.08)', selected: 'rgba(145, 235, 78, 0.16)', focus: 'rgba(145, 235, 78, 0.12)' },
-        contrastText: { primary: '#fff', secondary: '#aaaaaa' },
+        background: { 
+            default: '#0a0a0a', 
+            paper: '#1a1a1a', 
+            container: '#2d2d2d', 
+            gradient: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%)' 
+        },
+        text: { 
+            primary: '#ffffff', 
+            secondary: '#c5c5c5', 
+            disabled: '#7a7a7a' 
+        },
+        divider: 'rgba(255, 255, 255, 0.15)',
+        action: { 
+            hover: 'rgba(255, 255, 255, 0.12)', 
+            selected: 'rgba(145, 235, 78, 0.2)', 
+            focus: 'rgba(145, 235, 78, 0.15)' 
+        },
+        contrastText: { 
+            primary: '#fff', 
+            secondary: '#c5c5c5' 
+        },
     },
     typography: sharedTypography,
     breakpoints: sharedBreakpoints,
@@ -320,11 +337,11 @@ export const darkTheme = createTheme({
             styleOverrides: {
                 paper: {
                     borderRadius: sharedShape.borderRadiusLg,
-                    backdropFilter: 'blur(12px)',
-                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                    boxShadow: '0 24px 48px rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(16px)',
+                    backgroundColor: 'rgba(20, 20, 20, 0.96)',
+                    boxShadow: '0 32px 64px rgba(0, 0, 0, 0.8)',
                     backgroundImage: 'none',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
                     '@media (max-width:600px)': { margin: '16px', maxHeight: 'calc(100% - 32px)', borderRadius: sharedShape.borderRadiusMd },
                 },
             },
