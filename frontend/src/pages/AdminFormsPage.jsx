@@ -916,7 +916,23 @@ export default function AdminFormsPage() {
                                             <Typography variant="h6" gutterBottom color="primary">Health History</Typography>
                                             <Typography><strong>Operations:</strong> {selectedForm.operations || 'None'}</Typography>
                                             <Typography><strong>Health Conditions:</strong> {selectedForm.healthConditions?.join(', ') || 'None'}</Typography>
-                                            <Typography><strong>Family History:</strong> {selectedForm.familyHistory || 'None'}</Typography>
+                                            {selectedForm.healthConditionsDetails && (
+                                                <Box sx={{ 
+                                                    mt: 1.5, 
+                                                    p: 1.5, 
+                                                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                                    borderRadius: 1,
+                                                    borderLeft: `3px solid ${theme.palette.primary.main}`
+                                                }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                                        Health Problems Details:
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                                        {selectedForm.healthConditionsDetails}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                            <Typography sx={{ mt: 1.5 }}><strong>Family History:</strong> {selectedForm.familyHistory || 'None'}</Typography>
                                             <Divider sx={{ my: 1 }} />
                                             <Typography><strong>Medications:</strong> {selectedForm.takeMedication ? selectedForm.medications?.join(', ') : 'None'}</Typography>
                                             <Typography><strong>Followed Advice:</strong> {selectedForm.followedDietAdvice ? 'Yes' : 'No'}</Typography>

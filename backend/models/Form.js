@@ -50,6 +50,7 @@ const formSchema = new Schema ({
         type: String,
         default: []
     }],
+    healthConditionsDetails: { type: String }, // Additional details about health problems
     
     // Family History
     familyHistory: { type: String },

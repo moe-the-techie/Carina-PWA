@@ -92,6 +92,7 @@ export default function NewFormPage () {
         // Health History
         operations: '',
         healthConditions: [],
+        healthConditionsDetails: '',
         familyHistory: '',
         takeMedication: false,
         medications: [''],
@@ -713,6 +714,21 @@ export default function NewFormPage () {
                                             />
                                         ))}
                                     </FormGroup>
+
+                                    {formData.healthConditions.length > 0 && (
+                                        <TextField 
+                                            fullWidth 
+                                            multiline 
+                                            rows={3} 
+                                            name="healthConditionsDetails" 
+                                            label="Health Problems Details (Please provide additional information)" 
+                                            value={formData.healthConditionsDetails} 
+                                            onChange={handleChange} 
+                                            variant="filled" 
+                                            sx={{ ...inputStyle, mb: 2 }} 
+                                            placeholder="Describe your health conditions in detail..."
+                                        />
+                                    )}
 
                                     <TextField fullWidth multiline rows={2} name="familyHistory" label="Family History Details" value={formData.familyHistory} onChange={handleChange} variant="filled" sx={inputStyle} />
 
