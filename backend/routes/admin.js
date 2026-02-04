@@ -21,7 +21,10 @@ import {
     getAllActivePlansAdmin,
     getPlanProgressAdmin,
     triggerPlanReminders,
-    triggerExpiredPlanUpdates
+    triggerExpiredPlanUpdates,
+    giveFormCredits,
+    getUserFormCredits,
+    bulkGiveFormCredits
 } from '../controllers/adminController.js';
 
 router.get('/admin/dashboard', adminOnly, getDashboardStats);
@@ -30,6 +33,11 @@ router.get('/admin/users/:userId', adminOnly, getUserDetails);
 router.delete('/admin/users/:userId', adminOnly, deleteUserByAdmin);
 router.put('/admin/users/:userId/ban', adminOnly, banUserByAdmin);
 router.put('/admin/users/:userId/class', adminOnly, checkFeatureEnabled('ENABLE_USER_CLASSES'), assignUserClass);
+
+// Form credits management
+router.get('/admin/users/:userId/credits', adminOnly, getUserFormCredits);
+router.post('/admin/users/:userId/credits', adminOnly, giveFormCredits);
+router.post('/admin/users/bulk/credits', adminOnly, bulkGiveFormCredits);
 
 router.get('/admin/forms', adminOnly, getAllFormsAdmin);
 

@@ -943,3 +943,145 @@ export async function triggerExpiredPlanUpdates(req, res) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 }
+
+/**
+ * Give form credits to a user (Admin only)
+ * Supports adding or setting credits
+ */
+export async function giveFormCredits(req, res) {
+    try {
+        const { userId } = req.params;
+        const { credits, mode = 'add' } = req.body;
+
+        // Validate credits input
+        if (credits === undefined || credits === null) {
+            return res.status(400).json({ error: 'Credits amount is required' });
+        }
+
+        const creditsNum = parseInt(credits);
+        if (isNaN(creditsNum) || creditsNum < 0) {
+            return res.status(400).json({ error: 'Credits must be a non-negative number' });
+        }
+
+        // Find the user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const previousCredits = user.formCredits || 0;
+        let newCredits;
+
+        if (mode === 'set') {
+            // Set credits to exact value
+            newCredits = creditsNum;
+        } else {
+            // Add credits (default behavior)
+            newCredits = previousCredits + creditsNum;
+        }
+
+        // Update user's form credits
+        user.formCredits = newCredits;
+        await user.save();
+
+        // Invalidate user cache if they're cached
+        cache.delete(CacheKeys.userById(userId));
+
+        res.status(200).json({
+            message: `Form credits ${mode === 'set' ? 'set to' : 'added successfully'}`,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                formCredits: newCredits,
+                previousCredits
+            },
+            creditsAdded: mode === 'add' ? creditsNum : newCredits - previousCredits
+        });
+    } catch (error) {
+        console.error('Error giving form credits:', error);
+        res.status(500).json({ error: 'Failed to give form credits' });
+    }
+}
+
+/**
+ * Get user's current form credits (Admin only)
+ */
+export async function getUserFormCredits(req, res) {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId).select('_id name email formCredits').lean();
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).json({
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                formCredits: user.formCredits || 0
+            }
+        });
+    } catch (error) {
+        console.error('Error getting user form credits:', error);
+        res.status(500).json({ error: 'Failed to get user form credits' });
+    }
+}
+
+/**
+ * Bulk give form credits to multiple users (Admin only)
+ * Useful for promotions or batch operations
+ */
+export async function bulkGiveFormCredits(req, res) {
+    try {
+        const { userIds, credits, mode = 'add' } = req.body;
+
+        // Validate inputs
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ error: 'userIds array is required' });
+        }
+
+        if (credits === undefined || credits === null) {
+            return res.status(400).json({ error: 'Credits amount is required' });
+        }
+
+        const creditsNum = parseInt(credits);
+        if (isNaN(creditsNum) || creditsNum < 0) {
+            return res.status(400).json({ error: 'Credits must be a non-negative number' });
+        }
+
+        let result;
+
+        if (mode === 'set') {
+            // Set credits to exact value for all users
+            result = await User.updateMany(
+                { _id: { $in: userIds } },
+                { $set: { formCredits: creditsNum } }
+            );
+        } else {
+            // Add credits to all users
+            result = await User.updateMany(
+                { _id: { $in: userIds } },
+                { $inc: { formCredits: creditsNum } }
+            );
+        }
+
+        // Invalidate cache for all affected users
+        for (const userId of userIds) {
+            cache.delete(CacheKeys.userById(userId));
+        }
+
+        res.status(200).json({
+            message: `Form credits ${mode === 'set' ? 'set' : 'added'} for ${result.modifiedCount} users`,
+            modifiedCount: result.modifiedCount,
+            matchedCount: result.matchedCount,
+            credits: creditsNum,
+            mode
+        });
+    } catch (error) {
+        console.error('Error in bulk give form credits:', error);
+        res.status(500).json({ error: 'Failed to give form credits in bulk' });
+    }
+}
