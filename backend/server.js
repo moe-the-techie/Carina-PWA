@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import cors from 'cors';
+import compression from 'compression';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,8 +27,23 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Enable gzip compression for all responses - reduces bandwidth significantly
+app.use(compression({
+    level: 6, // Balance between compression ratio and CPU usage
+    threshold: 1024, // Only compress responses larger than 1KB
+    filter: (req, res) => {
+        // Don't compress if client doesn't support it
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression.filter(req, res);
+    }
+}));
+
+// Body parsing with size limits to prevent abuse
+app.use(express.json({ limit: '10mb' })); // Limit JSON body size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 

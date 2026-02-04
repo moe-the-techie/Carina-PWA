@@ -28,13 +28,16 @@ export async function getAllForms (req, res) {
             }
         }
 
-        const forms = await Form.find(query)
-            .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        const total = await Form.countDocuments(query);
+        // Run find and count in parallel to eliminate double query
+        const [forms, total] = await Promise.all([
+            Form.find(query)
+                .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Form.countDocuments(query)
+        ]);
 
         if (!forms || forms.length === 0) {
             if (total === 0) {
@@ -68,12 +71,17 @@ export async function getMyForms (req, res) {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const forms = await Form.find({ user: userId })
-            .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
-            .skip(skip)
-            .limit(limit);
+        const query = { user: userId };
 
-        const total = await Form.countDocuments({ user: userId });
+        // Run find and count in parallel
+        const [forms, total] = await Promise.all([
+            Form.find(query)
+                .populate('user', 'name email dateOfBirth isMother gender profileImageUrl phoneNumber profession')
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Form.countDocuments(query)
+        ]);
 
         if (!forms || forms.length === 0) {
             if (total === 0) {
@@ -100,12 +108,17 @@ export async function getUserForms (req, res) {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const forms = await Form.find({ user: userId })
-            .populate('user', 'name email dateOfBirth isMother gender')
-            .skip(skip)
-            .limit(limit);
+        const query = { user: userId };
 
-        const total = await Form.countDocuments({ user: userId });
+        // Run find and count in parallel
+        const [forms, total] = await Promise.all([
+            Form.find(query)
+                .populate('user', 'name email dateOfBirth isMother gender')
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Form.countDocuments(query)
+        ]);
 
         if (!forms || forms.length === 0) {
             if (total === 0) {

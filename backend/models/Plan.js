@@ -243,6 +243,14 @@ planSchema.methods.updateStreak = function() {
     }
 };
 
+// Performance indexes for common queries
+planSchema.index({ user: 1, createdAt: -1 }); // User's plans sorted by date
+planSchema.index({ status: 1, createdAt: -1 }); // Filter by status
+planSchema.index({ form: 1 }, { unique: true }); // One plan per form
+planSchema.index({ status: 1, activatedAt: 1 }); // For reminder service queries
+planSchema.index({ user: 1, status: 1 }); // User's active/draft plans
+planSchema.index({ createdBy: 1 }); // Plans by admin
+
 
 const Plan = mongoose.model('Plan', planSchema);
 

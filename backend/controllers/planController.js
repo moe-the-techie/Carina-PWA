@@ -125,10 +125,13 @@ export async function createPlan(req, res) {
     }
 }
 
-// Get all plans (admin only)
+// Get all plans (admin only) - OPTIMIZED with parallel queries
 export async function getAllPlans(req, res) {
     try {
         const { page = 1, limit = 10, status, userId } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
         const query = {};
         
         if (status) {
@@ -139,19 +142,22 @@ export async function getAllPlans(req, res) {
             query.user = userId;
         }
 
-        const plans = await Plan.find(query)
-            .populate('user', 'name email')
-            .populate('createdBy', 'name')
-            .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
-
-        const total = await Plan.countDocuments(query); // Todo fix double query
+        // Run find and count in parallel to eliminate double-query
+        const [plans, total] = await Promise.all([
+            Plan.find(query)
+                .populate('user', 'name email')
+                .populate('createdBy', 'name')
+                .sort({ createdAt: -1 })
+                .limit(limitNum)
+                .skip(skip)
+                .lean(),
+            Plan.countDocuments(query)
+        ]);
 
         res.status(200).json({
             plans,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page,
+            totalPages: Math.ceil(total / limitNum),
+            currentPage: pageNum,
             total
         });
     } catch (error) {

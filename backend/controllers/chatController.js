@@ -224,13 +224,16 @@ export const markMessagesAsRead = async (req, res) => {
     }
 };
 
-// Admin: Get all chats
+// Admin: Get all chats - OPTIMIZED to avoid N+1 query problem
 export const getAllChats = async (req, res) => {
     try {
         const { skip = 0, limit = 50, search = '' } = req.query;
+        const skipNum = parseInt(skip);
+        const limitNum = parseInt(limit);
 
-        let query = {};
+        let matchStage = {};
         
+        // If search is provided, find matching users first
         if (search && search.trim()) {
             const searchRegex = new RegExp(search.trim(), 'i');
             const users = await User.find({
@@ -238,46 +241,99 @@ export const getAllChats = async (req, res) => {
                     { name: searchRegex },
                     { email: searchRegex }
                 ]
-            }).select('_id');
+            }).select('_id').lean();
             
             const userIds = users.map(u => u._id);
-            query.userId = { $in: userIds };
+            matchStage.userId = { $in: userIds };
         }
 
-        const chats = await Chat.find(query)
-            .sort({ lastMessageAt: -1 })
-            .skip(parseInt(skip))
-            .limit(parseInt(limit))
-            .populate('userId', 'name email profileImageUrl');
+        // Use aggregation pipeline to fetch chats with last message in a single query
+        // This solves the N+1 query problem
+        const [result] = await Chat.aggregate([
+            { $match: matchStage },
+            { $sort: { lastMessageAt: -1 } },
+            {
+                $facet: {
+                    // Get paginated chats with their last message
+                    chats: [
+                        { $skip: skipNum },
+                        { $limit: limitNum },
+                        // Lookup last message for each chat
+                        {
+                            $lookup: {
+                                from: 'messages',
+                                let: { chatId: '$_id' },
+                                pipeline: [
+                                    { $match: { $expr: { $eq: ['$chatId', '$$chatId'] } } },
+                                    { $sort: { createdAt: -1 } },
+                                    { $limit: 1 },
+                                    {
+                                        $lookup: {
+                                            from: 'users',
+                                            localField: 'senderId',
+                                            foreignField: '_id',
+                                            as: 'sender',
+                                            pipeline: [
+                                                { $project: { name: 1, role: 1 } }
+                                            ]
+                                        }
+                                    },
+                                    { $unwind: { path: '$sender', preserveNullAndEmptyArrays: true } }
+                                ],
+                                as: 'lastMessageArr'
+                            }
+                        },
+                        // Lookup user details
+                        {
+                            $lookup: {
+                                from: 'users',
+                                localField: 'userId',
+                                foreignField: '_id',
+                                as: 'user',
+                                pipeline: [
+                                    { $project: { name: 1, email: 1, profileImageUrl: 1 } }
+                                ]
+                            }
+                        },
+                        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+                        // Project final shape
+                        {
+                            $project: {
+                                chatId: '$_id',
+                                user: 1,
+                                lastMessageAt: 1,
+                                unreadByAdmins: 1,
+                                createdAt: 1,
+                                lastMessage: {
+                                    $cond: {
+                                        if: { $gt: [{ $size: '$lastMessageArr' }, 0] },
+                                        then: {
+                                            content: { $arrayElemAt: ['$lastMessageArr.content', 0] },
+                                            senderId: { $arrayElemAt: ['$lastMessageArr.sender', 0] },
+                                            senderRole: { $arrayElemAt: ['$lastMessageArr.senderRole', 0] },
+                                            createdAt: { $arrayElemAt: ['$lastMessageArr.createdAt', 0] }
+                                        },
+                                        else: null
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    // Get total count in the same query
+                    totalCount: [
+                        { $count: 'count' }
+                    ]
+                }
+            }
+        ]);
 
-        const chatsWithLastMessage = await Promise.all(
-            chats.map(async (chat) => {
-                const lastMessage = await Message.findOne({ chatId: chat._id })
-                    .sort({ createdAt: -1 })
-                    .populate('senderId', 'name role');
-
-                return {
-                    chatId: chat._id,
-                    user: chat.userId,
-                    lastMessageAt: chat.lastMessageAt,
-                    unreadByAdmins: chat.unreadByAdmins,
-                    lastMessage: lastMessage ? {
-                        content: lastMessage.content,
-                        senderId: lastMessage.senderId,
-                        senderRole: lastMessage.senderRole,
-                        createdAt: lastMessage.createdAt
-                    } : null,
-                    createdAt: chat.createdAt
-                };
-            })
-        );
-
-        const totalChats = await Chat.countDocuments(query);
+        const chats = result.chats || [];
+        const totalChats = result.totalCount[0]?.count || 0;
 
         res.status(200).json({
-            chats: chatsWithLastMessage,
+            chats: chats,
             total: totalChats,
-            hasMore: parseInt(skip) + chats.length < totalChats
+            hasMore: skipNum + chats.length < totalChats
         });
     } catch (error) {
         console.error('Error in getAllChats:', error);

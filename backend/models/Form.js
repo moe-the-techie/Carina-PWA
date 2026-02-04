@@ -155,6 +155,12 @@ const formSchema = new Schema ({
     }
 });
 
+// Performance indexes for common queries
+formSchema.index({ user: 1, createdAt: -1 }); // User's forms sorted by date
+formSchema.index({ reviewed: 1, createdAt: -1 }); // Admin pending forms
+formSchema.index({ type: 1, reviewed: 1, createdAt: -1 }); // Filter by type & status
+formSchema.index({ planSent: 1 }); // Forms with/without plans
+
 const Form = mongoose.model('Form', formSchema);
 
 export default Form;

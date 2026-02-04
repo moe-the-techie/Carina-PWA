@@ -9,31 +9,21 @@ import fawaterkConfig from '../config/fawaterk.js';
 import { deleteImage } from '../config/cloudinary.js';
 import { adminAuth } from '../config/firebase.js';
 import { sendPlanReminders, updateExpiredPlans } from '../services/planReminderService.js';
+import cache, { CacheKeys, CacheTTL } from '../config/cache.js';
+
+// Dashboard stats with caching - reduces DB load significantly
 export async function getDashboardStats(req, res) {
     try {
-        const totalUsers = await User.countDocuments({ role: 'user', isVerified: true });
-        const totalForms = await Form.countDocuments();
-        const pendingForms = await Form.countDocuments({ reviewed: false });
-        const activePlans = await Plan.countDocuments({ status: 'active' });
-        const totalPlans = await Plan.countDocuments();
+        // Try to get cached stats first
+        const cacheKey = CacheKeys.dashboardStats();
+        const cached = cache.get(cacheKey);
         
-        const recentUsers = await User.find({ role: 'user', isVerified: true })
-            .sort({ createdAt: -1 })
-            .limit(5)
-            .select('name email createdAt profileImageUrl');
+        if (cached) {
+            return res.status(200).json(cached);
+        }
 
-        const recentForms = await Form.find()
-            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
-            .sort({ createdAt: -1 })
-            .limit(5);
-
-        // Get recent active plans
-        const recentActivePlans = await Plan.find({ status: 'active' })
-            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
-            .sort({ activatedAt: -1 })
-            .limit(5);
-
-        res.status(200).json({
+        // Run all count queries in parallel for better performance
+        const [
             totalUsers,
             totalForms,
             pendingForms,
@@ -42,7 +32,44 @@ export async function getDashboardStats(req, res) {
             recentUsers,
             recentForms,
             recentActivePlans
-        });
+        ] = await Promise.all([
+            User.countDocuments({ role: 'user', isVerified: true }),
+            Form.countDocuments(),
+            Form.countDocuments({ reviewed: false }),
+            Plan.countDocuments({ status: 'active' }),
+            Plan.countDocuments(),
+            User.find({ role: 'user', isVerified: true })
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .select('name email createdAt profileImageUrl')
+                .lean(),
+            Form.find()
+                .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .lean(),
+            Plan.find({ status: 'active' })
+                .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
+                .sort({ activatedAt: -1 })
+                .limit(5)
+                .lean()
+        ]);
+
+        const stats = {
+            totalUsers,
+            totalForms,
+            pendingForms,
+            activePlans,
+            totalPlans,
+            recentUsers,
+            recentForms,
+            recentActivePlans
+        };
+
+        // Cache for 1 minute
+        cache.set(cacheKey, stats, CacheTTL.DASHBOARD);
+
+        res.status(200).json(stats);
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
         res.status(500).json({ message: 'Server error' });
@@ -52,6 +79,10 @@ export async function getDashboardStats(req, res) {
 export async function getAllUsersAdmin(req, res) {
     try {
         const { page = 1, limit = 10, search = '', classFilter = '', includeUnverified = 'false' } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+        
         const query = { role: 'user' };
         
         if (includeUnverified !== 'true') {
@@ -73,19 +104,22 @@ export async function getAllUsersAdmin(req, res) {
             }
         }
 
-        const users = await User.find(query)
-            .select('-password')
-            .populate('userClass', 'name color description')
-            .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
-
-        const total = await User.countDocuments(query);
+        // Use Promise.all to run find and count in parallel - eliminates double query
+        const [users, total] = await Promise.all([
+            User.find(query)
+                .select('-password')
+                .populate('userClass', 'name color description')
+                .sort({ createdAt: -1 })
+                .limit(limitNum)
+                .skip(skip)
+                .lean(),
+            User.countDocuments(query)
+        ]);
 
         res.status(200).json({
             users,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page,
+            totalPages: Math.ceil(total / limitNum),
+            currentPage: pageNum,
             total
         });
     } catch (error) {
@@ -119,6 +153,9 @@ export async function getUserDetails(req, res) {
 export async function getAllFormsAdmin(req, res) {
     try {
         const { page = 1, limit = 10, reviewed, userId, type } = req.query;
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
         const query = {};
         
         if (reviewed !== undefined && reviewed !== '') {
@@ -141,18 +178,21 @@ export async function getAllFormsAdmin(req, res) {
             }
         }
 
-        const forms = await Form.find(query)
-            .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
-            .sort({ createdAt: -1 })
-            .limit(limit * 1)
-            .skip((page - 1) * limit);
-
-        const total = await Form.countDocuments(query);
+        // Run find and count in parallel - eliminates the double query
+        const [forms, total] = await Promise.all([
+            Form.find(query)
+                .populate('user', 'name email dateOfBirth gender profileImageUrl isMother phoneNumber profession')
+                .sort({ createdAt: -1 })
+                .limit(limitNum)
+                .skip(skip)
+                .lean(),
+            Form.countDocuments(query)
+        ]);
 
         res.status(200).json({
             forms,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page,
+            totalPages: Math.ceil(total / limitNum),
+            currentPage: pageNum,
             total
         });
     } catch (error) {

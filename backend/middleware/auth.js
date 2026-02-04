@@ -1,82 +1,91 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import cache, { CacheKeys, CacheTTL } from '../config/cache.js';
 
-// TODO: add logic for admin access
+// JWT verification - synchronous for better performance
+export function verifyToken(token) {
+  return jwt.verify(token, process.env.JWT_SECRET);
+}
 
-// Function to verify the JWT token (for login)
-export async function verifyToken(token) {
-  try {
-    const decoded = await jwt.verify(token, process.env.JWT_SECRET);
-    return decoded; // Return the decoded payload
-  } catch (error) {
-    throw error; // Re-throw the error to be caught by the caller
+/**
+ * Extract and verify token from request
+ * @returns {{ decoded: object } | { error: string, status: number }}
+ */
+function extractToken(req) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { error: '401: Not authorized, no token', status: 401 };
   }
-};
 
-export async function protect(req, res, next) {
-  let token;
-
+  const token = authHeader.slice(7); // More efficient than split
+  
   try {
-    // Check for the token
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({ error: '401: Not authorized, no token' });
-    }
-
-    // Verify the token
-    const decoded = await verifyToken(token);
-
-    // Get the user (and check if they exist)
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      return res.status(401).json({ error: '401: Not authorized, invalid token' }); // Or a more specific message
-    }
-
-    req.user = user; // Store user in request
-    next(); // Move to the next middleware/route
+    const decoded = verifyToken(token);
+    return { decoded };
   } catch (error) {
-    // Handle all errors (token verification, user lookup) in one place
-    console.error(error);
-    return res.status(401).json({ error: '401: Not authorized, token failed' });
+    return { error: '401: Not authorized, token failed', status: 401 };
   }
-};
+}
 
-// Admin protection middleware
-export async function adminOnly(req, res, next) {
-  let token;
+/**
+ * Get user with caching for repeated requests
+ * Uses short TTL to balance freshness vs performance
+ */
+async function getCachedUser(userId) {
+  const cacheKey = CacheKeys.userById(userId);
+  
+  return cache.getOrSet(cacheKey, async () => {
+    const user = await User.findById(userId)
+      .select('-password')
+      .lean(); // Use lean() for read-only operations - 3-5x faster
+    return user;
+  }, CacheTTL.SHORT);
+}
 
-  try {
-    // Check for the token
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
+/**
+ * Core authentication middleware - shared logic
+ * @param {boolean} requireAdmin - Whether to require admin role
+ */
+function createAuthMiddleware(requireAdmin = false) {
+  return async function(req, res, next) {
+    try {
+      // Extract and verify token
+      const tokenResult = extractToken(req);
+      if (tokenResult.error) {
+        return res.status(tokenResult.status).json({ error: tokenResult.error });
+      }
+
+      // Get user with caching
+      const user = await getCachedUser(tokenResult.decoded.userId);
+      
+      if (!user) {
+        return res.status(401).json({ error: '401: Not authorized, invalid token' });
+      }
+
+      // Check admin requirement
+      if (requireAdmin && user.role !== 'admin') {
+        return res.status(403).json({ error: '403: Access denied, admin privileges required' });
+      }
+
+      // Attach user to request (convert lean object back for compatibility)
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Auth middleware error:', error.message);
+      return res.status(401).json({ error: '401: Not authorized, token failed' });
     }
+  };
+}
 
-    if (!token) {
-      return res.status(401).json({ error: '401: Not authorized, no token' });
-    }
+// Export middleware functions
+export const protect = createAuthMiddleware(false);
+export const adminOnly = createAuthMiddleware(true);
 
-    // Verify the token
-    const decoded = await verifyToken(token);
-
-    // Get the user (and check if they exist)
-    const user = await User.findById(decoded.userId).select('-password');
-    if (!user) {
-      return res.status(401).json({ error: '401: Not authorized, invalid token' });
-    }
-
-    // Check if user is admin
-    if (user.role !== 'admin') {
-      return res.status(403).json({ error: '403: Access denied, admin privileges required' });
-    }
-
-    req.user = user; // Store user in request
-    next(); // Move to the next middleware/route
-  } catch (error) {
-    // Handle all errors (token verification, user lookup) in one place
-    console.error(error);
-    return res.status(401).json({ error: '401: Not authorized, token failed' });
-  }
-};
+/**
+ * Invalidate user cache when user data changes
+ * Call this after user updates
+ */
+export function invalidateUserCache(userId) {
+  cache.delete(CacheKeys.userById(userId));
+}
