@@ -33,6 +33,7 @@ import { disconnectAbly } from './services/ablyService';
 import { cleanupPushNotifications } from './services/ablyPushService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
+import { UserProvider } from './contexts/UserContext';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const isFeatureEnabled = (featureName) => {
@@ -124,10 +125,11 @@ function App() {
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
     return (
         <Router>
-            <UnreadCountProvider user={user}>
-                <AnnouncementNotificationProvider user={user}>
-                    <OfflineIndicator />
-                    <ScrollToTop />
+            <UserProvider enabled={isLoggedIn}>
+                <UnreadCountProvider user={user}>
+                    <AnnouncementNotificationProvider user={user}>
+                        <OfflineIndicator />
+                        <ScrollToTop />
                     <Routes>
                 <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
                 <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
@@ -160,8 +162,8 @@ function App() {
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>
-        </Router>
-    );
+            </UserProvider>
+        </Router>    );
 }
 
 export default App;

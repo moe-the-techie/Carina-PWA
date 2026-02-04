@@ -34,6 +34,7 @@ import PageFade from '../components/PageFade';
 import EditAccountDialog from '../components/EditAccountDialog.jsx';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import { useThemeMode } from '../contexts/ThemeContext';
+import { useUserProfile } from '../contexts/UserContext';
 import { 
   clearVoiceCache, 
   getVoiceCacheStats 
@@ -48,7 +49,8 @@ export default function SettingsPage({ onLogout }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const { mode, toggleTheme } = useThemeMode();
-  const [user, setUser] = useState(null);
+  const { userProfile, setUserProfile, isLoading: isUserLoading, error: userError } = useUserProfile();
+  const user = userProfile?.user;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [error, setError] = useState('');
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
@@ -59,40 +61,22 @@ export default function SettingsPage({ onLogout }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await fetch(`${apiBaseUrl}/api/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-
-        const data = await response.json();
-        setUser(data.user);
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+    if (userError) {
         setError('Failed to load profile information');
-      }
-    };
+    }
+  }, [userError]);
 
+  useEffect(() => {
     const loadCacheStats = () => {
       const stats = getVoiceCacheStats();
       setCacheStats(stats);
     };
 
-    fetchUserProfile();
     loadCacheStats();
   }, []);
 
   const handleUserUpdate = (updatedUser) => {
-    setUser(updatedUser);
+    setUserProfile({ user: updatedUser });
   };
 
   const handleClearCache = () => {

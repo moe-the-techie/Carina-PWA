@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useUserProfile } from '../contexts/UserContext';
 import PageFade from '../components/PageFade.jsx';
 import { 
     TextField, 
@@ -136,10 +137,12 @@ export default function NewFormPage () {
     const [formCredits, setFormCredits] = useState(null);
     const [checkingCredits, setCheckingCredits] = useState(true);
     const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+    const { userProfile } = useUserProfile();
+    const user = userProfile?.user;
 
-    // Check form credits on mount
+    // Check form credits (user profile is handled by context)
     useEffect(() => {
-        const checkFormCredits = async () => {
+        const initPage = async () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) {
@@ -147,33 +150,38 @@ export default function NewFormPage () {
                     return;
                 }
 
-                const response = await fetch(`${apiBaseUrl}/api/payments/credits`, {
+                // Fetch credits
+                const creditsRes = await fetch(`${apiBaseUrl}/api/payments/credits`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setFormCredits(data.formCredits);
-                    setPaymentsEnabled(data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
+
+
+                // Handle credits response
+                if (creditsRes.ok) {
+                    const creditsData = await creditsRes.json();
+                    setFormCredits(creditsData.formCredits);
+                    setPaymentsEnabled(creditsData.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false');
                     
                     // Redirect to payment if no credits and payments are enabled
-                    if (data.formCredits <= 0 && data.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false') {
+                    if (creditsData.formCredits <= 0 && creditsData.paymentsEnabled !== false && import.meta.env.VITE_ENABLE_PAYMENTS !== 'false') {
                         navigate('/payment', { 
                             state: { 
                                 message: 'You need to purchase form credits to submit a new form.',
                                 fromNewForm: true
                             }
                         });
+                        return;
                     }
                 }
             } catch (error) {
-                console.error('Error checking credits:', error);
+                console.error('Error initializing page:', error);
             } finally {
                 setCheckingCredits(false);
             }
         };
 
-        checkFormCredits();
+        initPage();
     }, [navigate]);
 
     useEffect(() => {
@@ -655,7 +663,9 @@ export default function NewFormPage () {
                                         <TextField fullWidth type="number" name="currentWeight" label="Current Weight (kg)" value={formData.currentWeight} onChange={handleChange} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="filled" sx={inputStyle} />
                                         <TextField fullWidth type="number" name="height" label="Height (cm)" value={formData.height} onChange={handleChange} error={!!formErrors.height} helperText={formErrors.height} variant="filled" sx={inputStyle} />
                                         
-                                        <TextField fullWidth name="menstrualCycle" label="Period Cycle" value={formData.menstrualCycle} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        {user?.gender === 'female' && (
+                                            <TextField fullWidth name="menstrualCycle" label="Period Cycle" value={formData.menstrualCycle} onChange={handleChange} variant="filled" sx={inputStyle} />
+                                        )}
                                         <TextField fullWidth name="bowelMovement" label="Bowel Movement" value={formData.bowelMovement} onChange={handleChange} variant="filled" sx={inputStyle} />
                                         <TextField fullWidth name="physicalActivity" label="Physical Activity" value={formData.physicalActivity} onChange={handleChange} variant="filled" sx={inputStyle} />
                                         <TextField fullWidth name="whoCooks" label="Who Cooks?" value={formData.whoCooks} onChange={handleChange} variant="filled" sx={inputStyle} />
@@ -720,9 +730,12 @@ export default function NewFormPage () {
 
                                     <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>Blood Test Results</Typography>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                        {Object.keys(formData.bloodTest).map((key) => (
-                                            <TextField key={key} fullWidth label={key.charAt(0).toUpperCase() + key.slice(1)} value={formData.bloodTest[key]} onChange={(e) => handleNestedChange('bloodTest', key, e.target.value)} variant="filled" sx={inputStyle} />
-                                        ))}
+                                        {Object.keys(formData.bloodTest).map((key) => {
+                                            if (key === 'prolactin' && user?.gender !== 'female') return null;
+                                            return (
+                                                <TextField key={key} fullWidth label={key.charAt(0).toUpperCase() + key.slice(1)} value={formData.bloodTest[key]} onChange={(e) => handleNestedChange('bloodTest', key, e.target.value)} variant="filled" sx={inputStyle} />
+                                            );
+                                        })}
                                     </Box>
                                 </Paper>
                             </motion.div>
