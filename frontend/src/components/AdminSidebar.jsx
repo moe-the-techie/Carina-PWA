@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Box,
     Drawer,
@@ -31,15 +31,31 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { spacing, transitions, zIndex } from '../styles';
 
 const drawerWidth = 240;
 
 export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle }) {
     const location = useLocation();
+    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { unreadCount } = useUnreadCount();
+    const { startNavigation, getActivePath } = useNavigation();
+    
+    // Use the "visual" active path for instant feedback
+    const activePath = getActivePath();
+    
+    // Handle navigation with instant feedback
+    const handleNavClick = (e, to) => {
+        e.preventDefault();
+        if (to !== location.pathname) {
+            startNavigation(to);
+            navigate(to);
+        }
+        if (isMobile) handleDrawerToggle();
+    };
     
     const menuItems = [
         { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
@@ -99,14 +115,14 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             
             <List sx={{ flexGrow: 1 }}>
                 {menuItems.map((item) => {
-                    const isActive = location.pathname === item.to;
+                    const isActive = activePath === item.to;
                     return (
                         <ListItem key={item.to} disablePadding>
                             <ListItemButton
-                                component={Link}
-                                to={item.to}
+                                component="a"
+                                href={item.to}
+                                onClick={(e) => handleNavClick(e, item.to)}
                                 selected={isActive}
-                                onClick={isMobile ? handleDrawerToggle : undefined}
                                 sx={{
                                     transition: transitions.fast,
                                     '&.Mui-selected': {

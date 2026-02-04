@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import IconButton from '@mui/material/IconButton';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import HomeFilledIcon from '@mui/icons-material/Home';
@@ -18,13 +18,19 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
+import { useNavigation } from '../contexts/NavigationContext';
 import { spacing, transitions, zIndex, accentColors } from '../styles';
 
 export default function NavigationBar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const theme = useTheme();
   const { unreadCount } = useUnreadCount();
   const { unreadCount: announcementUnreadCount } = useAnnouncementNotifications();
+  const { startNavigation, getActivePath } = useNavigation();
+
+  // Use the "visual" active path for instant feedback
+  const activePath = getActivePath();
 
   const navItems = [
     { to: '/home', outlinedIcon: <HomeOutlinedIcon />, filledIcon: <HomeFilledIcon />, label: 'Forms' },
@@ -33,6 +39,15 @@ export default function NavigationBar() {
     { to: '/chat', outlinedIcon: <ChatBubbleOutlineIcon />, filledIcon: <ChatBubbleIcon />, label: 'Chat' },
     { to: '/settings', outlinedIcon: <SettingsOutlinedIcon />, filledIcon: <SettingsIcon />, label: 'Settings' }
   ].filter(item => !item.feature || import.meta.env[item.feature] !== 'false');
+
+  // Handle navigation with instant feedback
+  const handleNavClick = (e, to) => {
+    e.preventDefault();
+    if (to !== location.pathname) {
+      startNavigation(to);
+      navigate(to);
+    }
+  };
 
   return (
     <Box
@@ -70,11 +85,21 @@ export default function NavigationBar() {
         }}
       >
         {navItems.map(({ to, outlinedIcon, filledIcon, label, activeColor }) => {
-          const isActive = location.pathname === to;
+          const isActive = activePath === to;
           const itemColor = isActive ? (activeColor || theme.palette.primary.main) : theme.palette.text.secondary;
           return (
             <li key={to}>
-              <Link to={to} style={{ textDecoration: 'none' }}>
+              <Box
+                component="a"
+                href={to}
+                onClick={(e) => handleNavClick(e, to)}
+                sx={{ 
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  display: 'block',
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              >
                 <Box
                   sx={{
                     display: 'flex',
@@ -136,7 +161,7 @@ export default function NavigationBar() {
                     {label}
                   </Typography>
                 </Box>
-              </Link>
+              </Box>
             </li>
           );
         })}

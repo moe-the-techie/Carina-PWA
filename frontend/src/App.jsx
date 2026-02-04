@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, data } from 'react-router-dom';
-import { CircularProgress, Box } from '@mui/material';
+import { CircularProgress, Box, Skeleton } from '@mui/material';
 
 // Eagerly load critical path components (landing, login)
 import LandingPage from './pages/LandingPage';
@@ -42,21 +42,51 @@ import { disconnectAbly } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 import { UserProvider } from './contexts/UserContext';
+import { NavigationProvider } from './contexts/NavigationContext';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-// Loading fallback component - minimal spinner for route transitions
+// Loading fallback component - skeleton layout for smoother transitions
+// This shows a skeleton that matches the general page structure
 const PageLoader = () => (
     <Box 
         sx={{ 
             display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
+            flexDirection: 'column',
+            gap: 2,
+            p: { xs: 2, md: 3 },
             minHeight: '50vh',
-            width: '100%'
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden',
         }}
     >
-        <CircularProgress size={40} />
+        {/* Header skeleton */}
+        <Skeleton 
+            variant="text" 
+            width="40%" 
+            height={40} 
+            sx={{ mb: 1 }}
+        />
+        {/* Content skeleton */}
+        <Skeleton 
+            variant="rounded" 
+            width="100%" 
+            height={120} 
+            sx={{ borderRadius: 2 }}
+        />
+        <Skeleton 
+            variant="rounded" 
+            width="100%" 
+            height={120} 
+            sx={{ borderRadius: 2 }}
+        />
+        <Skeleton 
+            variant="rounded" 
+            width="100%" 
+            height={80} 
+            sx={{ borderRadius: 2 }}
+        />
     </Box>
 );
 
@@ -155,6 +185,7 @@ function App() {
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
     return (
         <Router>
+            <NavigationProvider>
             <UserProvider enabled={isLoggedIn}>
                 <UnreadCountProvider user={user}>
                     <AnnouncementNotificationProvider user={user}>
@@ -193,6 +224,7 @@ function App() {
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>
             </UserProvider>
+            </NavigationProvider>
         </Router>    );
 }
 
