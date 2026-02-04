@@ -79,12 +79,8 @@ export default function NewFormPage () {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({
         // Personal Information
-        phoneNumber: '',
-        dateOfBirth: '',
-        profession: '',
         currentWeight: '',
         height: '',
-        isMother: false,
         allergies: [''],
         menstrualCycle: '',
         bowelMovement: '',
@@ -656,18 +652,6 @@ export default function NewFormPage () {
                                     </Box>
 
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                        <TextField fullWidth name="phoneNumber" label="Phone Number" value={formData.phoneNumber} onChange={handleChange} variant="filled" sx={inputStyle} />
-                                        <TextField fullWidth type="date" name="dateOfBirth" label="Date of Birth" InputLabelProps={{ shrink: true }} value={formData.dateOfBirth} onChange={handleChange} variant="filled" sx={inputStyle} />
-                                        <TextField fullWidth name="profession" label="Profession" value={formData.profession} onChange={handleChange} variant="filled" sx={inputStyle} />
-                                        
-                                        <FormControl component="fieldset" sx={{ mb: 2 }}>
-                                            <FormLabel component="legend">If mother?</FormLabel>
-                                            <RadioGroup row name="isMother" value={formData.isMother} onChange={(e) => setFormData(p => ({...p, isMother: e.target.value === 'true'}))}>
-                                                <FormControlLabel value={true} control={<Radio />} label="Yes" />
-                                                <FormControlLabel value={false} control={<Radio />} label="No" />
-                                            </RadioGroup>
-                                        </FormControl>
-
                                         <TextField fullWidth type="number" name="currentWeight" label="Current Weight (kg)" value={formData.currentWeight} onChange={handleChange} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="filled" sx={inputStyle} />
                                         <TextField fullWidth type="number" name="height" label="Height (cm)" value={formData.height} onChange={handleChange} error={!!formErrors.height} helperText={formErrors.height} variant="filled" sx={inputStyle} />
                                         

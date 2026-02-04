@@ -149,6 +149,12 @@ export async function newForm(req, res) {
 
         const formData = { ...req.body, user: userId };
 
+        // Populate fields from user data
+        formData.phoneNumber = user.phoneNumber;
+        formData.dateOfBirth = user.dateOfBirth;
+        formData.profession = user.profession;
+        formData.isMother = user.isMother;
+
         // Determine form type based on user's history
         const previousFormsCount = await Form.countDocuments({ user: userId });
         formData.type = previousFormsCount > 0 ? 'follow-up' : 'new-patient';
