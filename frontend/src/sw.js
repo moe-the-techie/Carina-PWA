@@ -34,7 +34,7 @@ const CACHE_TTL = {
   fonts: 365 * 24 * 60 * 60, // 1 year for fonts
 };
 
-// API endpoints that need fresh data (network-first or short cache)
+// API endpoints that need fresh data (network-first)
 const FRESH_DATA_ENDPOINTS = [
   '/api/admin/dashboard',
   '/api/chat/messages',
