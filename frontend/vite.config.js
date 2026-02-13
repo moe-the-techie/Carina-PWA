@@ -33,10 +33,6 @@ export default defineConfig({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
-            // Emotion - CSS-in-JS runtime (must be its own chunk, loaded before MUI)
-            if (id.includes('@emotion')) {
-              return 'emotion-vendor';
-            }
             // MUI - large UI framework, separate chunk
             if (id.includes('@mui')) {
               return 'mui-vendor';
