@@ -12,6 +12,11 @@ export default defineConfig({
       "date-fns/addSeconds"
     ]
   },
+  esbuild: {
+    // Remove console.log/debug in production (keep errors/warnings)
+    drop: [],
+    pure: ['console.log', 'console.debug'],
+  },
   build: {
     // Enable source maps for debugging in production
     sourcemap: false,
@@ -74,20 +79,8 @@ export default defineConfig({
         },
       },
     },
-    // Minification settings
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // Remove console.log in production (keep errors/warnings)
-        drop_console: false,
-        pure_funcs: ['console.log', 'console.debug'],
-        // Additional optimizations
-        passes: 2,
-      },
-      mangle: {
-        safari10: true,
-      },
-    },
+    // Minification settings - use esbuild (Vite default, faster, avoids TDZ issues with terser multi-pass)
+    minify: 'esbuild',
     // Target modern browsers for smaller bundles
     target: 'es2020',
   },
