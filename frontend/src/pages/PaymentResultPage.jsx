@@ -134,7 +134,8 @@ export default function PaymentResultPage() {
     };
 
     const getResultConfig = () => {
-        if (isSuccess || paymentStatus?.status === 'paid') {
+        // Prioritize URL path (set by backend redirect) over fetched payment status
+        if (isSuccess) {
             return {
                 icon: CheckCircleOutlineIcon,
                 color: 'success',
@@ -143,7 +144,37 @@ export default function PaymentResultPage() {
                 gradient: `linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)`,
                 showCredits: true
             };
-        } else if (isPending || paymentStatus?.status === 'pending') {
+        } else if (isFailed) {
+            return {
+                icon: ErrorOutlineIcon,
+                color: 'error',
+                title: 'Payment Failed',
+                subtitle: errorParam === 'invalid_signature' 
+                    ? 'Payment verification failed. Please try again.'
+                    : 'Something went wrong with your payment. Please try again.',
+                gradient: `linear-gradient(135deg, #f44336 0%, #c62828 100%)`,
+                showCredits: false
+            };
+        } else if (isPending) {
+            return {
+                icon: HourglassEmptyIcon,
+                color: 'warning',
+                title: 'Payment Pending',
+                subtitle: 'Your payment is being processed. Please wait a moment.',
+                gradient: `linear-gradient(135deg, #ff9800 0%, #f57c00 100%)`,
+                showCredits: false
+            };
+        } else if (paymentStatus?.status === 'paid') {
+            // Fallback to fetched status if no URL indicator
+            return {
+                icon: CheckCircleOutlineIcon,
+                color: 'success',
+                title: 'Payment Successful!',
+                subtitle: 'Your form credits have been added to your account.',
+                gradient: `linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)`,
+                showCredits: true
+            };
+        } else if (paymentStatus?.status === 'pending') {
             return {
                 icon: HourglassEmptyIcon,
                 color: 'warning',
@@ -153,13 +184,12 @@ export default function PaymentResultPage() {
                 showCredits: false
             };
         } else {
+            // Default to failed
             return {
                 icon: ErrorOutlineIcon,
                 color: 'error',
                 title: 'Payment Failed',
-                subtitle: errorParam === 'invalid_signature' 
-                    ? 'Payment verification failed. Please try again.'
-                    : 'Something went wrong with your payment. Please try again.',
+                subtitle: 'Something went wrong with your payment. Please try again.',
                 gradient: `linear-gradient(135deg, #f44336 0%, #c62828 100%)`,
                 showCredits: false
             };
