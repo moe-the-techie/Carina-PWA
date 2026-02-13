@@ -72,7 +72,7 @@ export default function HomePage() {
             return { ...form, plan: planData.plan };
           }
         } catch (error) {
-          console.log(`No plan found for form ${form._id}`);
+          // Silently handle - no plan for this form
         }
         return form;
       })

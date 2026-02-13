@@ -211,7 +211,12 @@ async function networkFirstWithDedup(request, cacheName) {
   // Check for in-flight request
   if (inFlightRequests.has(cacheKey)) {
     console.log('[SW] Dedup: waiting for in-flight request:', cacheKey);
-    return inFlightRequests.get(cacheKey);
+    try {
+      const response = await inFlightRequests.get(cacheKey);
+      return response.clone();
+    } catch (e) {
+      // If the in-flight request failed, fall through to make a new request
+    }
   }
   
   const fetchPromise = (async () => {
@@ -292,7 +297,12 @@ async function staleWhileRevalidateWithDedup(request, cacheName) {
   // No cache, need to fetch
   // Check for in-flight request first
   if (inFlightRequests.has(cacheKey)) {
-    return inFlightRequests.get(cacheKey);
+    try {
+      const response = await inFlightRequests.get(cacheKey);
+      return response.clone();
+    } catch (e) {
+      // If the in-flight request failed, fall through to make a new request
+    }
   }
   
   const fetchPromise = fetch(request).then(networkResponse => {

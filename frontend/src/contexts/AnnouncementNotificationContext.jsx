@@ -29,7 +29,10 @@ export const AnnouncementNotificationProvider = ({ children, user }) => {
             const response = await getUnreadAnnouncementsCount();
             setUnreadCount(response.unreadCount || 0);
         } catch (error) {
-            console.error('Error fetching unread announcements count:', error);
+            // Silently handle 403 (feature disabled) - don't log as error
+            if (!error.message?.includes('403')) {
+                console.error('Error fetching unread announcements count:', error);
+            }
             setUnreadCount(0);
         } finally {
             setLoading(false);
