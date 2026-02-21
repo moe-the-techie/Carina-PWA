@@ -36,34 +36,30 @@ const steps = [
   {
     label: 'Welcome',
     title: 'Welcome to Carina! 🎉',
-    description: 'Your personalized fitness and nutrition planning assistant. Let us show you around and help you get the most out of your experience.',
+    description: `Your portal to top-notch nutrition consluting lead by
+    Dr. Carina Youssef.
+    World class nutrition advice now accessible anywhere!`,
     icon: <HomeIcon sx={{ fontSize: 60 }} />,
-    hasVideo: true,
+    hasVideo: false,
     videoUrl: import.meta.env.VITE_INTRO_VIDEO_URL || 'https://www.youtube.com/embed/dQw4w9WgXcQ?si=b8YRqncV6Pobj1mo', 
   },
   {
     label: 'Forms',
     title: 'Submit Your Information',
-    description: 'Start by filling out a form with your goals, preferences, and current fitness level. Our team will use this to create a personalized plan just for you.',
+    description: 'Start by filling out a form with your health information and dietary goals, this helps us build a personalized nutrition plan customized only for you.',
     icon: <DescriptionIcon sx={{ fontSize: 60 }} />,
   },
   {
     label: 'Plans',
     title: 'View Your Plans',
-    description: 'Once your plan is ready, you can view it anytime from your home page. Track your progress and stay motivated with your customized workout and nutrition schedule.',
+    description: 'Once your plan is ready, you can view it anytime from your home page. Track your progress and stay motivated with your customized nutrition plan.',
     icon: <HomeIcon sx={{ fontSize: 60 }} />,
   },
   {
     label: 'Chat',
     title: 'Stay Connected',
-    description: 'Have questions? Use the chat feature to communicate directly with your coach. Get real-time support and guidance whenever you need it.',
+    description: 'Have questions? Use the chat feature to communicate directly with Dr. Carina and get real-time support and guidance whenever you need it.',
     icon: <ChatIcon sx={{ fontSize: 60 }} />,
-  },
-  {
-    label: 'Announcements',
-    title: 'Stay Updated',
-    description: 'Check the announcements page for important updates, tips, and news. Never miss out on new features or special promotions.',
-    icon: <CampaignIcon sx={{ fontSize: 60 }} />,
   },
   {
     label: 'Install App',
