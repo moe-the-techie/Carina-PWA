@@ -54,20 +54,29 @@ app.use('/api', generalLimiter);
 
 const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
-// const allowedOrigins = isDevelopment ? [
-//   'http://localhost:3000',
-//   'http://localhost:5173',
-//   'http://127.0.0.1:3000',
-//   'http://127.0.0.1:5173',
-//   //for philo's enviroment
-//   /^https:\/\/.*\.app\.github\.dev$/,
-//   /^https:\/\/.*\.github\.dev$/,
-//   'https://carina-pwa-1.vercel.app'
-// ] : [
-//   'https://carina-pwa-1.vercel.app'
-// ];
+const allowedOrigins = isDevelopment ? [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  //for philo's enviroment
+  /^https:\/\/.*\.app\.github\.dev$/,
+  /^https:\/\/.*\.github\.dev$/,
+  'https://carina-pwa-1.vercel.app'
+] : [
+  'https://carina-pwa-1.vercel.app'
+];
 
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 
 // Use routes
