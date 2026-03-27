@@ -26,9 +26,9 @@ export async function createPaymentIntention(req, res) {
         // Prepare customer data
         const customerData = {
             first_name: user.name.split(' ')[0] || 'User',
-            last_name: user.name.split(' ').slice(1).join(' ') || 'Name',
+            last_name: user.name.split(' ').slice(1).join(' ') || '',
             email: user.email,
-            phone: user.phone || '01000000000',
+            phone: user.phoneNumber || '01000000000',
             address: 'Cairo, Egypt'
         };
 
