@@ -436,16 +436,18 @@ export default function OnboardingOverlay({ forceShow = false, onClose }) {
               Back
             </Button>
 
-            <Button
-              onClick={handleSkip}
-              color="inherit"
-              sx={{ 
-                opacity: 0.7,
-                fontSize: '0.875rem',
-              }}
-            >
-              Skip
-            </Button>
+            {activeStep !== steps.length - 1 && (
+              <Button
+                onClick={handleSkip}
+                color="inherit"
+                sx={{
+                  opacity: 0.7,
+                  fontSize: '0.875rem',
+                }}
+              >
+                Skip
+              </Button>
+            )}
 
             <Button
               onClick={handleNext}
