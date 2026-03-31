@@ -78,7 +78,7 @@ const userSchema = new Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'admin', 'chat_admin'],
         default: 'user'
     },
     formCredits: {
@@ -118,11 +118,9 @@ const userSchema = new Schema({
 });
 
 // Performance indexes for common queries
-userSchema.index({ email: 1 }); // Already unique, but explicit
 userSchema.index({ role: 1, isVerified: 1, createdAt: -1 }); // Admin user listing
 userSchema.index({ role: 1, isVerified: 1, userClass: 1 }); // Filter by class
 userSchema.index({ name: 'text', email: 'text' }); // Text search for admin search
-userSchema.index({ firebaseUid: 1 }); // Login lookup
 userSchema.index({ isBanned: 1 }); // Ban checks
 
 const User = mongoose.model('User', userSchema)

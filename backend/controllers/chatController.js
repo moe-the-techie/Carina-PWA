@@ -34,7 +34,9 @@ export const sendMessage = async (req, res) => {
     try {
         const { chatId, content, messageType = 'text', imageUrl, imageDeleteUrl, voiceUrl, voiceDeleteUrl, voiceDuration } = req.body;
         const senderId = req.user._id;
-        const senderRole = req.user.role;
+        const requesterRole = req.user.role;
+        const isChatStaff = requesterRole === 'admin' || requesterRole === 'chat_admin';
+        const senderRole = isChatStaff ? 'admin' : 'user';
 
         // Validate message based on type
         if (messageType === 'text' && (!content || content.trim().length === 0)) {
@@ -54,7 +56,7 @@ export const sendMessage = async (req, res) => {
             return res.status(404).json({ error: 'Chat not found' });
         }
 
-        if (senderRole !== 'admin' && chat.userId.toString() !== senderId.toString()) {
+        if (!isChatStaff && chat.userId.toString() !== senderId.toString()) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
@@ -134,13 +136,14 @@ export const getMessages = async (req, res) => {
         const { before, limit = 50 } = req.query;
         const userId = req.user._id;
         const userRole = req.user.role;
+        const isChatStaff = userRole === 'admin' || userRole === 'chat_admin';
 
         const chat = await Chat.findById(chatId);
         if (!chat) {
             return res.status(404).json({ error: 'Chat not found' });
         }
 
-        if (userRole !== 'admin' && chat.userId.toString() !== userId.toString()) {
+        if (!isChatStaff && chat.userId.toString() !== userId.toString()) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
@@ -180,17 +183,18 @@ export const markMessagesAsRead = async (req, res) => {
         const { chatId } = req.params;
         const userId = req.user._id;
         const userRole = req.user.role;
+        const isChatStaff = userRole === 'admin' || userRole === 'chat_admin';
 
         const chat = await Chat.findById(chatId);
         if (!chat) {
             return res.status(404).json({ error: 'Chat not found' });
         }
 
-        if (userRole !== 'admin' && chat.userId.toString() !== userId.toString()) {
+        if (!isChatStaff && chat.userId.toString() !== userId.toString()) {
             return res.status(403).json({ error: 'Access denied' });
         }
 
-        if (userRole === 'admin') {
+        if (isChatStaff) {
             await Message.updateMany(
                 { chatId, readByAdmins: false },
                 { readByAdmins: true }
@@ -473,9 +477,10 @@ export const getAblyAuthToken = async (req, res) => {
     try {
         const userId = req.user._id;
         const userRole = req.user.role;
+        const isChatStaff = userRole === 'admin' || userRole === 'chat_admin';
 
         let tokenRequest;
-        if (userRole === 'admin') {
+        if (isChatStaff) {
             tokenRequest = await generateAdminAblyToken(userId);
         } else {
             tokenRequest = await generateAblyToken(userId);
@@ -572,6 +577,7 @@ export const getVoiceAudio = async (req, res) => {
         const { messageId } = req.params;
         const userId = req.user._id;
         const userRole = req.user.role;
+        const isChatStaff = userRole === 'admin' || userRole === 'chat_admin';
 
         const message = await Message.findById(messageId);
         if (!message) {
@@ -587,7 +593,7 @@ export const getVoiceAudio = async (req, res) => {
             return res.status(404).json({ error: 'Chat not found' });
         }
 
-        if (userRole !== 'admin' && chat.userId.toString() !== userId.toString()) {
+        if (!isChatStaff && chat.userId.toString() !== userId.toString()) {
             return res.status(403).json({ error: 'Access denied' });
         }
 

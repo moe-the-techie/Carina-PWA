@@ -83,6 +83,39 @@ export const protect = createAuthMiddleware(false);
 export const adminOnly = createAuthMiddleware(true);
 
 /**
+ * Role-based authorization middleware
+ * @param {string[]} allowedRoles
+ */
+function roleOnly(allowedRoles = []) {
+  return async function(req, res, next) {
+    try {
+      const tokenResult = extractToken(req);
+      if (tokenResult.error) {
+        return res.status(tokenResult.status).json({ error: tokenResult.error });
+      }
+
+      const user = await getCachedUser(tokenResult.decoded.userId);
+
+      if (!user) {
+        return res.status(401).json({ error: '401: Not authorized, invalid token' });
+      }
+
+      if (!allowedRoles.includes(user.role)) {
+        return res.status(403).json({ error: '403: Access denied' });
+      }
+
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Auth middleware error:', error.message);
+      return res.status(401).json({ error: '401: Not authorized, token failed' });
+    }
+  };
+}
+
+export const chatAdminOnly = roleOnly(['admin', 'chat_admin']);
+
+/**
  * Invalidate user cache when user data changes
  * Call this after user updates
  */

@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import multer from 'multer';
-import { protect, adminOnly } from '../middleware/auth.js';
+import { protect, adminOnly, chatAdminOnly } from '../middleware/auth.js';
 import { chatLimiter, uploadLimiter, adminLimiter } from '../middleware/rateLimiter.js';
 import {
     getOrCreateChat,
@@ -65,12 +65,12 @@ router.get('/chat/unread/count', protect, getUnreadCount);
 router.get('/chat/ably/auth', protect, getAblyAuthToken);
 
 // Admin routes with admin rate limiting
-router.get('/admin/chats', adminOnly, adminLimiter, getAllChats);
-router.get('/admin/chats/unread/count', adminOnly, getAdminUnreadCount);
-router.get('/admin/chat/:chatId', adminOnly, getChatById);
-router.get('/admin/chat/user/:userId', adminOnly, getChatByUserId);
-router.post('/admin/chat/user/:userId', adminOnly, getOrCreateChatByUserId);
-router.delete('/admin/chat/:chatId', adminOnly, deleteChat);
+router.get('/admin/chats', chatAdminOnly, adminLimiter, getAllChats);
+router.get('/admin/chats/unread/count', chatAdminOnly, getAdminUnreadCount);
+router.get('/admin/chat/:chatId', chatAdminOnly, getChatById);
+router.get('/admin/chat/user/:userId', chatAdminOnly, getChatByUserId);
+router.post('/admin/chat/user/:userId', chatAdminOnly, getOrCreateChatByUserId);
+router.delete('/admin/chat/:chatId', chatAdminOnly, deleteChat);
 
 export default router;
 

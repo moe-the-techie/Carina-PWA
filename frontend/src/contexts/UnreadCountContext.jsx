@@ -30,8 +30,10 @@ export const UnreadCountProvider = ({ children, user }) => {
             return;
         }
 
+        const isChatStaff = user.role === 'admin' || user.role === 'chat_admin';
+
         try {
-            const response = user.role === 'admin' 
+            const response = isChatStaff 
                 ? await getAdminUnreadCount()
                 : await getUnreadCount();
             setUnreadCount(response.unreadCount || 0);
@@ -58,7 +60,9 @@ export const UnreadCountProvider = ({ children, user }) => {
 
         let messageHandler;
 
-        if (user.role === 'admin') {
+        const isChatStaff = user.role === 'admin' || user.role === 'chat_admin';
+
+        if (isChatStaff) {
             messageHandler = (messageData) => {
                 // Only increment unread count if message is from a user AND not viewing that chat
                 if (messageData.senderRole === 'user') {

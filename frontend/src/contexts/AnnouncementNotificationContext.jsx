@@ -19,7 +19,7 @@ export const AnnouncementNotificationProvider = ({ children, user }) => {
     const [latestAnnouncement, setLatestAnnouncement] = useState(null);
 
     const fetchUnreadCount = useCallback(async () => {
-        if (!user || user.role === 'admin') {
+        if (!user || user.role === 'admin' || user.role === 'chat_admin') {
             setUnreadCount(0);
             setLoading(false);
             return;
@@ -60,7 +60,7 @@ export const AnnouncementNotificationProvider = ({ children, user }) => {
 
     // Subscribe to real-time updates when user is available
     useEffect(() => {
-        if (!user || user.role === 'admin') return;
+        if (!user || user.role === 'admin' || user.role === 'chat_admin') return;
 
         let unsubscribe;
 

@@ -98,7 +98,7 @@ export async function login(req, res) {
         const adminUser = await User.findOne({ 
             email: email, 
             isFirebaseUser: false,
-            role: 'admin' 
+            role: { $in: ['admin', 'chat_admin'] }
         }).select('+password');
 
         if (adminUser) {
@@ -218,7 +218,13 @@ export async function validateToken(req, res) {
         if(!user){
         return res.status(401).json({error: 'Invalid Token'})
         }
-        res.status(200).json({ message: 'Token is valid', userId: decoded.userId , isAdmin: user.role === 'admin'});
+        res.status(200).json({
+            message: 'Token is valid',
+            userId: decoded.userId,
+            role: user.role,
+            isAdmin: user.role === 'admin',
+            isChatAdmin: user.role === 'chat_admin'
+        });
     } catch (error) {
         return res.status(401).json({ error: 'Invalid token' });
     }

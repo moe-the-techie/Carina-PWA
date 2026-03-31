@@ -106,6 +106,7 @@ function App() {
         return localStorage.getItem('token') ? true : false;
     });
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isChatAdmin, setIsChatAdmin] = useState(false);
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
     const [userId, setUserId] = useState(null);
     const [user, setUser] = useState(null);
@@ -129,21 +130,28 @@ function App() {
                     throw new Error('Invalid token');
                 })
                 .then((data) => {
+                    const roleFromServer = data.role || (data.isAdmin ? 'admin' : 'user');
+                    const fullAdmin = roleFromServer === 'admin';
+                    const chatAdmin = roleFromServer === 'chat_admin' || data.isChatAdmin === true;
+
                     setIsLoggedIn(true);
-                    setIsAdmin(data.isAdmin || false);
+                    setIsAdmin(fullAdmin);
+                    setIsChatAdmin(chatAdmin);
                     setUserId(data.userId || null);
-                    setUser({ _id: data.userId, role: data.isAdmin ? 'admin' : 'user' });
+                    setUser({ _id: data.userId, role: roleFromServer });
                 })
                 .catch(error => {
                     console.error('Token validation failed:', error);
                     localStorage.removeItem('token');
                     setIsLoggedIn(false);
                     setIsAdmin(false);
+                    setIsChatAdmin(false);
                     setUser(null);
                 })
         } else {
             setIsLoggedIn(false);
             setIsAdmin(false);
+            setIsChatAdmin(false);
             setUser(null);
         }
     }, [update]);
@@ -177,6 +185,7 @@ function App() {
 
     setIsLoggedIn(false);
     setIsAdmin(false);
+    setIsChatAdmin(false);
     setUserId(null);
     setUser(null);
     disconnectAbly();
@@ -192,12 +201,12 @@ function App() {
                         <OfflineIndicator />
                         <ScrollToTop />
                     <Routes>
-                <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
-                <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
-                <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LazyRoute><SignUpPage onLogin={handleLogin} /></LazyRoute>} />
-                <Route path="/forgot-password" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/home" replace />) : <LazyRoute><ForgotPasswordPage /></LazyRoute>} />
-                <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><HomePage onLogin={handleLogin} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/active-plans" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><ActivePlansPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : isChatAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/home" replace />) : <LandingPage />} />
+                <Route path="/login" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : isChatAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/home" replace />) : <LoginPage onLogin={handleLogin} />} />
+                <Route path="/register" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : isChatAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/home" replace />) : <LazyRoute><SignUpPage onLogin={handleLogin} /></LazyRoute>} />
+                <Route path="/forgot-password" element={isLoggedIn ? (isAdmin ? <Navigate to="/admin/dashboard" replace /> : isChatAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/home" replace />) : <LazyRoute><ForgotPasswordPage /></LazyRoute>} />
+                <Route path="/home" element={isLoggedIn && !isAdmin && !isChatAdmin ? <AuthenticatedLayout><LazyRoute><HomePage onLogin={handleLogin} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route path="/active-plans" element={isLoggedIn && !isAdmin && !isChatAdmin ? <AuthenticatedLayout><LazyRoute><ActivePlansPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><LazyRoute><SettingsPage onLogout={handleLogout} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route
                     path="/chat"
@@ -205,6 +214,8 @@ function App() {
                         ? (user
                             ? (isAdmin
                                 ? <Navigate to="/admin/chats" replace />
+                                : isChatAdmin
+                                    ? <Navigate to="/admin/chats" replace />
                                 : <AuthenticatedLayout><LazyRoute><ChatPage /></LazyRoute></AuthenticatedLayout>
                             )
                             : <AuthenticatedLayout><PageLoader /></AuthenticatedLayout>
@@ -215,7 +226,7 @@ function App() {
                     path="/caht"
                     element={isLoggedIn
                         ? (user
-                            ? (isAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/chat" replace />)
+                            ? ((isAdmin || isChatAdmin) ? <Navigate to="/admin/chats" replace /> : <Navigate to="/chat" replace />)
                             : <PageLoader />
                         )
                         : <Navigate to="/" replace/>}
@@ -230,16 +241,16 @@ function App() {
                 <Route path="/payment/pending" element={<LazyRoute><PaymentResultPage /></LazyRoute>} />
                 
                 {/* Admin*/}
-                <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminDashboardPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminUsersPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/classes" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_USER_CLASSES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminClassesPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminFormsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/templates" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_PLAN_TEMPLATES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminTemplatesPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPlanBuilderPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/chats" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminChatsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminAnnouncementsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPaymentsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
-                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminActivePlansPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/dashboard" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminDashboardPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/users" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminUsersPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/classes" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_USER_CLASSES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminClassesPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/forms" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminFormsPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/templates" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_PLAN_TEMPLATES') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminTemplatesPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/plan-builder" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPlanBuilderPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/chats" element={isLoggedIn && (isAdmin || isChatAdmin) ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminChatsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
+                <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminAnnouncementsPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPaymentsPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminActivePlansPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

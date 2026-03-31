@@ -4,6 +4,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "create-admin": "node scripts/createAdminUser.js",
+    "create-chat-admin": "node scripts/createChatAdminUser.js",
     "convert-admin-local": "node scripts/convertAdminToLocal.js"
   },
   "dependencies": {

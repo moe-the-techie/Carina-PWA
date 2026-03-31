@@ -32,6 +32,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ThemeToggle from './ThemeToggle';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useUserProfile } from '../contexts/UserContext';
 import { spacing, transitions, zIndex } from '../styles';
 
 const drawerWidth = 240;
@@ -43,6 +44,10 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { unreadCount } = useUnreadCount();
     const { startNavigation, getActivePath } = useNavigation();
+    const { userProfile } = useUserProfile();
+
+    const currentRole = userProfile?.user?.role;
+    const isChatAdmin = currentRole === 'chat_admin';
     
     // Use the "visual" active path for instant feedback
     const activePath = getActivePath();
@@ -57,18 +62,23 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
         if (isMobile) handleDrawerToggle();
     };
     
-    const menuItems = [
-        { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
-        { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
-        { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes', feature: 'VITE_ENABLE_USER_CLASSES' },
-        { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
-        { to: '/admin/payments', icon: <PaymentIcon />, label: 'Payments' },
-        { to: '/admin/active-plans', icon: <PlayCircleFilledIcon />, label: 'Active Plans' },
-        { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
-        { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
-        { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates', feature: 'VITE_ENABLE_PLAN_TEMPLATES' },
-        { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
-    ].filter(item => !item.feature || import.meta.env[item.feature] !== 'false');
+    const menuItems = (isChatAdmin
+        ? [
+            { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
+        ]
+        : [
+            { to: '/admin/dashboard', icon: <DashboardIcon />, label: 'Home' },
+            { to: '/admin/users', icon: <PeopleIcon />, label: 'Users' },
+            { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes', feature: 'VITE_ENABLE_USER_CLASSES' },
+            { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
+            { to: '/admin/payments', icon: <PaymentIcon />, label: 'Payments' },
+            { to: '/admin/active-plans', icon: <PlayCircleFilledIcon />, label: 'Active Plans' },
+            { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
+            { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
+            { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates', feature: 'VITE_ENABLE_PLAN_TEMPLATES' },
+            { to: '/admin/plan-builder', icon: <RestaurantMenuIcon />, label: 'Plan Builder' },
+        ])
+        .filter(item => !item.feature || import.meta.env[item.feature] !== 'false');
 
     const drawer = (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
