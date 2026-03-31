@@ -199,7 +199,27 @@ function App() {
                 <Route path="/home" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><HomePage onLogin={handleLogin} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/active-plans" element={isLoggedIn && !isAdmin ? <AuthenticatedLayout><LazyRoute><ActivePlansPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/settings" element={isLoggedIn ? <AuthenticatedLayout><LazyRoute><SettingsPage onLogout={handleLogout} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
-                <Route path="/chat" element={isLoggedIn ? <AuthenticatedLayout><LazyRoute><ChatPage /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
+                <Route
+                    path="/chat"
+                    element={isLoggedIn
+                        ? (user
+                            ? (isAdmin
+                                ? <Navigate to="/admin/chats" replace />
+                                : <AuthenticatedLayout><LazyRoute><ChatPage /></LazyRoute></AuthenticatedLayout>
+                            )
+                            : <AuthenticatedLayout><PageLoader /></AuthenticatedLayout>
+                        )
+                        : <Navigate to="/" replace/>}
+                />
+                <Route
+                    path="/caht"
+                    element={isLoggedIn
+                        ? (user
+                            ? (isAdmin ? <Navigate to="/admin/chats" replace /> : <Navigate to="/chat" replace />)
+                            : <PageLoader />
+                        )
+                        : <Navigate to="/" replace/>}
+                />
                 <Route path="/announcements" element={isLoggedIn && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AuthenticatedLayout><LazyRoute><AnnouncementsPage user={user} /></LazyRoute></AuthenticatedLayout> : <Navigate to="/" replace/>} />
                 <Route path="/new-form" element={isLoggedIn ? <LazyRoute><AddFormPage /></LazyRoute> : <Navigate to="/" replace/>} />
                 <Route path="/form-success" element={isLoggedIn ? <LazyRoute><FormSuccessPage /></LazyRoute> : <Navigate to="/" replace/>} />
