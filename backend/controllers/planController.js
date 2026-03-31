@@ -3,6 +3,46 @@ import Form from '../models/Form.js';
 import User from '../models/User.js';
 import { publishMessage } from '../config/ably.js';
 
+function parseActivationDate(rawValue) {
+    if (rawValue === undefined) {
+        return { provided: false, value: null, invalid: false };
+    }
+
+    if (rawValue === null || rawValue === '') {
+        return { provided: true, value: null, invalid: false };
+    }
+
+    const parsed = new Date(rawValue);
+    if (Number.isNaN(parsed.getTime())) {
+        return { provided: true, value: null, invalid: true };
+    }
+
+    return { provided: true, value: parsed, invalid: false };
+}
+
+function calculateExpiryDate(activatedAt, durationWeeks) {
+    const weeks = Number(durationWeeks);
+    const durationInDays = Number.isFinite(weeks) && weeks > 0 ? Math.round(weeks * 7) : 7;
+    const expiresAt = new Date(activatedAt);
+    expiresAt.setDate(expiresAt.getDate() + durationInDays);
+    return expiresAt;
+}
+
+function resolveActivationFields({ status, duration, currentActivatedAt, currentExpiresAt, requestedActivatedAt }) {
+    if (status !== 'active') {
+        return {
+            activatedAt: currentActivatedAt,
+            expiresAt: currentExpiresAt
+        };
+    }
+
+    const activatedAt = requestedActivatedAt || currentActivatedAt || new Date();
+    return {
+        activatedAt,
+        expiresAt: calculateExpiryDate(activatedAt, duration)
+    };
+}
+
 // Create a new plan
 export async function createPlan(req, res) {
     try {
@@ -19,8 +59,14 @@ export async function createPlan(req, res) {
             generalPlan,
             warnings,
             templateId,
-            status
+            status,
+            activatedAt
         } = req.body;
+
+        const parsedActivation = parseActivationDate(activatedAt);
+        if (parsedActivation.invalid) {
+            return res.status(400).json({ error: 'Invalid activation date' });
+        }
 
         // Verify the form exists and belongs to the user
         const form = await Form.findOne({ _id: formId, user: userId });
@@ -38,6 +84,7 @@ export async function createPlan(req, res) {
         
         if (existingPlan) {
             // Update the existing plan instead of creating a new one
+            const previousStatus = existingPlan.status;
             existingPlan.title = title;
             existingPlan.description = description;
             existingPlan.duration = duration;
@@ -48,6 +95,20 @@ export async function createPlan(req, res) {
             existingPlan.generalPlan = generalPlan || existingPlan.generalPlan || {};
             existingPlan.warnings = warnings || [];
             existingPlan.status = status || 'draft'; // Use provided status or default to draft
+            const shouldResetActivation =
+                existingPlan.status === 'active' &&
+                previousStatus !== 'active' &&
+                !parsedActivation.provided;
+
+            const activationFields = resolveActivationFields({
+                status: existingPlan.status,
+                duration: existingPlan.duration,
+                currentActivatedAt: existingPlan.activatedAt,
+                currentExpiresAt: existingPlan.expiresAt,
+                requestedActivatedAt: shouldResetActivation ? new Date() : parsedActivation.value
+            });
+            existingPlan.activatedAt = activationFields.activatedAt;
+            existingPlan.expiresAt = activationFields.expiresAt;
             
             await existingPlan.save();
             
@@ -78,6 +139,15 @@ export async function createPlan(req, res) {
         }
 
         // Create new plan if none exists
+        const initialStatus = status || 'draft';
+        const activationFields = resolveActivationFields({
+            status: initialStatus,
+            duration,
+            currentActivatedAt: null,
+            currentExpiresAt: null,
+            requestedActivatedAt: parsedActivation.value
+        });
+
         const newPlan = new Plan({
             user: userId,
             form: formId,
@@ -91,7 +161,9 @@ export async function createPlan(req, res) {
             generalPlan: generalPlan || {},
             warnings: warnings || [],
             createdBy: req.user._id,
-            status: status || 'draft'
+            status: initialStatus,
+            activatedAt: activationFields.activatedAt,
+            expiresAt: activationFields.expiresAt
         });
 
         await newPlan.save();
@@ -197,7 +269,40 @@ export async function getPlanDetails(req, res) {
 export async function updatePlan(req, res) {
     try {
         const { planId } = req.params;
-        const updateData = req.body;
+        const updateData = { ...req.body };
+
+        const parsedActivation = parseActivationDate(updateData.activatedAt);
+        if (parsedActivation.invalid) {
+            return res.status(400).json({ error: 'Invalid activation date' });
+        }
+
+        const existingPlan = await Plan.findById(planId).select('status duration activatedAt expiresAt');
+        if (!existingPlan) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        const nextStatus = updateData.status || existingPlan.status;
+        const nextDuration = updateData.duration || existingPlan.duration;
+        const shouldResetActivation =
+            nextStatus === 'active' &&
+            existingPlan.status !== 'active' &&
+            !parsedActivation.provided;
+        const activationFields = resolveActivationFields({
+            status: nextStatus,
+            duration: nextDuration,
+            currentActivatedAt: existingPlan.activatedAt,
+            currentExpiresAt: existingPlan.expiresAt,
+            requestedActivatedAt: shouldResetActivation ? new Date() : parsedActivation.value
+        });
+
+        if (nextStatus === 'active') {
+            updateData.activatedAt = activationFields.activatedAt;
+            updateData.expiresAt = activationFields.expiresAt;
+        }
+
+        if (parsedActivation.provided && nextStatus !== 'active') {
+            delete updateData.activatedAt;
+        }
 
         const plan = await Plan.findByIdAndUpdate(
             planId,
@@ -232,18 +337,30 @@ export async function updatePlan(req, res) {
 export async function activatePlan(req, res) {
     try {
         const { planId } = req.params;
-        
-        // Calculate expiration date (7 days from activation)
-        const activatedAt = new Date();
-        const expiresAt = new Date(activatedAt);
-        expiresAt.setDate(expiresAt.getDate() + 7);
+        const parsedActivation = parseActivationDate(req.body?.activatedAt);
+        if (parsedActivation.invalid) {
+            return res.status(400).json({ error: 'Invalid activation date' });
+        }
+
+        const currentPlan = await Plan.findById(planId).select('duration activatedAt expiresAt');
+        if (!currentPlan) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        const activationFields = resolveActivationFields({
+            status: 'active',
+            duration: currentPlan.duration,
+            currentActivatedAt: currentPlan.activatedAt,
+            currentExpiresAt: currentPlan.expiresAt,
+            requestedActivatedAt: parsedActivation.value || new Date()
+        });
         
         const plan = await Plan.findByIdAndUpdate(
             planId,
             { 
                 status: 'active',
-                activatedAt: activatedAt,
-                expiresAt: expiresAt
+                activatedAt: activationFields.activatedAt,
+                expiresAt: activationFields.expiresAt
             },
             { new: true }
         ).populate('user', 'name email')
