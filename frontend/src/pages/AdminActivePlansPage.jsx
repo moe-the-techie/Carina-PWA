@@ -48,7 +48,10 @@ import {
     CalendarToday as CalendarTodayIcon,
     Close as CloseIcon,
     CheckCircle as CheckCircleIcon,
-    Restaurant as RestaurantIcon,
+    WbSunny as WbSunnyIcon,
+    WbTwilight as WbTwilightIcon,
+    NightsStay as NightsStayIcon,
+    Cookie as CookieIcon,
     FitnessCenter as FitnessCenterIcon,
     SentimentVerySatisfied as SentimentVerySatisfiedIcon,
     SentimentSatisfied as SentimentSatisfiedIcon,
@@ -83,6 +86,13 @@ const getStatusConfig = (status) => {
         case 'draft': return { color: '#9CA3AF', label: 'Draft', bgColor: '#F3F4F6' };
         default: return { color: '#9CA3AF', label: status, bgColor: '#F3F4F6' };
     }
+};
+
+const formatDisplayDate = (value) => {
+    if (!value) return 'Not set';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Not set';
+    return date.toLocaleDateString();
 };
 
 // Stat Card Component
@@ -266,6 +276,20 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             {progressData.plan.description || 'No description'}
                         </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2.5 }}>
+                            <Chip
+                                icon={<CalendarTodayIcon sx={{ fontSize: 16 }} />}
+                                label={`Created: ${formatDisplayDate(progressData.plan.createdAt)}`}
+                                size="small"
+                                variant="outlined"
+                            />
+                            <Chip
+                                icon={<PlayCircleFilledIcon sx={{ fontSize: 16 }} />}
+                                label={`Activated: ${formatDisplayDate(progressData.plan.activatedAt)}`}
+                                size="small"
+                                variant="outlined"
+                            />
+                        </Box>
                         
                         {/* Stats Grid */}
                         <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -384,7 +408,12 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                                     <TableBody>
                                         {progressData.progress.slice(0, 14).map((entry, idx) => {
                                             const meals = entry.mealsCompleted || {};
-                                            const mealsCompleted = [meals.breakfast, meals.lunch, meals.dinner, meals.snack].filter(Boolean).length;
+                                            const mealIcons = [
+                                                { key: 'breakfast', label: 'Breakfast', icon: WbSunnyIcon, color: '#FFB020' },
+                                                { key: 'lunch', label: 'Lunch', icon: WbTwilightIcon, color: '#10B981' },
+                                                { key: 'dinner', label: 'Dinner', icon: NightsStayIcon, color: '#6366F1' },
+                                                { key: 'snack', label: 'Snack', icon: CookieIcon, color: '#EC4899' }
+                                            ];
                                             const mConfig = moodConfig[entry.mood] || moodConfig.okay;
                                             const MoodIcon = mConfig.icon;
                                             
@@ -396,11 +425,37 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                            <RestaurantIcon sx={{ fontSize: 16, color: accentColors.emerald.main }} />
-                                                            <Typography variant="body2">
-                                                                {mealsCompleted}/4
-                                                            </Typography>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                                                            {mealIcons.map((meal) => {
+                                                                const taken = Boolean(meals[meal.key]);
+                                                                const MealIcon = meal.icon;
+                                                                const baseColor = meal.color;
+                                                                return (
+                                                                    <Tooltip key={meal.key} title={`${meal.label}: ${taken ? 'Taken' : 'Not taken'}`}>
+                                                                        <Box
+                                                                            sx={{
+                                                                                width: 24,
+                                                                                height: 24,
+                                                                                borderRadius: '50%',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                bgcolor: taken
+                                                                                    ? alpha(accentColors.emerald.main, 0.12)
+                                                                                    : alpha(baseColor, 0.12),
+                                                                                color: taken
+                                                                                    ? accentColors.emerald.main
+                                                                                    : baseColor,
+                                                                                border: `1px solid ${taken
+                                                                                    ? alpha(accentColors.emerald.main, 0.3)
+                                                                                    : alpha(baseColor, 0.28)}`
+                                                                            }}
+                                                                        >
+                                                                            <MealIcon sx={{ fontSize: 14 }} />
+                                                                        </Box>
+                                                                    </Tooltip>
+                                                                );
+                                                            })}
                                                         </Box>
                                                     </TableCell>
                                                     <TableCell>
@@ -711,6 +766,12 @@ export default function AdminActivePlansPage() {
                                                         </Typography>
                                                         <Typography variant="caption" color="text.secondary">
                                                             {plan.duration} week{plan.duration > 1 ? 's' : ''}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                            Created: {formatDisplayDate(plan.createdAt)}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                            Activated: {formatDisplayDate(plan.activatedAt)}
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell>
