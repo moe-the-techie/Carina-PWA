@@ -86,6 +86,14 @@ const createEmptyWeeklyPlan = () => {
     return plan;
 };
 
+// Helper function to create a general plan (same meals for all days)
+const createEmptyGeneralPlan = () => ({
+    breakfast: '',
+    lunch: '',
+    dinner: '',
+    snack: ''
+});
+
 // Helper function to create empty recommendations
 const createEmptyRecommendations = () => ({
     avoid: [],
@@ -137,6 +145,7 @@ export default function AdminPlanBuilderPage() {
         description: '',
         status: 'draft',
         duration: 1,
+        planType: 'weekly',
         goals: {
             targetWeight: '',
             targetCalories: '',
@@ -145,6 +154,7 @@ export default function AdminPlanBuilderPage() {
             targetFats: ''
         },
         weeklyPlan: createEmptyWeeklyPlan(),
+        generalPlan: createEmptyGeneralPlan(),
         recommendations: createEmptyRecommendations(),
         warnings: []
     });
@@ -189,6 +199,7 @@ export default function AdminPlanBuilderPage() {
                         ...prev,
                         title: `Nutrition Plan for ${formData.user.name}`,
                         description: `Personalized nutrition plan based on submitted form`,
+                        planType: 'weekly',
                         goals: {
                             targetWeight: formData.desiredWeight || '',
                             targetCalories: '',
@@ -197,6 +208,7 @@ export default function AdminPlanBuilderPage() {
                             targetFats: ''
                         },
                         weeklyPlan: createEmptyWeeklyPlan(),
+                        generalPlan: createEmptyGeneralPlan(),
                         recommendations: createEmptyRecommendations(),
                         warnings: []
                     }));
@@ -210,6 +222,7 @@ export default function AdminPlanBuilderPage() {
                     title: templateData.name,
                     description: templateData.description || '',
                     duration: templateData.duration,
+                    planType: templateData.defaultPlanType || 'weekly',
                     goals: templateData.defaultGoals || {
                         targetWeight: '',
                         targetCalories: '',
@@ -218,6 +231,7 @@ export default function AdminPlanBuilderPage() {
                         targetFats: ''
                     },
                     weeklyPlan: templateData.defaultWeeklyPlan || createEmptyWeeklyPlan(),
+                    generalPlan: templateData.defaultGeneralPlan || createEmptyGeneralPlan(),
                     recommendations: templateData.defaultRecommendations || createEmptyRecommendations(),
                     warnings: templateData.defaultWarnings || []
                 }));
@@ -241,6 +255,7 @@ export default function AdminPlanBuilderPage() {
                     title: templateData.name,
                     description: templateData.description || '',
                     duration: templateData.duration,
+                    planType: templateData.defaultPlanType || 'weekly',
                     goals: templateData.defaultGoals || {
                         targetWeight: '',
                         targetCalories: '',
@@ -249,6 +264,7 @@ export default function AdminPlanBuilderPage() {
                         targetFats: ''
                     },
                     weeklyPlan: templateData.defaultWeeklyPlan || createEmptyWeeklyPlan(),
+                    generalPlan: templateData.defaultGeneralPlan || createEmptyGeneralPlan(),
                     recommendations: templateData.defaultRecommendations || createEmptyRecommendations(),
                     warnings: templateData.defaultWarnings || []
                 }));
@@ -298,6 +314,7 @@ export default function AdminPlanBuilderPage() {
                     description: existingPlan.description,
                     status: existingPlan.status || 'draft',
                     duration: existingPlan.duration,
+                    planType: existingPlan.planType || 'weekly',
                     goals: existingPlan.goals || {
                         targetWeight: '',
                         targetCalories: '',
@@ -306,6 +323,7 @@ export default function AdminPlanBuilderPage() {
                         targetFats: ''
                     },
                     weeklyPlan: existingPlan.weeklyPlan || createEmptyWeeklyPlan(),
+                    generalPlan: existingPlan.generalPlan || createEmptyGeneralPlan(),
                     recommendations: {
                         avoid: recommendations.avoid || [],
                         useCarefully: recommendations.useCarefully || [],
@@ -419,6 +437,7 @@ export default function AdminPlanBuilderPage() {
                 title: template.name,
                 description: template.description || '',
                 duration: template.duration,
+                planType: template.defaultPlanType || 'weekly',
                 goals: template.defaultGoals || {
                     targetWeight: '',
                     targetCalories: '',
@@ -427,6 +446,7 @@ export default function AdminPlanBuilderPage() {
                     targetFats: ''
                 },
                 weeklyPlan: template.defaultWeeklyPlan || createEmptyWeeklyPlan(),
+                generalPlan: template.defaultGeneralPlan || createEmptyGeneralPlan(),
                 recommendations: template.defaultRecommendations || createEmptyRecommendations(),
                 warnings: template.defaultWarnings || []
             }));
@@ -459,6 +479,17 @@ export default function AdminPlanBuilderPage() {
                     ...prev.weeklyPlan[day],
                     [mealType]: value
                 }
+            }
+        }));
+    };
+
+    // Handle general meal change (same meals for all days)
+    const handleGeneralMealChange = (mealType, value) => {
+        setPlanData(prev => ({
+            ...prev,
+            generalPlan: {
+                ...prev.generalPlan,
+                [mealType]: value
             }
         }));
     };
@@ -589,8 +620,10 @@ export default function AdminPlanBuilderPage() {
                     description: templateDescription,
                     category: templateCategory,
                     duration: planData.duration,
+                    defaultPlanType: planData.planType,
                     defaultGoals: planData.goals,
                     defaultWeeklyPlan: planData.weeklyPlan,
+                    defaultGeneralPlan: planData.generalPlan,
                     defaultRecommendations: planData.recommendations,
                     defaultWarnings: planData.warnings
                 })
@@ -638,8 +671,10 @@ export default function AdminPlanBuilderPage() {
                     description: templateMetadata.description.trim(),
                     category: templateMetadata.category,
                     duration: planData.duration,
+                    defaultPlanType: planData.planType,
                     defaultGoals: planData.goals,
                     defaultWeeklyPlan: planData.weeklyPlan,
+                    defaultGeneralPlan: planData.generalPlan,
                     defaultRecommendations: planData.recommendations,
                     defaultWarnings: planData.warnings,
                     tags: templateMetadata.tags.filter(tag => tag.trim() !== '')
@@ -675,6 +710,7 @@ export default function AdminPlanBuilderPage() {
             description: '',
             status: 'draft',
             duration: 1,
+            planType: 'weekly',
             goals: {
                 targetWeight: '',
                 targetCalories: '',
@@ -683,6 +719,7 @@ export default function AdminPlanBuilderPage() {
                 targetFats: ''
             },
             weeklyPlan: createEmptyWeeklyPlan(),
+            generalPlan: createEmptyGeneralPlan(),
             recommendations: createEmptyRecommendations(),
             warnings: []
         });
@@ -763,7 +800,7 @@ export default function AdminPlanBuilderPage() {
                         mb: 2
                     }}
                 >
-                    {isEditingTemplate ? `Edit Template: ${templateMetadata.name}` : 'Weekly Plan Builder'}
+                    {isEditingTemplate ? `Edit Template: ${templateMetadata.name}` : 'Plan Builder'}
                 </Typography>
 
                 {isEditingTemplate && (
@@ -1039,6 +1076,19 @@ export default function AdminPlanBuilderPage() {
                                             inputProps={{ min: 1, step: 1 }}
                                             sx={{ mb: 2 }}
                                         />
+
+                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                            <InputLabel>Plan Type</InputLabel>
+                                            <Select
+                                                value={planData.planType || 'weekly'}
+                                                onChange={(e) => handlePlanChange('planType', e.target.value)}
+                                                label="Plan Type"
+                                                MenuProps={{ disableScrollLock: true }}
+                                            >
+                                                <MenuItem value="weekly">Weekly (per day)</MenuItem>
+                                                <MenuItem value="general">General (same every day)</MenuItem>
+                                            </Select>
+                                        </FormControl>
                                         
                                         <TextField
                                             fullWidth
@@ -1081,6 +1131,19 @@ export default function AdminPlanBuilderPage() {
                                             inputProps={{ min: 1, step: 1 }}
                                             sx={{ mb: 2 }}
                                         />
+
+                                        <FormControl fullWidth sx={{ mb: 2 }}>
+                                            <InputLabel>Plan Type</InputLabel>
+                                            <Select
+                                                value={planData.planType || 'weekly'}
+                                                onChange={(e) => handlePlanChange('planType', e.target.value)}
+                                                label="Plan Type"
+                                                MenuProps={{ disableScrollLock: true }}
+                                            >
+                                                <MenuItem value="weekly">Weekly (per day)</MenuItem>
+                                                <MenuItem value="general">General (same every day)</MenuItem>
+                                            </Select>
+                                        </FormControl>
 
                                         <FormControl fullWidth>
                                             <InputLabel>Status</InputLabel>
@@ -1176,103 +1239,152 @@ export default function AdminPlanBuilderPage() {
                         </Card>
                     </Grid>
 
-                    {/* Weekly Meal Plan */}
+                    {/* Meal Plan Details */}
                     <Grid item xs={12}>
                         <Card>
                             <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6">
-                                        Weekly Meal Plan
-                                    </Typography>
-                                    <Tooltip title="Copy a day's meals to other days">
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            startIcon={<ContentCopyIcon />}
-                                            onClick={() => setCopyDayDialogOpen(true)}
-                                        >
-                                            Copy Day
-                                        </Button>
-                                    </Tooltip>
-                                </Box>
-                                
-                                {/* Day Tabs */}
-                                <Tabs
-                                    value={selectedDayTab}
-                                    onChange={(e, newValue) => setSelectedDayTab(newValue)}
-                                    variant="scrollable"
-                                    scrollButtons="auto"
-                                    sx={{ 
-                                        mb: 3,
-                                        borderBottom: 1,
-                                        borderColor: 'divider',
-                                        '& .MuiTab-root': {
-                                            minWidth: { xs: 80, sm: 100 },
-                                            fontWeight: 600
-                                        }
-                                    }}
-                                >
-                                    {DAYS_OF_WEEK.map((day, index) => (
-                                        <Tab 
-                                            key={day} 
-                                            label={isMobile ? DAY_LABELS[day].substring(0, 3) : DAY_LABELS[day]}
-                                            sx={{
-                                                color: planData.weeklyPlan[day]?.breakfast || 
-                                                       planData.weeklyPlan[day]?.lunch || 
-                                                       planData.weeklyPlan[day]?.dinner || 
-                                                       planData.weeklyPlan[day]?.snack 
-                                                    ? 'success.main' : 'inherit'
-                                            }}
-                                        />
-                                    ))}
-                                </Tabs>
-
-                                {/* Current Day's Meals */}
-                                <Box>
-                                    <Typography variant="h6" color="primary" gutterBottom>
-                                        {DAY_LABELS[currentDay]}
-                                    </Typography>
-                                    
-                                    <Grid container spacing={2}>
-                                        {MEAL_TYPES.map((mealType) => (
-                                            <Grid item xs={12} md={6} key={mealType}>
-                                                <Paper 
-                                                    variant="outlined" 
-                                                    sx={{ 
-                                                        p: 2,
-                                                        borderColor: mealType === 'breakfast' ? 'warning.main' :
-                                                                    mealType === 'lunch' ? 'success.main' :
-                                                                    mealType === 'dinner' ? 'primary.main' : 'secondary.main',
-                                                        borderWidth: 2
-                                                    }}
+                                {planData.planType === 'weekly' ? (
+                                    <>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="h6">
+                                                Weekly Meal Plan
+                                            </Typography>
+                                            <Tooltip title="Copy a day's meals to other days">
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    startIcon={<ContentCopyIcon />}
+                                                    onClick={() => setCopyDayDialogOpen(true)}
                                                 >
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                                        {MEAL_ICONS[mealType]}
-                                                        <Typography variant="subtitle1" fontWeight={600}>
-                                                            {MEAL_LABELS[mealType]}
-                                                        </Typography>
-                                                    </Box>
-                                                    <TextField
-                                                        fullWidth
-                                                        multiline
-                                                        rows={4}
-                                                        placeholder={`Enter ${MEAL_LABELS[mealType].toLowerCase()} details...`}
-                                                        value={planData.weeklyPlan[currentDay]?.[mealType] || ''}
-                                                        onChange={(e) => handleMealChange(currentDay, mealType, e.target.value)}
-                                                        variant="outlined"
-                                                        sx={{ 
-                                                            '& .MuiOutlinedInput-root': {
-                                                                backgroundColor: theme.palette.mode === 'dark' 
-                                                                    ? 'rgba(255,255,255,0.05)' 
-                                                                    : 'rgba(0,0,0,0.02)'
-                                                            }
-                                                        }}
-                                                    />
-                                                </Paper>
+                                                    Copy Day
+                                                </Button>
+                                            </Tooltip>
+                                        </Box>
+
+                                        {/* Day Tabs */}
+                                        <Tabs
+                                            value={selectedDayTab}
+                                            onChange={(e, newValue) => setSelectedDayTab(newValue)}
+                                            variant="scrollable"
+                                            scrollButtons="auto"
+                                            sx={{ 
+                                                mb: 3,
+                                                borderBottom: 1,
+                                                borderColor: 'divider',
+                                                '& .MuiTab-root': {
+                                                    minWidth: { xs: 80, sm: 100 },
+                                                    fontWeight: 600
+                                                }
+                                            }}
+                                        >
+                                            {DAYS_OF_WEEK.map((day, index) => (
+                                                <Tab 
+                                                    key={day} 
+                                                    label={isMobile ? DAY_LABELS[day].substring(0, 3) : DAY_LABELS[day]}
+                                                    sx={{
+                                                        color: planData.weeklyPlan[day]?.breakfast || 
+                                                               planData.weeklyPlan[day]?.lunch || 
+                                                               planData.weeklyPlan[day]?.dinner || 
+                                                               planData.weeklyPlan[day]?.snack 
+                                                            ? 'success.main' : 'inherit'
+                                                    }}
+                                                />
+                                            ))}
+                                        </Tabs>
+
+                                        {/* Current Day's Meals */}
+                                        <Box>
+                                            <Typography variant="h6" color="primary" gutterBottom>
+                                                {DAY_LABELS[currentDay]}
+                                            </Typography>
+
+                                            <Grid container spacing={2}>
+                                                {MEAL_TYPES.map((mealType) => (
+                                                    <Grid item xs={12} md={6} key={mealType}>
+                                                        <Paper 
+                                                            variant="outlined" 
+                                                            sx={{ 
+                                                                p: 2,
+                                                                borderColor: mealType === 'breakfast' ? 'warning.main' :
+                                                                            mealType === 'lunch' ? 'success.main' :
+                                                                            mealType === 'dinner' ? 'primary.main' : 'secondary.main',
+                                                                borderWidth: 2
+                                                            }}
+                                                        >
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                                {MEAL_ICONS[mealType]}
+                                                                <Typography variant="subtitle1" fontWeight={600}>
+                                                                    {MEAL_LABELS[mealType]}
+                                                                </Typography>
+                                                            </Box>
+                                                            <TextField
+                                                                fullWidth
+                                                                multiline
+                                                                rows={4}
+                                                                placeholder={`Enter ${MEAL_LABELS[mealType].toLowerCase()} details...`}
+                                                                value={planData.weeklyPlan[currentDay]?.[mealType] || ''}
+                                                                onChange={(e) => handleMealChange(currentDay, mealType, e.target.value)}
+                                                                variant="outlined"
+                                                                sx={{ 
+                                                                    '& .MuiOutlinedInput-root': {
+                                                                        backgroundColor: theme.palette.mode === 'dark' 
+                                                                            ? 'rgba(255,255,255,0.05)' 
+                                                                            : 'rgba(0,0,0,0.02)'
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </Paper>
+                                                    </Grid>
+                                                ))}
                                             </Grid>
-                                        ))}
-                                    </Grid>
-                                </Box>
+                                        </Box>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography variant="h6" gutterBottom>
+                                            General Meal Plan (same every day)
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            {MEAL_TYPES.map((mealType) => (
+                                                <Grid item xs={12} md={6} key={mealType}>
+                                                    <Paper 
+                                                        variant="outlined" 
+                                                        sx={{ 
+                                                            p: 2,
+                                                            borderColor: mealType === 'breakfast' ? 'warning.main' :
+                                                                        mealType === 'lunch' ? 'success.main' :
+                                                                        mealType === 'dinner' ? 'primary.main' : 'secondary.main',
+                                                            borderWidth: 2
+                                                        }}
+                                                    >
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                            {MEAL_ICONS[mealType]}
+                                                            <Typography variant="subtitle1" fontWeight={600}>
+                                                                {MEAL_LABELS[mealType]}
+                                                            </Typography>
+                                                        </Box>
+                                                        <TextField
+                                                            fullWidth
+                                                            multiline
+                                                            rows={4}
+                                                            placeholder={`Enter ${MEAL_LABELS[mealType].toLowerCase()} details...`}
+                                                            value={planData.generalPlan?.[mealType] || ''}
+                                                            onChange={(e) => handleGeneralMealChange(mealType, e.target.value)}
+                                                            variant="outlined"
+                                                            sx={{ 
+                                                                '& .MuiOutlinedInput-root': {
+                                                                    backgroundColor: theme.palette.mode === 'dark' 
+                                                                        ? 'rgba(255,255,255,0.05)' 
+                                                                        : 'rgba(0,0,0,0.02)'
+                                                                }
+                                                            }}
+                                                        />
+                                                    </Paper>
+                                                </Grid>
+                                            ))}
+                                        </Grid>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>

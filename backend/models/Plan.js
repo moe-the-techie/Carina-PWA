@@ -86,6 +86,11 @@ const planSchema = new Schema({
         required: true,
         min: 1
     },
+    planType: {
+        type: String,
+        enum: ['weekly', 'general'],
+        default: 'weekly'
+    },
     goals: {
         targetWeight: { type: Number, min: 0 },
         targetCalories: { type: Number, min: 0 },
@@ -103,6 +108,8 @@ const planSchema = new Schema({
         thursday: dayMealSchema,
         friday: dayMealSchema
     },
+    // General meal plan - same meals for all days
+    generalPlan: dayMealSchema,
     // General recommendations
     recommendations: {
         avoid: [{

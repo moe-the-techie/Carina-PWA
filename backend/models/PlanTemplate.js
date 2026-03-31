@@ -46,6 +46,11 @@ const planTemplateSchema = new Schema({
         min: 1,
         default: 1
     },
+    defaultPlanType: {
+        type: String,
+        enum: ['weekly', 'general'],
+        default: 'weekly'
+    },
     defaultGoals: {
         targetCalories: { type: Number, min: 0 },
         targetProtein: { type: Number, min: 0 },
@@ -62,6 +67,8 @@ const planTemplateSchema = new Schema({
         thursday: dayMealSchema,
         friday: dayMealSchema
     },
+    // General meal plan template - same meals for all days
+    defaultGeneralPlan: dayMealSchema,
     // General recommendations
     defaultRecommendations: {
         avoid: [{

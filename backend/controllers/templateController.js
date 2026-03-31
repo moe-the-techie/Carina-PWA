@@ -70,7 +70,10 @@ export async function createTemplate(req, res) {
             description,
             category,
             duration,
+            defaultPlanType,
             defaultGoals,
+            defaultWeeklyPlan,
+            defaultGeneralPlan,
             defaultRecommendations,
             defaultWarnings,
             tags
@@ -81,7 +84,10 @@ export async function createTemplate(req, res) {
             description,
             category,
             duration,
+            defaultPlanType: defaultPlanType || 'weekly',
             defaultGoals: defaultGoals || {},
+            defaultWeeklyPlan: defaultWeeklyPlan || {},
+            defaultGeneralPlan: defaultGeneralPlan || {},
             defaultRecommendations: defaultRecommendations || {},
             defaultWarnings: defaultWarnings || [],
             tags: tags || [],
@@ -188,7 +194,12 @@ export async function createTemplateFromPlan(req, res) {
             description: description || plan.description,
             category: category || 'General',
             duration: plan.duration,
+            defaultPlanType: plan.planType || 'weekly',
             defaultGoals: plan.goals,
+            defaultWeeklyPlan: plan.weeklyPlan,
+            defaultGeneralPlan: plan.generalPlan,
+            defaultRecommendations: plan.recommendations,
+            defaultWarnings: plan.warnings,
             tags: tags || [],
             createdBy: req.user._id
         });
@@ -225,7 +236,12 @@ export async function duplicateTemplate(req, res) {
             description: originalTemplate.description,
             category: originalTemplate.category,
             duration: originalTemplate.duration,
+            defaultPlanType: originalTemplate.defaultPlanType || 'weekly',
             defaultGoals: originalTemplate.defaultGoals,
+            defaultWeeklyPlan: originalTemplate.defaultWeeklyPlan,
+            defaultGeneralPlan: originalTemplate.defaultGeneralPlan,
+            defaultRecommendations: originalTemplate.defaultRecommendations,
+            defaultWarnings: originalTemplate.defaultWarnings,
             tags: originalTemplate.tags,
             createdBy: req.user._id
         });

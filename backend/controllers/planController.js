@@ -12,9 +12,11 @@ export async function createPlan(req, res) {
             title, 
             description, 
             duration, 
+            planType,
             goals,
             recommendations,
             weeklyPlan,
+            generalPlan,
             warnings,
             templateId,
             status
@@ -39,9 +41,11 @@ export async function createPlan(req, res) {
             existingPlan.title = title;
             existingPlan.description = description;
             existingPlan.duration = duration;
+            existingPlan.planType = planType || existingPlan.planType || 'weekly';
             existingPlan.goals = goals || {};
             existingPlan.recommendations = recommendations || {};
-            existingPlan.weeklyPlan = weeklyPlan || {};
+            existingPlan.weeklyPlan = weeklyPlan || existingPlan.weeklyPlan || {};
+            existingPlan.generalPlan = generalPlan || existingPlan.generalPlan || {};
             existingPlan.warnings = warnings || [];
             existingPlan.status = status || 'draft'; // Use provided status or default to draft
             
@@ -80,9 +84,11 @@ export async function createPlan(req, res) {
             title,
             description,
             duration,
+            planType: planType || 'weekly',
             goals: goals || {},
             recommendations: recommendations || {},
             weeklyPlan: weeklyPlan || {},
+            generalPlan: generalPlan || {},
             warnings: warnings || [],
             createdBy: req.user._id,
             status: status || 'draft'
@@ -495,7 +501,7 @@ export async function getTodayProgress(req, res) {
         const { planId } = req.params;
 
         const plan = await Plan.findOne({ _id: planId, user: req.user._id })
-            .select('progress currentStreak longestStreak weeklyPlan activatedAt duration');
+            .select('progress currentStreak longestStreak planType weeklyPlan generalPlan activatedAt duration');
 
         if (!plan) {
             return res.status(404).json({ error: 'Plan not found or does not belong to user' });
@@ -514,11 +520,14 @@ export async function getTodayProgress(req, res) {
         // Get today's day name for meals
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const todayDayName = days[today.getDay()];
-        const todayMeals = plan.weeklyPlan?.[todayDayName] || {};
+        const todayMeals = plan.planType === 'general'
+            ? (plan.generalPlan || {})
+            : (plan.weeklyPlan?.[todayDayName] || {});
 
         res.status(200).json({
             date: today,
             dayName: todayDayName,
+            planType: plan.planType || 'weekly',
             todayMeals,
             progress: todayProgress || null,
             currentStreak: plan.currentStreak,

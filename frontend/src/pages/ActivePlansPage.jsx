@@ -183,7 +183,9 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
     const theme = useTheme();
     const navigate = useNavigate();
     const todayDay = getTodayDayName();
-    const todayMeals = plan.weeklyPlan?.[todayDay] || {};
+    const todayMeals = plan.planType === 'general'
+        ? (plan.generalPlan || {})
+        : (plan.weeklyPlan?.[todayDay] || {});
     
     const [localProgress, setLocalProgress] = useState({
         mealsCompleted: todayProgress?.mealsCompleted || { breakfast: false, lunch: false, dinner: false, snack: false },
