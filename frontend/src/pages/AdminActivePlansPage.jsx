@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -31,7 +31,6 @@ import {
     Avatar,
     LinearProgress,
     Grid,
-    Divider,
     alpha,
     Card,
     CardContent
@@ -52,19 +51,20 @@ import {
     WbTwilight as WbTwilightIcon,
     NightsStay as NightsStayIcon,
     Cookie as CookieIcon,
-    FitnessCenter as FitnessCenterIcon,
     SentimentVerySatisfied as SentimentVerySatisfiedIcon,
     SentimentSatisfied as SentimentSatisfiedIcon,
     SentimentNeutral as SentimentNeutralIcon,
     SentimentDissatisfied as SentimentDissatisfiedIcon,
     SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon,
-    Chat as ChatIcon
+    Chat as ChatIcon,
+    Edit as EditIcon,
+    DeleteOutline as DeleteOutlineIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
-import { accentColors, containerVariants, itemVariants } from '../styles';
+import { accentColors } from '../styles';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -149,6 +149,7 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
     const [progressData, setProgressData] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => {
         if (open && planId) {
@@ -194,10 +195,12 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
             onClose={onClose}
             maxWidth="md"
             fullWidth
+            fullScreen={isPhone}
             PaperProps={{
                 sx: {
                     ...glassDialog(theme),
-                    maxHeight: '90vh'
+                    maxHeight: isPhone ? '100vh' : '90vh',
+                    m: isPhone ? 0 : undefined
                 }
             }}
         >
@@ -545,14 +548,15 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
     );
 };
 
-export default function AdminActivePlansPage() {
+export default function AdminPlansPage() {
     const theme = useTheme();
     const navigate = useNavigate();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('active');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
@@ -560,6 +564,9 @@ export default function AdminActivePlansPage() {
     
     const [progressDialogOpen, setProgressDialogOpen] = useState(false);
     const [selectedPlanId, setSelectedPlanId] = useState(null);
+    const [updatingPlanId, setUpdatingPlanId] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [planToDelete, setPlanToDelete] = useState(null);
 
     useEffect(() => {
         fetchPlans();
@@ -612,18 +619,111 @@ export default function AdminActivePlansPage() {
         navigate('/admin/chats', { state: { userId } });
     };
 
+    const handleEditPlan = (plan) => {
+        const userId = plan?.user?._id;
+        const formId = typeof plan?.form === 'string' ? plan.form : plan?.form?._id;
+
+        if (!userId || !formId) {
+            setMessage({ type: 'error', text: 'This plan cannot be edited because the related user/form is missing.' });
+            return;
+        }
+
+        navigate('/admin/plan-builder', {
+            state: {
+                selectedUser: userId,
+                selectedForm: formId
+            }
+        });
+    };
+
+    const handleStatusChange = async (plan, nextStatus) => {
+        if (!plan?._id || !nextStatus || plan.status === nextStatus) {
+            return;
+        }
+
+        setUpdatingPlanId(plan._id);
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/plans/${plan._id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ status: nextStatus })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData?.error || 'Failed to update plan status');
+            }
+
+            setPlans((prev) => prev.map((p) => (
+                p._id === plan._id
+                    ? {
+                        ...p,
+                        status: nextStatus,
+                        activatedAt: nextStatus === 'active' ? (p.activatedAt || new Date().toISOString()) : p.activatedAt
+                    }
+                    : p
+            )));
+            setMessage({ type: 'success', text: 'Plan status updated successfully.' });
+        } catch (error) {
+            console.error('Error updating plan status:', error);
+            setMessage({ type: 'error', text: error.message || 'Failed to update plan status.' });
+        } finally {
+            setUpdatingPlanId(null);
+        }
+    };
+
+    const openDeleteDialog = (plan) => {
+        setPlanToDelete(plan);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeletePlan = async () => {
+        if (!planToDelete?._id) {
+            setDeleteDialogOpen(false);
+            return;
+        }
+
+        setUpdatingPlanId(planToDelete._id);
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/admin/plans/${planToDelete._id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData?.error || 'Failed to delete plan');
+            }
+
+            setMessage({ type: 'success', text: 'Plan deleted successfully.' });
+            setDeleteDialogOpen(false);
+            setPlanToDelete(null);
+            await fetchPlans();
+        } catch (error) {
+            console.error('Error deleting plan:', error);
+            setMessage({ type: 'error', text: error.message || 'Failed to delete plan.' });
+        } finally {
+            setUpdatingPlanId(null);
+        }
+    };
+
     return (
         <PageFade>
-            <Box sx={{ p: isMobile ? 2 : 4, maxWidth: 1600, mx: 'auto' }}>
+            <Box sx={{ p: isPhone ? 1.5 : isMobile ? 2 : 4, maxWidth: 1600, mx: 'auto' }}>
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                        <PlayCircleFilledIcon sx={{ fontSize: 40, color: accentColors.emerald.main }} />
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                        <PlayCircleFilledIcon sx={{ fontSize: { xs: 32, sm: 36, md: 40 }, color: accentColors.emerald.main }} />
                         <Typography 
-                            variant="h4" 
+                            variant={isPhone ? 'h5' : 'h4'}
                             sx={{ 
                                 fontWeight: 800, 
                                 background: `linear-gradient(45deg, ${accentColors.emerald.main} 30%, ${accentColors.sky.main} 90%)`, 
@@ -631,11 +731,11 @@ export default function AdminActivePlansPage() {
                                 WebkitTextFillColor: 'transparent' 
                             }}
                         >
-                            Active Plans
+                            Plans
                         </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Monitor user plan progress and engagement
+                        Manage plans, update statuses, edit plans, and remove outdated ones
                     </Typography>
                 </motion.div>
                 
@@ -650,13 +750,21 @@ export default function AdminActivePlansPage() {
                 )}
 
                 {/* Filters */}
-                <Paper sx={{ ...glassCard(theme), mb: 3, p: 2 }}>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                <Paper sx={{ ...glassCard(theme), mb: 3, p: isPhone ? 1.5 : 2 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            gap: 1.5,
+                            flexWrap: 'wrap',
+                            alignItems: isPhone ? 'stretch' : 'center',
+                            flexDirection: isPhone ? 'column' : 'row'
+                        }}
+                    >
                         <TextField
-                            placeholder="Search by user name or email..."
+                            placeholder="Search by user name, email, or plan title..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            sx={{ ...glassInput(theme), minWidth: 280, flex: 1 }}
+                            sx={{ ...glassInput(theme), minWidth: isPhone ? 0 : 280, width: isPhone ? '100%' : 'auto', flex: 1 }}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -666,7 +774,7 @@ export default function AdminActivePlansPage() {
                             }}
                             size="small"
                         />
-                        <FormControl sx={{ minWidth: 150 }} size="small">
+                        <FormControl sx={{ minWidth: isPhone ? 0 : 150, width: isPhone ? '100%' : 'auto' }} size="small">
                             <InputLabel>Status</InputLabel>
                             <Select
                                 value={statusFilter}
@@ -682,7 +790,7 @@ export default function AdminActivePlansPage() {
                             </Select>
                         </FormControl>
                         <Tooltip title="Refresh">
-                            <IconButton onClick={fetchPlans} color="primary">
+                            <IconButton onClick={fetchPlans} color="primary" sx={{ alignSelf: isPhone ? 'flex-end' : 'center' }}>
                                 <RefreshIcon />
                             </IconButton>
                         </Tooltip>
@@ -709,6 +817,169 @@ export default function AdminActivePlansPage() {
                                 No plans found
                             </Typography>
                         </Box>
+                    ) : isPhone ? (
+                        <Box sx={{ p: 1.25, display: 'flex', flexDirection: 'column', gap: 1.25 }}>
+                            <AnimatePresence>
+                                {plans.map((plan, index) => {
+                                    const statusConfig = getStatusConfig(plan.status);
+                                    return (
+                                        <motion.div
+                                            key={plan._id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.04 }}
+                                        >
+                                            <Paper
+                                                onClick={() => handleViewProgress(plan._id)}
+                                                sx={{
+                                                    ...glassCard(theme),
+                                                    p: 1.5,
+                                                    cursor: 'pointer',
+                                                    borderRadius: 2
+                                                }}
+                                            >
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1.25 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+                                                        <Avatar
+                                                            src={plan.user?.profileImageUrl}
+                                                            sx={{
+                                                                width: 36,
+                                                                height: 36,
+                                                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                                                            }}
+                                                        >
+                                                            {plan.user?.name?.charAt(0).toUpperCase() || '?'}
+                                                        </Avatar>
+                                                        <Box sx={{ minWidth: 0 }}>
+                                                            <Typography variant="subtitle2" fontWeight={700} noWrap>
+                                                                {plan.user?.name || 'Unknown'}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary" noWrap>
+                                                                {plan.user?.email || ''}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                    <Chip
+                                                        label={statusConfig.label}
+                                                        size="small"
+                                                        sx={{
+                                                            bgcolor: alpha(statusConfig.color, 0.1),
+                                                            color: statusConfig.color,
+                                                            fontWeight: 600,
+                                                            flexShrink: 0
+                                                        }}
+                                                    />
+                                                </Box>
+
+                                                <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
+                                                    {plan.title || 'Nutrition Plan'}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                    Duration: {plan.duration} week{plan.duration > 1 ? 's' : ''}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                    Created: {formatDisplayDate(plan.createdAt)}
+                                                </Typography>
+
+                                                <Box sx={{ mt: 1.25 }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="caption" color="text.secondary">Progress</Typography>
+                                                        <Typography variant="caption" sx={{ color: accentColors.emerald.main, fontWeight: 700 }}>
+                                                            {plan.overallProgress || 0}%
+                                                        </Typography>
+                                                    </Box>
+                                                    <LinearProgress
+                                                        variant="determinate"
+                                                        value={plan.overallProgress || 0}
+                                                        sx={{
+                                                            height: 7,
+                                                            borderRadius: 4,
+                                                            backgroundColor: alpha(accentColors.emerald.main, 0.2),
+                                                            '& .MuiLinearProgress-bar': {
+                                                                borderRadius: 4,
+                                                                backgroundColor: accentColors.emerald.main
+                                                            }
+                                                        }}
+                                                    />
+                                                </Box>
+
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1, mb: 1.25 }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                        <LocalFireDepartmentIcon
+                                                            sx={{
+                                                                fontSize: 16,
+                                                                color: plan.currentStreak > 0 ? accentColors.amber.main : 'text.disabled'
+                                                            }}
+                                                        />
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Streak: {plan.currentStreak || 0}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Days: {plan.daysElapsed || 0} / {plan.totalDays || 0}
+                                                    </Typography>
+                                                </Box>
+
+                                                <Box onClick={(e) => e.stopPropagation()}>
+                                                    <FormControl size="small" fullWidth>
+                                                        <InputLabel>Update Status</InputLabel>
+                                                        <Select
+                                                            value={plan.status || 'draft'}
+                                                            label="Update Status"
+                                                            onChange={(e) => handleStatusChange(plan, e.target.value)}
+                                                            disabled={updatingPlanId === plan._id}
+                                                        >
+                                                            <MenuItem value="draft">Draft</MenuItem>
+                                                            <MenuItem value="active">Active</MenuItem>
+                                                            <MenuItem value="paused">Paused</MenuItem>
+                                                            <MenuItem value="completed">Completed</MenuItem>
+                                                        </Select>
+                                                    </FormControl>
+
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25 }}>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            startIcon={<VisibilityIcon fontSize="small" />}
+                                                            onClick={() => handleViewProgress(plan._id)}
+                                                        >
+                                                            View
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            startIcon={<ChatIcon fontSize="small" />}
+                                                            onClick={() => handleMessageUser(plan.user?._id)}
+                                                        >
+                                                            Chat
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            startIcon={<EditIcon fontSize="small" />}
+                                                            onClick={() => handleEditPlan(plan)}
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            color="error"
+                                                            startIcon={<DeleteOutlineIcon fontSize="small" />}
+                                                            onClick={() => openDeleteDialog(plan)}
+                                                            disabled={updatingPlanId === plan._id}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                        {updatingPlanId === plan._id && <CircularProgress size={16} sx={{ ml: 0.5, mt: 0.5 }} />}
+                                                    </Box>
+                                                </Box>
+                                            </Paper>
+                                        </motion.div>
+                                    );
+                                })}
+                            </AnimatePresence>
+                        </Box>
                     ) : (
                         <TableContainer sx={{ maxHeight: 'calc(100vh - 350px)' }}>
                             <Table stickyHeader>
@@ -720,6 +991,7 @@ export default function AdminActivePlansPage() {
                                         <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Progress</TableCell>
                                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Streak</TableCell>
                                         <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>Days</TableCell>
+                                        <TableCell>Status Control</TableCell>
                                         <TableCell align="right">Actions</TableCell>
                                     </TableRow>
                                 </TableHead>
@@ -831,6 +1103,21 @@ export default function AdminActivePlansPage() {
                                                             {plan.daysElapsed || 0} / {plan.totalDays || 0}
                                                         </Typography>
                                                     </TableCell>
+                                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                                        <FormControl size="small" sx={{ minWidth: 130 }}>
+                                                            <Select
+                                                                value={plan.status || 'draft'}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onChange={(e) => handleStatusChange(plan, e.target.value)}
+                                                                disabled={updatingPlanId === plan._id}
+                                                            >
+                                                                <MenuItem value="draft">Draft</MenuItem>
+                                                                <MenuItem value="active">Active</MenuItem>
+                                                                <MenuItem value="paused">Paused</MenuItem>
+                                                                <MenuItem value="completed">Completed</MenuItem>
+                                                            </Select>
+                                                        </FormControl>
+                                                    </TableCell>
                                                     <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                                                         <Tooltip title="View Details">
                                                             <IconButton 
@@ -850,6 +1137,28 @@ export default function AdminActivePlansPage() {
                                                                 <ChatIcon fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
+                                                        <Tooltip title="Edit Plan">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleEditPlan(plan)}
+                                                                sx={{ color: accentColors.violet.main }}
+                                                            >
+                                                                <EditIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete Plan">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => openDeleteDialog(plan)}
+                                                                sx={{ color: theme.palette.error.main }}
+                                                                disabled={updatingPlanId === plan._id}
+                                                            >
+                                                                <DeleteOutlineIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        {updatingPlanId === plan._id && (
+                                                            <CircularProgress size={16} sx={{ ml: 1 }} />
+                                                        )}
                                                     </TableCell>
                                                 </motion.tr>
                                             );
@@ -862,12 +1171,13 @@ export default function AdminActivePlansPage() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, borderTop: `1px solid ${theme.palette.divider}`, px: isPhone ? 1 : 0 }}>
                             <Pagination 
                                 count={totalPages} 
                                 page={page} 
                                 onChange={(e, value) => setPage(value)}
                                 color="primary"
+                                size={isPhone ? 'small' : 'medium'}
                             />
                         </Box>
                     )}
@@ -880,6 +1190,48 @@ export default function AdminActivePlansPage() {
                     planId={selectedPlanId}
                     theme={theme}
                 />
+
+                <Dialog
+                    open={deleteDialogOpen}
+                    onClose={() => {
+                        if (updatingPlanId !== planToDelete?._id) {
+                            setDeleteDialogOpen(false);
+                            setPlanToDelete(null);
+                        }
+                    }}
+                    maxWidth="xs"
+                    fullWidth
+                >
+                    <DialogTitle>Delete Plan</DialogTitle>
+                    <DialogContent>
+                        <Typography variant="body2" color="text.secondary">
+                            Are you sure you want to delete 
+                            <Typography component="span" sx={{ fontWeight: 700, mx: 0.5, color: 'text.primary' }}>
+                                {planToDelete?.title || 'this plan'}
+                            </Typography>
+                            ? This action cannot be undone.
+                        </Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => {
+                                setDeleteDialogOpen(false);
+                                setPlanToDelete(null);
+                            }}
+                            disabled={updatingPlanId === planToDelete?._id}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            color="error"
+                            variant="contained"
+                            onClick={handleDeletePlan}
+                            disabled={updatingPlanId === planToDelete?._id}
+                        >
+                            {updatingPlanId === planToDelete?._id ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </PageFade>
     );

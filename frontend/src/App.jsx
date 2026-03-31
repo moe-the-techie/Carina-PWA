@@ -30,7 +30,7 @@ const AdminPlanBuilderPage = lazy(() => import('./pages/AdminPlanBuilderPage'));
 const AdminChatsPage = lazy(() => import('./pages/AdminChatsPage'));
 const AdminAnnouncementsPage = lazy(() => import('./pages/AdminAnnouncementsPage'));
 const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage'));
-const AdminActivePlansPage = lazy(() => import('./pages/AdminActivePlansPage'));
+const AdminPlansPage = lazy(() => import('./pages/AdminActivePlansPage'));
 
 // Eagerly load layout components (used on every authenticated route)
 import AdminLayout from './components/AdminLayout';
@@ -250,7 +250,8 @@ function App() {
                 <Route path="/admin/chats" element={isLoggedIn && (isAdmin || isChatAdmin) ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminChatsPage /></LazyRoute></AdminLayout> : <Navigate to="/" replace/>} />
                 <Route path="/admin/announcements" element={isLoggedIn && isAdmin && isFeatureEnabled('VITE_ENABLE_ANNOUNCEMENTS') ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminAnnouncementsPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
                 <Route path="/admin/payments" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPaymentsPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
-                <Route path="/admin/active-plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminActivePlansPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/plans" element={isLoggedIn && isAdmin ? <AdminLayout onLogout={handleLogout}><LazyRoute><AdminPlansPage /></LazyRoute></AdminLayout> : (isLoggedIn && isChatAdmin ? <Navigate to="/admin/chats" replace/> : <Navigate to="/" replace/>)} />
+                <Route path="/admin/active-plans" element={<Navigate to="/admin/plans" replace />} />
                 </Routes>
                 </AnnouncementNotificationProvider>
             </UnreadCountProvider>

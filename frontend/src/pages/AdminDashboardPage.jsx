@@ -168,12 +168,12 @@ export default function AdminDashboardPage() {
             link: '/admin/forms'
         },
         {
-            label: 'Active Plans',
-            value: dashboardData.activePlans || 0,
+            label: 'Plans',
+            value: dashboardData.totalPlans || 0,
             icon: AssignmentTurnedInIcon,
             color: accentColors.emerald.main,
             gradient: `linear-gradient(135deg, ${accentColors.emerald.main}, ${accentColors.emerald.dark})`,
-            link: '/admin/active-plans'
+            link: '/admin/plans'
         }
     ];
 

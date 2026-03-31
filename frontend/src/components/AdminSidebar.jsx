@@ -72,7 +72,7 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             { to: '/admin/classes', icon: <CategoryIcon />, label: 'Classes', feature: 'VITE_ENABLE_USER_CLASSES' },
             { to: '/admin/forms', icon: <DescriptionIcon />, label: 'Forms' },
             { to: '/admin/payments', icon: <PaymentIcon />, label: 'Payments' },
-            { to: '/admin/active-plans', icon: <PlayCircleFilledIcon />, label: 'Active Plans' },
+            { to: '/admin/plans', icon: <PlayCircleFilledIcon />, label: 'Plans' },
             { to: '/admin/chats', icon: <ChatIcon />, label: 'Chats', badge: unreadCount },
             { to: '/admin/announcements', icon: <CampaignIcon />, label: 'Announcements', feature: 'VITE_ENABLE_ANNOUNCEMENTS' },
             { to: '/admin/templates', icon: <TemplateIcon />, label: 'Templates', feature: 'VITE_ENABLE_PLAN_TEMPLATES' },
