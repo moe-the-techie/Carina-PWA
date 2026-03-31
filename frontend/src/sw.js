@@ -18,7 +18,7 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
@@ -42,6 +42,15 @@ const FRESH_DATA_ENDPOINTS = [
   '/api/announcements/unread',
   '/api/payments/credits',
 ];
+
+function isDynamicFreshEndpoint(pathname) {
+  // Chat history endpoints are dynamic: /api/chat/:chatId/messages
+  if (/^\/api\/chat\/[^/]+\/messages$/.test(pathname)) {
+    return true;
+  }
+
+  return false;
+}
 
 // API endpoints that are safe to cache longer (stale-while-revalidate)
 const CACHEABLE_ENDPOINTS = [
@@ -125,6 +134,10 @@ self.addEventListener('activate', (event) => {
  */
 function getCachingStrategy(url) {
   const pathname = new URL(url).pathname;
+
+  if (isDynamicFreshEndpoint(pathname)) {
+    return { strategy: 'network-first', cache: API_CACHE_FRESH, ttl: CACHE_TTL.apiFresh };
+  }
   
   // Check if it's a fresh data endpoint
   if (FRESH_DATA_ENDPOINTS.some(ep => pathname.includes(ep))) {

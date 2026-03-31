@@ -7,6 +7,23 @@ let activeSubscriptions = new Map();
 let messageHandlers = new Map(); // Store multiple handlers per channel
 let currentlyViewingChat = null; 
 
+const sameChatId = (left, right) => {
+    if (left === undefined || left === null || right === undefined || right === null) {
+        return false;
+    }
+    return String(left).trim() === String(right).trim();
+};
+
+const isAppVisible = () => {
+    if (typeof document === 'undefined') {
+        return true;
+    }
+
+    const visible = document.visibilityState === 'visible';
+    const focused = typeof document.hasFocus === 'function' ? document.hasFocus() : true;
+    return visible && focused;
+};
+
 // Helper function to get auth token
 const getAuthToken = () => {
     return localStorage.getItem('token');
@@ -24,6 +41,10 @@ export const clearCurrentlyViewingChat = () => {
 
 export const getCurrentlyViewingChat = () => {
     return currentlyViewingChat;
+};
+
+export const isActivelyViewingChat = (chatId) => {
+    return sameChatId(currentlyViewingChat, chatId) && isAppVisible();
 };
 
 // Request notification permission
@@ -155,7 +176,7 @@ export const subscribeToChat = async (userId, onMessage) => {
             
             const messageData = message.data;
             
-            const shouldShowNotification = !currentlyViewingChat || currentlyViewingChat !== messageData.chatId;
+            const shouldShowNotification = !isActivelyViewingChat(messageData.chatId);
             
             if (shouldShowNotification) {
                 const notificationTitle = messageData.senderRole === 'admin' 
@@ -245,7 +266,7 @@ export const subscribeToAdminChats = async (onMessage) => {
             
             const messageData = message.data;
             
-            const shouldShowNotification = !currentlyViewingChat || currentlyViewingChat !== messageData.chatId;
+            const shouldShowNotification = !isActivelyViewingChat(messageData.chatId);
             
             if (shouldShowNotification) {
                 const notificationTitle = messageData.senderRole === 'user' 

@@ -6,7 +6,7 @@ import {
     subscribeToPlans,
     removeMessageHandler,
     requestNotificationPermission,
-    getCurrentlyViewingChat
+    isActivelyViewingChat
 } from '../services/ablyService';
 
 const UnreadCountContext = createContext();
@@ -66,9 +66,7 @@ export const UnreadCountProvider = ({ children, user }) => {
             messageHandler = (messageData) => {
                 // Only increment unread count if message is from a user AND not viewing that chat
                 if (messageData.senderRole === 'user') {
-                    const viewingChatId = getCurrentlyViewingChat();
-                    const isViewing = viewingChatId && messageData.chatId && 
-                        String(viewingChatId).trim() === String(messageData.chatId).trim();
+                    const isViewing = isActivelyViewingChat(messageData.chatId);
                     
                     if (!isViewing) {
                         setUnreadCount(prev => prev + 1);
@@ -88,9 +86,7 @@ export const UnreadCountProvider = ({ children, user }) => {
             messageHandler = (messageData) => {
                 // Only increment unread count if message is from admin AND not viewing the chat
                 if (messageData.senderRole === 'admin') {
-                    const viewingChatId = getCurrentlyViewingChat();
-                    const isViewing = viewingChatId && messageData.chatId && 
-                        String(viewingChatId).trim() === String(messageData.chatId).trim();
+                    const isViewing = isActivelyViewingChat(messageData.chatId);
 
                     if (!isViewing) {
                         setUnreadCount(prev => prev + 1);

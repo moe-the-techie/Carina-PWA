@@ -41,9 +41,16 @@ import {
     subscribeToChat, 
     removeMessageHandler,
     setCurrentlyViewingChat,
-    clearCurrentlyViewingChat
+    clearCurrentlyViewingChat,
+    isActivelyViewingChat
 } from '../services/ablyService';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
+import {
+    getCachedChatState,
+    cacheChatSnapshot,
+    appendMessageToChatCache,
+    shouldFetchMessagesFromServer
+} from '../services/chatMessageCache';
 
 export default function ChatPage() {
     const theme = useTheme();
@@ -79,6 +86,53 @@ export default function ChatPage() {
     const recordingIntervalRef = useRef(null);
     const audioChunksRef = useRef([]);
     const audioRefs = useRef({});
+    const chatRef = useRef(chat);
+
+    useEffect(() => {
+        chatRef.current = chat;
+    }, [chat]);
+
+    const mergeUniqueMessages = (currentMessages, incomingMessages) => {
+        const byId = new Map();
+        [...currentMessages, ...incomingMessages].forEach((msg) => {
+            if (msg?._id) {
+                byId.set(msg._id, msg);
+            }
+        });
+
+        return Array.from(byId.values()).sort((a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+    };
+
+    const syncChatMessagesFromServer = async (chatId, options = {}) => {
+        const online = typeof navigator === 'undefined' || navigator.onLine;
+        const shouldFetch = shouldFetchMessagesFromServer(chatId, {
+            forceSync: options.forceSync === true,
+            maxServerSyncAgeMs: 60 * 1000,
+            online
+        });
+
+        if (!shouldFetch) {
+            return false;
+        }
+
+        const messagesResponse = await getMessages(chatId);
+        const nextMessages = messagesResponse.messages || [];
+        const nextHasMore = messagesResponse.hasMore !== false;
+
+        setMessages(nextMessages);
+        setHasMoreMessages(nextHasMore);
+        cacheChatSnapshot(chatId, nextMessages, { hasMore: nextHasMore, serverSynced: true });
+
+        if (online) {
+            await markMessagesAsRead(chatId);
+            resetUnreadCount();
+            fetchUnreadCount();
+        }
+
+        return true;
+    };
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -100,12 +154,33 @@ export default function ChatPage() {
             setChat(chatResponse);
             
             if (chatResponse.chatId) {
-                const messagesResponse = await getMessages(chatResponse.chatId);
-                setMessages(messagesResponse.messages);
-                setHasMoreMessages(messagesResponse.hasMore !== false);
-                await markMessagesAsRead(chatResponse.chatId);
                 setCurrentlyViewingChat(chatResponse.chatId);
-                resetUnreadCount();
+
+                const cachedState = getCachedChatState(chatResponse.chatId);
+                if (cachedState.hasMessages) {
+                    setMessages(cachedState.messages);
+                    setHasMoreMessages(cachedState.hasMore);
+                    const online = typeof navigator === 'undefined' || navigator.onLine;
+                    if (online) {
+                        await markMessagesAsRead(chatResponse.chatId);
+                        resetUnreadCount();
+                        fetchUnreadCount();
+                    }
+                    setTimeout(() => scrollToBottom(), 200);
+                    return;
+                }
+
+                const synced = await syncChatMessagesFromServer(chatResponse.chatId, {
+                    forceSync: !cachedState.hasMessages
+                });
+
+                const online = typeof navigator === 'undefined' || navigator.onLine;
+                if (!synced && online) {
+                    await markMessagesAsRead(chatResponse.chatId);
+                    resetUnreadCount();
+                    fetchUnreadCount();
+                }
+
                 // Scroll to bottom after loading messages
                 setTimeout(() => scrollToBottom(), 200);
             }
@@ -131,7 +206,14 @@ export default function ChatPage() {
                     previousScrollHeight.current = container.scrollHeight;
                 }
                 
-                setMessages(prev => [...messagesResponse.messages, ...prev]);
+                setMessages(prev => {
+                    const nextMessages = mergeUniqueMessages(messagesResponse.messages, prev);
+                    cacheChatSnapshot(chat.chatId, nextMessages, {
+                        hasMore: messagesResponse.hasMore !== false,
+                        serverSynced: true
+                    });
+                    return nextMessages;
+                });
                 setHasMoreMessages(messagesResponse.hasMore !== false);
                 
                 // Maintain scroll position after prepending messages
@@ -449,7 +531,10 @@ export default function ChatPage() {
             setMessages(prev => {
                 const exists = prev.some(m => m._id === response._id);
                 if (exists) return prev;
-                return [...prev, response];
+
+                const nextMessages = [...prev, response];
+                cacheChatSnapshot(chat.chatId, nextMessages, { serverSynced: true });
+                return nextMessages;
             });
             setNewMessage('');
             handleRemoveImage();
@@ -490,11 +575,13 @@ export default function ChatPage() {
                 setMessages(prev => {
                     const exists = prev.some(m => m._id === messageData._id);
                     if (exists) return prev;
-                    
-                    return [...prev, messageData];
+
+                    const nextMessages = [...prev, messageData];
+                    appendMessageToChatCache(chat.chatId, messageData, { serverSynced: true });
+                    return nextMessages;
                 });
 
-                if (messageData.senderRole !== 'user') {
+                if (messageData.senderRole !== 'user' && isActivelyViewingChat(chat.chatId)) {
                     markMessagesAsRead(chat.chatId)
                         .then(() => fetchUnreadCount())
                         .catch(err => 
@@ -521,6 +608,61 @@ export default function ChatPage() {
             clearCurrentlyViewingChat();
         };
     }, []);
+
+    useEffect(() => {
+        const syncViewingState = () => {
+            const activeChatId = chatRef.current?.chatId;
+            const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+            const hasFocus = typeof document === 'undefined' || typeof document.hasFocus !== 'function' || document.hasFocus();
+
+            if (activeChatId && isVisible && hasFocus) {
+                setCurrentlyViewingChat(activeChatId);
+            } else {
+                clearCurrentlyViewingChat();
+            }
+        };
+
+        const handleWindowBlur = () => clearCurrentlyViewingChat();
+        const handlePageHide = () => clearCurrentlyViewingChat();
+
+        document.addEventListener('visibilitychange', syncViewingState);
+        window.addEventListener('focus', syncViewingState);
+        window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            document.removeEventListener('visibilitychange', syncViewingState);
+            window.removeEventListener('focus', syncViewingState);
+            window.removeEventListener('blur', handleWindowBlur);
+            window.removeEventListener('pagehide', handlePageHide);
+        };
+    }, []);
+
+    useEffect(() => {
+        const activeChatId = chatRef.current?.chatId;
+        if (!activeChatId) return;
+
+        const handleRecoverySync = () => {
+            const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+            const isOnline = typeof navigator === 'undefined' || navigator.onLine;
+
+            if (!isVisible || !isOnline) {
+                return;
+            }
+
+            syncChatMessagesFromServer(activeChatId, { forceSync: true }).catch((error) => {
+                console.error('Error syncing chat after recovery:', error);
+            });
+        };
+
+        window.addEventListener('online', handleRecoverySync);
+        document.addEventListener('visibilitychange', handleRecoverySync);
+
+        return () => {
+            window.removeEventListener('online', handleRecoverySync);
+            document.removeEventListener('visibilitychange', handleRecoverySync);
+        };
+    }, [chat?.chatId]);
 
     const formatTime = (dateString) => {
         const date = new Date(dateString);

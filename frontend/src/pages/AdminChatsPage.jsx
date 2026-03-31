@@ -64,9 +64,16 @@ import {
     subscribeToAdminChats, 
     removeMessageHandler,
     setCurrentlyViewingChat,
-    clearCurrentlyViewingChat
+    clearCurrentlyViewingChat,
+    isActivelyViewingChat
 } from '../services/ablyService';
 import { useUnreadCount } from '../contexts/UnreadCountContext';
+import {
+    getCachedChatState,
+    cacheChatSnapshot,
+    appendMessageToChatCache,
+    shouldFetchMessagesFromServer
+} from '../services/chatMessageCache';
 
 export default function AdminChatsPage() {
     const theme = useTheme();
@@ -115,6 +122,27 @@ export default function AdminChatsPage() {
     const audioChunksRef = useRef([]);
     const audioRefs = useRef({});
     const selectedChatRef = useRef(selectedChat);
+    const loadMessagesRequestRef = useRef(0);
+
+    const mergeUniqueMessages = (currentMessages, incomingMessages) => {
+        const byId = new Map();
+        [...currentMessages, ...incomingMessages].forEach((msg) => {
+            if (msg?._id) {
+                byId.set(msg._id, msg);
+            }
+        });
+
+        return Array.from(byId.values()).sort((a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+    };
+
+    const sameChatId = (left, right) => {
+        if (left === undefined || left === null || right === undefined || right === null) {
+            return false;
+        }
+        return String(left).trim() === String(right).trim();
+    };
 
     useEffect(() => {
         selectedChatRef.current = selectedChat;
@@ -164,17 +192,84 @@ export default function AdminChatsPage() {
         }
     };
 
-    const loadMessages = async (chatId) => {
-        setLoadingMessages(true);
+    const loadMessages = async (chatId, options = {}) => {
+        const requestId = ++loadMessagesRequestRef.current;
+        const shouldShowLoading = options.silent !== true;
+        if (shouldShowLoading) {
+            setLoadingMessages(true);
+        }
+
         setCurrentlyViewingChat(chatId);
         try {
+            const cachedState = getCachedChatState(chatId);
+            if (cachedState.hasMessages) {
+                setMessages(cachedState.messages);
+                setHasMoreMessages(cachedState.hasMore);
+            } else {
+                setMessages([]);
+                setHasMoreMessages(true);
+            }
+
+            if (cachedState.hasMessages && options.forceSync !== true) {
+                const online = typeof navigator === 'undefined' || navigator.onLine;
+                if (online) {
+                    await markMessagesAsRead(chatId);
+                    setChats(prevChats =>
+                        prevChats.map(chat =>
+                            sameChatId(chat.chatId, chatId)
+                                ? { ...chat, unreadByAdmins: 0 }
+                                : chat
+                        )
+                    );
+                    fetchUnreadCount();
+                }
+
+                setTimeout(() => scrollToBottom(), 50);
+                return;
+            }
+
+            const online = typeof navigator === 'undefined' || navigator.onLine;
+            const shouldFetch = shouldFetchMessagesFromServer(chatId, {
+                forceSync: options.forceSync === true || !cachedState.hasMessages,
+                maxServerSyncAgeMs: 60 * 1000,
+                online
+            });
+
+            if (!shouldFetch) {
+                if (online) {
+                    await markMessagesAsRead(chatId);
+                    setChats(prevChats =>
+                        prevChats.map(chat =>
+                            sameChatId(chat.chatId, chatId)
+                                ? { ...chat, unreadByAdmins: 0 }
+                                : chat
+                        )
+                    );
+                    fetchUnreadCount();
+                }
+
+                // Ensure selected chat opens at the latest message even in cache-only path.
+                setTimeout(() => scrollToBottom(), 50);
+                return;
+            }
+
             const response = await getMessages(chatId);
+
+            // Ignore outdated responses when users switch chats quickly.
+            if (requestId !== loadMessagesRequestRef.current || !sameChatId(selectedChatRef.current?.chatId, chatId)) {
+                return;
+            }
+
             setMessages(response.messages);
             setHasMoreMessages(response.hasMore !== false);
+            cacheChatSnapshot(chatId, response.messages, {
+                hasMore: response.hasMore !== false,
+                serverSynced: true
+            });
             await markMessagesAsRead(chatId);
             setChats(prevChats =>
                 prevChats.map(chat =>
-                    chat.chatId === chatId
+                    sameChatId(chat.chatId, chatId)
                         ? { ...chat, unreadByAdmins: 0 }
                         : chat
                 )
@@ -186,7 +281,9 @@ export default function AdminChatsPage() {
         } catch (error) {
             console.error('Error loading messages:', error);
         } finally {
-            setLoadingMessages(false);
+            if (shouldShowLoading && requestId === loadMessagesRequestRef.current) {
+                setLoadingMessages(false);
+            }
         }
     };
 
@@ -205,7 +302,14 @@ export default function AdminChatsPage() {
                     previousScrollHeight.current = container.scrollHeight;
                 }
                 
-                setMessages(prev => [...messagesResponse.messages, ...prev]);
+                setMessages(prev => {
+                    const nextMessages = mergeUniqueMessages(messagesResponse.messages, prev);
+                    cacheChatSnapshot(selectedChat.chatId, nextMessages, {
+                        hasMore: messagesResponse.hasMore !== false,
+                        serverSynced: true
+                    });
+                    return nextMessages;
+                });
                 setHasMoreMessages(messagesResponse.hasMore !== false);
                 
                 // Maintain scroll position after prepending messages
@@ -237,6 +341,7 @@ export default function AdminChatsPage() {
     };
 
     const handleChatSelect = async (chat) => {
+        selectedChatRef.current = chat;
         setSelectedChat(chat);
         setError('');
         
@@ -249,6 +354,7 @@ export default function AdminChatsPage() {
     };
 
     const handleBackToList = () => {
+        selectedChatRef.current = null;
         setShowChatView(false);
         setSelectedChat(null);
         clearCurrentlyViewingChat();
@@ -293,6 +399,7 @@ export default function AdminChatsPage() {
                 }
             });
             
+            selectedChatRef.current = chatObject;
             setSelectedChat(chatObject);
             
             // On mobile, immediately switch to chat view to show skeleton
@@ -596,7 +703,10 @@ export default function AdminChatsPage() {
             setMessages(prev => {
                 const exists = prev.some(m => m._id === response._id);
                 if (exists) return prev;
-                return [...prev, response];
+
+                const nextMessages = [...prev, response];
+                cacheChatSnapshot(selectedChat.chatId, nextMessages, { serverSynced: true });
+                return nextMessages;
             });
             setNewMessage('');
             handleRemoveImage();
@@ -653,7 +763,7 @@ export default function AdminChatsPage() {
                 if (eventType === 'messages-read') {
                     console.log('Handling read receipt:', messageData);
                     
-                    if (selectedChatRef.current && messageData.chatId === selectedChatRef.current.chatId && messageData.readBy === 'user') {
+                    if (selectedChatRef.current && sameChatId(messageData.chatId, selectedChatRef.current.chatId) && messageData.readBy === 'user') {
                         setMessages(prev => 
                             prev.map(msg => ({
                                 ...msg,
@@ -663,28 +773,33 @@ export default function AdminChatsPage() {
                     }
                     return;
                 }
+
+                appendMessageToChatCache(messageData.chatId, messageData, { serverSynced: true });
+
                 // Update messages if this is the selected chat
-                if (selectedChatRef.current && String(messageData.chatId).trim() === String(selectedChatRef.current.chatId).trim()) {
+                if (selectedChatRef.current && sameChatId(messageData.chatId, selectedChatRef.current.chatId)) {
                     setMessages(prev => {
                         const exists = prev.some(m => m._id === messageData._id);
                         if (exists) return prev;
                         return [...prev, messageData];
                     });
 
-                    // Mark as read if viewing this chat
-                    markMessagesAsRead(selectedChatRef.current.chatId)
-                        .then(() => {
-                            // Refresh the global unread count after marking as read
-                            fetchUnreadCount();
-                        })
-                        .catch(err => 
-                            console.error('Error marking messages as read:', err)
-                        );
+                    // Mark as read only when that chat is actively visible/focused.
+                    if (isActivelyViewingChat(selectedChatRef.current.chatId)) {
+                        markMessagesAsRead(selectedChatRef.current.chatId)
+                            .then(() => {
+                                // Refresh the global unread count after marking as read
+                                fetchUnreadCount();
+                            })
+                            .catch(err => 
+                                console.error('Error marking messages as read:', err)
+                            );
+                    }
                 }
 
                 // Update chat list
                 setChats(prevChats => {
-                    const chatExists = prevChats.some(chat => String(chat.chatId).trim() === String(messageData.chatId).trim());
+                    const chatExists = prevChats.some(chat => sameChatId(chat.chatId, messageData.chatId));
 
                     if (!chatExists && messageData.senderRole === 'user') {
                         const newChat = {
@@ -704,7 +819,7 @@ export default function AdminChatsPage() {
                     }
 
                     const updatedChats = prevChats.map(chat =>
-                        String(chat.chatId).trim() === String(messageData.chatId).trim()
+                        sameChatId(chat.chatId, messageData.chatId)
                             ? {
                                 ...chat,
                                 lastMessage: {
@@ -714,7 +829,7 @@ export default function AdminChatsPage() {
                                     createdAt: messageData.createdAt
                                 },
                                 lastMessageAt: messageData.createdAt,
-                                unreadByAdmins: messageData.senderRole === 'user' && (!selectedChatRef.current || String(selectedChatRef.current.chatId).trim() !== String(messageData.chatId).trim())
+                                unreadByAdmins: messageData.senderRole === 'user' && (!selectedChatRef.current || !sameChatId(selectedChatRef.current.chatId, messageData.chatId))
                                     ? messageData.unreadByAdmins
                                     : chat.unreadByAdmins
                             }
@@ -742,8 +857,66 @@ export default function AdminChatsPage() {
     useEffect(() => {
         if (selectedChat?.chatId) {
             setCurrentlyViewingChat(selectedChat.chatId);
+            return;
         }
+
+        clearCurrentlyViewingChat();
     }, [selectedChat]);
+
+    useEffect(() => {
+        const syncViewingState = () => {
+            const activeChatId = selectedChatRef.current?.chatId;
+            const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+            const hasFocus = typeof document === 'undefined' || typeof document.hasFocus !== 'function' || document.hasFocus();
+
+            if (activeChatId && isVisible && hasFocus) {
+                setCurrentlyViewingChat(activeChatId);
+            } else {
+                clearCurrentlyViewingChat();
+            }
+        };
+
+        const handleWindowBlur = () => clearCurrentlyViewingChat();
+        const handlePageHide = () => clearCurrentlyViewingChat();
+
+        document.addEventListener('visibilitychange', syncViewingState);
+        window.addEventListener('focus', syncViewingState);
+        window.addEventListener('blur', handleWindowBlur);
+        window.addEventListener('pagehide', handlePageHide);
+
+        return () => {
+            document.removeEventListener('visibilitychange', syncViewingState);
+            window.removeEventListener('focus', syncViewingState);
+            window.removeEventListener('blur', handleWindowBlur);
+            window.removeEventListener('pagehide', handlePageHide);
+        };
+    }, []);
+
+    useEffect(() => {
+        const activeChatId = selectedChatRef.current?.chatId;
+        if (!activeChatId) return;
+
+        const handleRecoverySync = () => {
+            const isVisible = typeof document === 'undefined' || document.visibilityState === 'visible';
+            const isOnline = typeof navigator === 'undefined' || navigator.onLine;
+
+            if (!isVisible || !isOnline) {
+                return;
+            }
+
+            loadMessages(activeChatId, { forceSync: true, silent: true }).catch((syncError) => {
+                console.error('Error syncing selected chat after recovery:', syncError);
+            });
+        };
+
+        window.addEventListener('online', handleRecoverySync);
+        document.addEventListener('visibilitychange', handleRecoverySync);
+
+        return () => {
+            window.removeEventListener('online', handleRecoverySync);
+            document.removeEventListener('visibilitychange', handleRecoverySync);
+        };
+    }, [selectedChat?.chatId]);
 
     useEffect(() => {
         return () => {
@@ -760,6 +933,12 @@ export default function AdminChatsPage() {
             setShowChatView(false);
         }
     }, [isMobile]);
+
+    useEffect(() => {
+        if (selectedChat?.chatId && !loadingMessages) {
+            setTimeout(() => scrollToBottom(), 50);
+        }
+    }, [selectedChat?.chatId, loadingMessages]);
 
     // Handle userId from navigation state (when coming from users page)
     useEffect(() => {
@@ -817,6 +996,7 @@ export default function AdminChatsPage() {
             
             // Clear selected chat if it was deleted
             if (selectedChat?.chatId === chatToDelete.chatId) {
+                selectedChatRef.current = null;
                 setSelectedChat(null);
                 setMessages([]);
                 setShowChatView(false);
