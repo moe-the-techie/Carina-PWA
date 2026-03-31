@@ -241,7 +241,22 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
     };
 
     const handleWeightChange = (e) => {
-        setLocalProgress({ ...localProgress, weight: e.target.value });
+        const rawValue = e.target.value;
+        if (rawValue === '') {
+            setLocalProgress({ ...localProgress, weight: '' });
+            return;
+        }
+
+        const parsed = Number(rawValue);
+        if (Number.isNaN(parsed)) return;
+
+        setLocalProgress({ ...localProgress, weight: String(Math.max(0, parsed)) });
+    };
+
+    const preventInvalidNumberKeys = (e) => {
+        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+            e.preventDefault();
+        }
     };
 
     const handleNotesChange = (e) => {
@@ -528,8 +543,10 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
                             type="number"
                             value={localProgress.weight}
                             onChange={handleWeightChange}
+                            onKeyDown={preventInvalidNumberKeys}
                             fullWidth
                             margin="normal"
+                            inputProps={{ min: 0, step: 'any' }}
                             InputProps={{
                                 startAdornment: <ScaleIcon sx={{ mr: 1, color: 'text.secondary' }} />
                             }}

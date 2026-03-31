@@ -23,9 +23,10 @@ const formSchema = new Schema ({
     profession: { type: String },
     currentWeight: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
-    height: { type: Number },
+    height: { type: Number, min: 0 },
     isMother: {
         type: Boolean,
         default: false
@@ -78,15 +79,18 @@ const formSchema = new Schema ({
     // Diet History
     minWeight: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     maxWeight: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     desiredWeight: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     triedDietBefore: { type: Boolean, default: false },
     weightLossMedication: { type: Boolean, default: false }, // Did you take any medication to lose weight?

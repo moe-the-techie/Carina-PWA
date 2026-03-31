@@ -83,7 +83,8 @@ const userSchema = new Schema({
     },
     formCredits: {
         type: Number,
-        default: 0  // Number of form submissions the user can make
+        default: 0,  // Number of form submissions the user can make
+        min: 0
     },
     userClass: {
         type: Schema.Types.ObjectId,

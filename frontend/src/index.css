@@ -47,6 +47,17 @@
     background: rgba(145, 235, 78, 0.3);
     color: inherit;
   }
+
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 /* ===== ANIMATION KEYFRAMES ===== */

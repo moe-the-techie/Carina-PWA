@@ -577,8 +577,14 @@ export default function AdminTemplatesPage() {
                                     label="Duration (weeks)"
                                     type="number"
                                     value={templateForm.duration}
-                                    onChange={(e) => setTemplateForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                                    inputProps={{ min: 1 }}
+                                    onChange={(e) => setTemplateForm(prev => ({ 
+                                        ...prev, 
+                                        duration: e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value, 10) || 1)
+                                    }))}
+                                    onKeyDown={(e) => {
+                                        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault();
+                                    }}
+                                    inputProps={{ min: 1, step: 1 }}
                                 />
                             </Grid>
                             <Grid item xs={12}>

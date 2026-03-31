@@ -127,8 +127,18 @@ export default function AdminClassesPage() {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === 'checkbox'
+                ? checked
+                : (type === 'number' && name === 'order')
+                    ? (value === '' ? '' : String(Math.max(0, Number(value) || 0)))
+                    : value
         }));
+    };
+
+    const preventInvalidNumberKeys = (e) => {
+        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+            e.preventDefault();
+        }
     };
 
     const handleSubmit = async () => {
@@ -408,8 +418,10 @@ export default function AdminClassesPage() {
                                 type="number"
                                 value={formData.order}
                                 onChange={handleInputChange}
+                                onKeyDown={preventInvalidNumberKeys}
                                 fullWidth
                                 helperText="Lower numbers appear first"
+                                inputProps={{ min: 0, step: 1 }}
                             />
 
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>

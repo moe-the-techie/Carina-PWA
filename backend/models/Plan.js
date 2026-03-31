@@ -43,10 +43,12 @@ const dailyProgressSchema = new Schema({
     },
     waterIntake: {
         type: Number, // glasses of water
-        default: 0
+        default: 0,
+        min: 0
     },
     weight: {
-        type: Number // optional daily weight log
+        type: Number,
+        min: 0 // optional daily weight log
     },
     notes: {
         type: String,
@@ -85,11 +87,11 @@ const planSchema = new Schema({
         min: 1
     },
     goals: {
-        targetWeight: Number,
-        targetCalories: Number,
-        targetProtein: Number,
-        targetCarbs: Number,
-        targetFats: Number
+        targetWeight: { type: Number, min: 0 },
+        targetCalories: { type: Number, min: 0 },
+        targetProtein: { type: Number, min: 0 },
+        targetCarbs: { type: Number, min: 0 },
+        targetFats: { type: Number, min: 0 }
     },
     // Weekly meal plan - 7 days with breakfast, lunch, dinner, snack
     weeklyPlan: {
@@ -138,11 +140,13 @@ const planSchema = new Schema({
     // Streak tracking
     currentStreak: {
         type: Number,
-        default: 0
+        default: 0,
+        min: 0
     },
     longestStreak: {
         type: Number,
-        default: 0
+        default: 0,
+        min: 0
     },
     createdBy: {
         type: Schema.Types.ObjectId,

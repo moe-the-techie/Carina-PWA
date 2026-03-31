@@ -24,7 +24,8 @@ const paymentSchema = new Schema({
     // Payment details
     amount: {
         type: Number,
-        required: true  // Amount in cents
+        required: true,  // Amount in cents
+        min: 0
     },
     currency: {
         type: String,
@@ -33,7 +34,8 @@ const paymentSchema = new Schema({
     formCredits: {
         type: Number,
         required: true,
-        default: 4  // Number of forms purchased (4 per payment)
+        default: 4,  // Number of forms purchased (4 per payment)
+        min: 0
     },
     // Status tracking
     status: {

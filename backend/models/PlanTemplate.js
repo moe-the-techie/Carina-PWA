@@ -47,10 +47,10 @@ const planTemplateSchema = new Schema({
         default: 1
     },
     defaultGoals: {
-        targetCalories: Number,
-        targetProtein: Number,
-        targetCarbs: Number,
-        targetFats: Number
+        targetCalories: { type: Number, min: 0 },
+        targetProtein: { type: Number, min: 0 },
+        targetCarbs: { type: Number, min: 0 },
+        targetFats: { type: Number, min: 0 }
     },
     // Weekly meal plan template - 7 days with breakfast, lunch, dinner, snack
     defaultWeeklyPlan: {
@@ -104,7 +104,8 @@ const planTemplateSchema = new Schema({
     },
     usageCount: {
         type: Number,
-        default: 0
+        default: 0,
+        min: 0
     },
     createdAt: {
         type: Date,

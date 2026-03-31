@@ -548,6 +548,19 @@ export default function AdminPlanBuilderPage() {
         }
     };
 
+    const preventInvalidNumberKeys = (e) => {
+        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+            e.preventDefault();
+        }
+    };
+
+    const clampNumber = (rawValue, min = 0) => {
+        if (rawValue === '') return '';
+        const parsed = Number(rawValue);
+        if (Number.isNaN(parsed)) return '';
+        return Math.max(min, parsed);
+    };
+
     // Function to open chip detail dialog
     const openChipDetailDialog = (content, title, category) => {
         setSelectedChipContent(content);
@@ -1021,7 +1034,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Duration (weeks)"
                                             value={planData.duration}
-                                            onChange={(e) => handlePlanChange('duration', parseInt(e.target.value))}
+                                            onChange={(e) => handlePlanChange('duration', clampNumber(e.target.value, 1))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 1, step: 1 }}
                                             sx={{ mb: 2 }}
                                         />
                                         
@@ -1061,7 +1076,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Duration (weeks)"
                                             value={planData.duration}
-                                            onChange={(e) => handlePlanChange('duration', parseInt(e.target.value))}
+                                            onChange={(e) => handlePlanChange('duration', clampNumber(e.target.value, 1))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 1, step: 1 }}
                                             sx={{ mb: 2 }}
                                         />
 
@@ -1100,7 +1117,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Target Weight (kg)"
                                             value={planData.goals.targetWeight}
-                                            onChange={(e) => handlePlanChange('goals.targetWeight', e.target.value)}
+                                            onChange={(e) => handlePlanChange('goals.targetWeight', clampNumber(e.target.value, 0))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 0, step: 'any' }}
                                             size="small"
                                         />
                                     </Grid>
@@ -1110,7 +1129,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Target Calories"
                                             value={planData.goals.targetCalories}
-                                            onChange={(e) => handlePlanChange('goals.targetCalories', e.target.value)}
+                                            onChange={(e) => handlePlanChange('goals.targetCalories', clampNumber(e.target.value, 0))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 0, step: 1 }}
                                             size="small"
                                         />
                                     </Grid>
@@ -1120,7 +1141,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Target Protein (g)"
                                             value={planData.goals.targetProtein}
-                                            onChange={(e) => handlePlanChange('goals.targetProtein', e.target.value)}
+                                            onChange={(e) => handlePlanChange('goals.targetProtein', clampNumber(e.target.value, 0))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 0, step: 'any' }}
                                             size="small"
                                         />
                                     </Grid>
@@ -1130,7 +1153,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Target Carbs (g)"
                                             value={planData.goals.targetCarbs}
-                                            onChange={(e) => handlePlanChange('goals.targetCarbs', e.target.value)}
+                                            onChange={(e) => handlePlanChange('goals.targetCarbs', clampNumber(e.target.value, 0))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 0, step: 'any' }}
                                             size="small"
                                         />
                                     </Grid>
@@ -1140,7 +1165,9 @@ export default function AdminPlanBuilderPage() {
                                             type="number"
                                             label="Target Fats (g)"
                                             value={planData.goals.targetFats}
-                                            onChange={(e) => handlePlanChange('goals.targetFats', e.target.value)}
+                                            onChange={(e) => handlePlanChange('goals.targetFats', clampNumber(e.target.value, 0))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 0, step: 'any' }}
                                             size="small"
                                         />
                                     </Grid>

@@ -34,6 +34,7 @@ const userClassSchema = new Schema({
     order: {
         type: Number,
         default: 0,
+        min: 0,
     },
     createdAt: {
         type: Date,

@@ -15,11 +15,13 @@ const chatSchema = new Schema({
     },
     unreadByAdmins: {
         type: Number,
-        default: 0
+        default: 0,
+        min: 0
     },
     unreadByUser: {
         type: Number,
-        default: 0
+        default: 0,
+        min: 0
     },
     createdAt: {
         type: Date,

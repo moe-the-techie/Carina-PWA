@@ -271,6 +271,9 @@ export default function UserActionsDialog({
                             label="Number of Credits"
                             value={creditsAmount}
                             onChange={(e) => setCreditsAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                            onKeyDown={(e) => {
+                                if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') e.preventDefault();
+                            }}
                             inputProps={{ min: 1 }}
                             fullWidth
                             size="small"

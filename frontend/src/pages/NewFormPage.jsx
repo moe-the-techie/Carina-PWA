@@ -208,11 +208,38 @@ export default function NewFormPage () {
         return (filled / total) * 100;
     };
 
+    const preventInvalidNumberKeys = (e) => {
+        // Block negative/exponent entry for number inputs
+        if (e.key === '-' || e.key === 'e' || e.key === 'E' || e.key === '+') {
+            e.preventDefault();
+        }
+    };
+
+    const clampNumberInput = (rawValue, min = 0) => {
+        if (rawValue === '') return '';
+        const parsed = Number(rawValue);
+        if (Number.isNaN(parsed)) return '';
+        return String(Math.max(min, parsed));
+    };
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const nonNegativeNumberFields = new Set([
+            'currentWeight',
+            'height',
+            'minWeight',
+            'maxWeight',
+            'desiredWeight',
+            'sugar'
+        ]);
+
         setFormData((prevData) => ({
             ...prevData,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: type === 'checkbox'
+                ? checked
+                : (type === 'number' && nonNegativeNumberFields.has(name))
+                    ? clampNumberInput(value, 0)
+                    : value
         }));
     };
 
@@ -661,8 +688,8 @@ export default function NewFormPage () {
                                     </Box>
 
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                        <TextField fullWidth type="number" name="currentWeight" label="Current Weight (kg)" value={formData.currentWeight} onChange={handleChange} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="filled" sx={inputStyle} />
-                                        <TextField fullWidth type="number" name="height" label="Height (cm)" value={formData.height} onChange={handleChange} error={!!formErrors.height} helperText={formErrors.height} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="number" name="currentWeight" label="Current Weight (kg)" value={formData.currentWeight} onChange={handleChange} onKeyDown={preventInvalidNumberKeys} error={!!formErrors.currentWeight} helperText={formErrors.currentWeight} variant="filled" sx={inputStyle} inputProps={{ min: 0, step: 'any' }} />
+                                        <TextField fullWidth type="number" name="height" label="Height (cm)" value={formData.height} onChange={handleChange} onKeyDown={preventInvalidNumberKeys} error={!!formErrors.height} helperText={formErrors.height} variant="filled" sx={inputStyle} inputProps={{ min: 0, step: 'any' }} />
                                         
                                         {user?.gender === 'female' && (
                                             <TextField fullWidth name="menstrualCycle" label="Period Cycle" value={formData.menstrualCycle} onChange={handleChange} variant="filled" sx={inputStyle} />
@@ -775,9 +802,9 @@ export default function NewFormPage () {
                                     </Box>
 
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                                        <TextField fullWidth type="number" name="minWeight" label="Minimum Weight (kg)" value={formData.minWeight} onChange={handleChange} error={!!formErrors.minWeight} helperText={formErrors.minWeight} variant="filled" sx={inputStyle} />
-                                        <TextField fullWidth type="number" name="maxWeight" label="Maximum Weight (kg)" value={formData.maxWeight} onChange={handleChange} error={!!formErrors.maxWeight} helperText={formErrors.maxWeight} variant="filled" sx={inputStyle} />
-                                        <TextField fullWidth type="number" name="desiredWeight" label="Desired Weight (kg)" value={formData.desiredWeight} onChange={handleChange} error={!!formErrors.desiredWeight} helperText={formErrors.desiredWeight} variant="filled" sx={inputStyle} />
+                                        <TextField fullWidth type="number" name="minWeight" label="Minimum Weight (kg)" value={formData.minWeight} onChange={handleChange} onKeyDown={preventInvalidNumberKeys} error={!!formErrors.minWeight} helperText={formErrors.minWeight} variant="filled" sx={inputStyle} inputProps={{ min: 0, step: 'any' }} />
+                                        <TextField fullWidth type="number" name="maxWeight" label="Maximum Weight (kg)" value={formData.maxWeight} onChange={handleChange} onKeyDown={preventInvalidNumberKeys} error={!!formErrors.maxWeight} helperText={formErrors.maxWeight} variant="filled" sx={inputStyle} inputProps={{ min: 0, step: 'any' }} />
+                                        <TextField fullWidth type="number" name="desiredWeight" label="Desired Weight (kg)" value={formData.desiredWeight} onChange={handleChange} onKeyDown={preventInvalidNumberKeys} error={!!formErrors.desiredWeight} helperText={formErrors.desiredWeight} variant="filled" sx={inputStyle} inputProps={{ min: 0, step: 'any' }} />
                                     </Box>
 
                                     <Box sx={{ mt: 2 }}>
@@ -830,9 +857,10 @@ export default function NewFormPage () {
                                                 label="Sugar Spoons per day" 
                                                 value={formData.sugar} 
                                                 onChange={handleChange} 
+                                                onKeyDown={preventInvalidNumberKeys}
                                                 variant="filled" 
                                                 sx={inputStyle} 
-                                                inputProps={{ min: 0 }}
+                                                inputProps={{ min: 0, step: 1 }}
                                             />
                                             <FormControl component="fieldset" variant="filled" sx={{ ...inputStyle, p: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
                                                 <FormLabel component="legend" sx={{ fontSize: '0.75rem' }}>Snack Time</FormLabel>

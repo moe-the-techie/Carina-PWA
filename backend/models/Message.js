@@ -45,7 +45,8 @@ const messageSchema = new Schema({
         trim: true
     },
     voiceDuration: {
-        type: Number
+        type: Number,
+        min: 0
     },
     readByAdmins: {
         type: Boolean,
