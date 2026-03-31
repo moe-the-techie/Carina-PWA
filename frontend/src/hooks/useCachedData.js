@@ -92,7 +92,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
   const cachedData = getCached();
   
   // Initialize with cached data or initialData
-  const [data, setData] = useState(cachedData ?? initialData);
+  const [data, setDataState] = useState(cachedData ?? initialData);
   // Only show loading if we have no cached data
   const [isLoading, setIsLoading] = useState(cachedData === null && enabled);
   // Shows when we're refreshing in background (cached data is being displayed)
@@ -109,12 +109,27 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
     
     const unsubscribe = subscribeToCacheKey(cacheKey, (newData) => {
       if (isMounted.current) {
-        setData(newData);
+        setDataState(newData);
       }
     });
     
     return unsubscribe;
   }, [cacheKey, syncAcrossComponents]);
+
+  // Keep manual updates in sync with persistent cache and peer subscribers.
+  const setData = useCallback((updater) => {
+    setDataState((previousData) => {
+      const nextData = typeof updater === 'function' ? updater(previousData) : updater;
+
+      setCacheData(cacheKey, nextData, cacheTTL);
+
+      if (syncAcrossComponents) {
+        notifyCacheUpdate(cacheKey, nextData);
+      }
+
+      return nextData;
+    });
+  }, [cacheKey, cacheTTL, syncAcrossComponents]);
 
   // Core fetch function with deduplication
   const fetchData = useCallback(async (showLoadingState = false) => {
@@ -126,7 +141,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
       try {
         const result = await inFlightRequests.get(cacheKey);
         if (isMounted.current) {
-          setData(result);
+          setDataState(result);
         }
         return result;
       } catch (err) {
@@ -152,7 +167,7 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
         if (!isMounted.current) return freshData;
 
         // Update state with fresh data
-        setData(freshData);
+        setDataState(freshData);
         setError(null);
         setLastFetchTime(Date.now());
         
@@ -218,11 +233,17 @@ export const useCachedData = (cacheKey, fetchFn, options = {}) => {
     isMounted.current = true;
 
     if (enabled && refetchOnMount) {
-      // Check if data is stale
-      const isStale = !lastFetchTime || (Date.now() - lastFetchTime) > staleTime;
-      
-      if (cachedData === null || isStale) {
-        fetchData(cachedData === null);
+      const hasCachedValue = cachedData !== null;
+      // Revalidate cached data only when staleTime is explicitly enabled (> 0)
+      // and we have a known in-memory fetch timestamp.
+      const shouldRevalidateCached =
+        hasCachedValue &&
+        staleTime > 0 &&
+        lastFetchTime !== null &&
+        (Date.now() - lastFetchTime) > staleTime;
+
+      if (!hasCachedValue || shouldRevalidateCached) {
+        fetchData(!hasCachedValue);
       }
     }
 

@@ -18,7 +18,7 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
@@ -46,6 +46,11 @@ const FRESH_DATA_ENDPOINTS = [
 function isDynamicFreshEndpoint(pathname) {
   // Chat history endpoints are dynamic: /api/chat/:chatId/messages
   if (/^\/api\/chat\/[^/]+\/messages$/.test(pathname)) {
+    return true;
+  }
+
+  // Plan progress endpoints are user-specific and change frequently.
+  if (pathname === '/api/plans/my' || /^\/api\/plans\/[^/]+\/progress(?:\/today)?$/.test(pathname)) {
     return true;
   }
 
