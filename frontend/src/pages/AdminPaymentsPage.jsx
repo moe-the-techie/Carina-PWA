@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Box,
     Typography,
@@ -37,18 +37,17 @@ import {
 } from '@mui/icons-material';
 import PageFade from '../components/PageFade';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
+import { useCachedData } from '../hooks/useCachedData';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminPaymentsPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [payments, setPayments] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [verifyLoading, setVerifyLoading] = useState(null);
 
@@ -56,41 +55,99 @@ export default function AdminPaymentsPage() {
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [newStatus, setNewStatus] = useState('');
 
-    useEffect(() => {
-        fetchPayments();
-    }, [page, statusFilter]);
-    
-    // Simple debounce for search
+    // Debounce search to reduce unnecessary API and cache churn
     useEffect(() => {
         const timer = setTimeout(() => {
-             fetchPayments();
+            setDebouncedSearch(search.trim());
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchPayments = async () => {
-        setLoading(true);
-        try {
-            let url = `${apiBaseUrl}/api/admin/payments?page=${page}&limit=10`;
-            if (search) url += `&search=${search}`;
-            if (statusFilter) url += `&status=${statusFilter}`;
+    const paymentsCacheKey = useMemo(
+        () => `admin_payments_p${page}_s${statusFilter || 'all'}_q${debouncedSearch || 'all'}`,
+        [page, statusFilter, debouncedSearch]
+    );
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                setPayments(data.payments);
-                setTotalPages(data.totalPages);
+    const fetchPaymentsData = useCallback(async () => {
+        let url = `${apiBaseUrl}/api/admin/payments?page=${page}&limit=10`;
+        if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+        if (statusFilter) url += `&status=${statusFilter}`;
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-        } catch (error) {
-            console.error('Error fetching payments:', error);
-        } finally {
-            setLoading(false);
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch payments');
         }
+
+        return response.json();
+    }, [page, statusFilter, debouncedSearch]);
+
+    const {
+        data: paymentsData,
+        isLoading: loading,
+        isRefreshing,
+        refetch: refetchPayments,
+        setData: setPaymentsData,
+    } = useCachedData(
+        paymentsCacheKey,
+        fetchPaymentsData,
+        {
+            cacheTTL: 2 * 60 * 1000,
+            initialData: { payments: [], totalPages: 1 },
+            dependencies: [page, statusFilter, debouncedSearch],
+        }
+    );
+
+    const payments = paymentsData?.payments || [];
+    const totalPages = paymentsData?.totalPages || 1;
+
+    const invalidateOtherAdminPaymentCaches = useCallback((keepCacheKey) => {
+        const keepDataKey = `carina_cache_${keepCacheKey}`;
+        const keepExpiryKey = `${keepDataKey}_expiry`;
+
+        Object.keys(localStorage).forEach((storageKey) => {
+            if (!storageKey.startsWith('carina_cache_admin_payments_')) {
+                return;
+            }
+
+            if (storageKey === keepDataKey || storageKey === keepExpiryKey) {
+                return;
+            }
+
+            localStorage.removeItem(storageKey);
+        });
+    }, []);
+
+    const applyPaymentStatusToCache = useCallback((paymentId, status) => {
+        if (!paymentId || !status) return;
+
+        setPaymentsData((previousData) => {
+            if (!previousData?.payments) return previousData;
+
+            return {
+                ...previousData,
+                payments: previousData.payments.map((payment) => (
+                    payment._id === paymentId
+                        ? { ...payment, status }
+                        : payment
+                )),
+            };
+        });
+    }, [setPaymentsData]);
+
+    const mapGatewayStatusToLocal = (statusText) => {
+        const normalized = statusText?.toLowerCase();
+        if (!normalized) return null;
+
+        if (['paid', 'success', 'successful'].includes(normalized)) return 'paid';
+        if (['pending', 'processing'].includes(normalized)) return 'pending';
+        if (normalized === 'refunded') return 'refunded';
+        if (['failed', 'declined', 'expired', 'canceled', 'cancelled'].includes(normalized)) return 'failed';
+        return null;
     };
 
     const handleVerifyPayload = async (paymentId) => {
@@ -106,7 +163,11 @@ export default function AdminPaymentsPage() {
             
             if (response.ok) {
                 setMessage({ type: 'success', text: `Verification: ${data.message} (Fawaterk: ${data.fawaterkStatus})` });
-                fetchPayments();
+                const mappedStatus = mapGatewayStatusToLocal(data.fawaterkStatus);
+                if (mappedStatus) {
+                    applyPaymentStatusToCache(paymentId, mappedStatus);
+                    invalidateOtherAdminPaymentCaches(paymentsCacheKey);
+                }
             } else {
                 setMessage({ type: 'error', text: data.message || 'Verification failed' });
             }
@@ -134,12 +195,14 @@ export default function AdminPaymentsPage() {
                 body: JSON.stringify({ status: newStatus })
             });
 
+            const data = await response.json().catch(() => ({}));
+
             if (response.ok) {
                 setMessage({ type: 'success', text: 'Payment status updated successfully' });
                 setEditDialogOpen(false);
-                fetchPayments();
+                applyPaymentStatusToCache(selectedPayment._id, data?.payment?.status || newStatus);
+                invalidateOtherAdminPaymentCaches(paymentsCacheKey);
             } else {
-                 const data = await response.json();
                  setMessage({ type: 'error', text: data.message || 'Update failed' });
             }
         } catch (err) {
@@ -203,10 +266,11 @@ export default function AdminPaymentsPage() {
                          <Button 
                             variant="outlined" 
                             startIcon={<RefreshIcon />}
-                            onClick={fetchPayments}
+                            onClick={refetchPayments}
+                            disabled={isRefreshing}
                             sx={{ ml: 'auto' }}
                         >
-                            Refresh
+                            {isRefreshing ? 'Refreshing...' : 'Refresh'}
                         </Button>
                     </Box>
                 </Paper>

@@ -18,7 +18,7 @@ import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST || []);
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `carina-pwa-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
@@ -37,6 +37,7 @@ const CACHE_TTL = {
 // API endpoints that need fresh data (network-first)
 const FRESH_DATA_ENDPOINTS = [
   '/api/admin/dashboard',
+  '/api/admin/payments',
   '/api/chat/messages',
   '/api/chat/unread',
   '/api/announcements/unread',
