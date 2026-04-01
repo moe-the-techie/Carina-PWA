@@ -138,6 +138,7 @@ export default function AdminFormsPage() {
         isLoading: loading,
         isRefreshing,
         refetch: refetchForms,
+        setData: setFormsData,
     } = useCachedData(
         `admin_forms_p${page}_r${reviewedFilter}_t${typeFilter}`,
         fetchFormsData,
@@ -299,9 +300,36 @@ export default function AdminFormsPage() {
             // Close the actions dialog
             setActionsDialogOpen(false);
             setSelectedFormForActions(null);
-            
-            // Refetch forms to update the list
-            await refetchForms();
+
+            // Update cached list in-place to avoid an extra network request.
+            setFormsData((previousData) => {
+                if (!previousData?.forms) return previousData;
+
+                const nextForms = previousData.forms.filter((existingForm) => existingForm._id !== form._id);
+
+                if (nextForms.length === previousData.forms.length) {
+                    return previousData;
+                }
+
+                const nextData = {
+                    ...previousData,
+                    forms: nextForms,
+                };
+
+                if (typeof previousData.total === 'number') {
+                    const nextTotal = Math.max(previousData.total - 1, 0);
+                    nextData.total = nextTotal;
+                    nextData.totalPages = Math.max(Math.ceil(nextTotal / 10), 1);
+                }
+
+                return nextData;
+            });
+
+            if (selectedForm?._id === form._id) {
+                setSelectedForm(null);
+                setFormDetailsOpen(false);
+                setHistoryForms([]);
+            }
         } catch (error) {
             console.error('Error deleting form:', error);
             setError(error.message);
