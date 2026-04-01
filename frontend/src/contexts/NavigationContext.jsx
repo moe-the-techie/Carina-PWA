@@ -7,7 +7,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, LinearProgress } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 
 const NavigationContext = createContext();
 
@@ -70,19 +70,20 @@ const TopLoadingBar = ({ isNavigating }) => {
     <Box
       sx={{
         position: 'fixed',
-        top: 0,
+        top: { xs: 'env(safe-area-inset-top)', md: 0 },
         left: 0,
         right: 0,
         zIndex: 9999,
-        height: '3px',
+        height: { xs: '4px', md: '3px' },
+        boxShadow: { xs: `0 1px 6px ${theme.palette.primary.main}55`, md: 'none' },
       }}
     >
       <LinearProgress
         variant="determinate"
         value={progress}
         sx={{
-          height: '3px',
-          backgroundColor: 'transparent',
+          height: '100%',
+          backgroundColor: { xs: alpha(theme.palette.background.paper, 0.68), md: 'transparent' },
           '& .MuiLinearProgress-bar': {
             backgroundColor: theme.palette.primary.main,
             transition: progress === 100 
