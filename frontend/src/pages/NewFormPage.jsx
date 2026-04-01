@@ -116,12 +116,18 @@ export default function NewFormPage () {
         breakfast: '',
         lunch: '',
         dinner: '',
+        waterIntake: '',
+        breakfastFrequency: 'Sometimes',
+        breadServings: '',
+        ricePlates: '',
         dislikedFood: '',
         dietGiven: '',
         goals: [''],
         
         // Missing required fields
+        eatAtNightDaily: false,
         nightEater: false,
+        nightHungerType: 'Hungry',
         coffee: false,
         sugar: 0,
         snackTime: 'After Lunch',
@@ -230,6 +236,9 @@ export default function NewFormPage () {
             'minWeight',
             'maxWeight',
             'desiredWeight',
+            'waterIntake',
+            'breadServings',
+            'ricePlates',
             'sugar'
         ]);
 
@@ -840,21 +849,78 @@ export default function NewFormPage () {
                                     <TextField fullWidth multiline rows={2} name="lunch" label="Lunch" value={formData.lunch} onChange={handleChange} variant="filled" sx={inputStyle} />
                                     <TextField fullWidth multiline rows={2} name="dinner" label="Dinner" value={formData.dinner} onChange={handleChange} variant="filled" sx={inputStyle} />
 
+                                    <Typography variant="subtitle2" sx={{ mb: 1, mt: 3 }}>Additional Nutrition Questions</Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                        <TextField
+                                            fullWidth
+                                            type="number"
+                                            name="waterIntake"
+                                            label="How much water do you drink? (glasses/day)"
+                                            value={formData.waterIntake}
+                                            onChange={handleChange}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            variant="filled"
+                                            sx={inputStyle}
+                                            inputProps={{ min: 0, step: 1 }}
+                                        />
+                                        <FormControl component="fieldset" variant="filled" sx={{ ...inputStyle, p: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
+                                            <FormLabel component="legend" sx={{ fontSize: '0.75rem' }}>How often do you have breakfast?</FormLabel>
+                                            <RadioGroup row name="breakfastFrequency" value={formData.breakfastFrequency} onChange={handleChange}>
+                                                <FormControlLabel value="Always" control={<Radio size="small" />} label="Always" />
+                                                <FormControlLabel value="Sometimes" control={<Radio size="small" />} label="Sometimes" />
+                                                <FormControlLabel value="Never" control={<Radio size="small" />} label="Never" />
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <TextField
+                                            fullWidth
+                                            type="number"
+                                            name="breadServings"
+                                            label="How many toasts or bread do you have?"
+                                            value={formData.breadServings}
+                                            onChange={handleChange}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            variant="filled"
+                                            sx={inputStyle}
+                                            inputProps={{ min: 0, step: 1 }}
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            type="number"
+                                            name="ricePlates"
+                                            label="How many plates of rice do you have?"
+                                            value={formData.ricePlates}
+                                            onChange={handleChange}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            variant="filled"
+                                            sx={inputStyle}
+                                            inputProps={{ min: 0, step: 1 }}
+                                        />
+                                    </Box>
+
                                     <Typography variant="subtitle2" sx={{ mb: 1, mt: 3 }}>Diet & Goals</Typography>
                                     <TextField fullWidth multiline rows={2} name="dislikedFood" label="What you don't eat?" value={formData.dislikedFood} onChange={handleChange} variant="filled" sx={inputStyle} />
                                     <TextField fullWidth multiline rows={2} name="dietGiven" label="Diet Given" value={formData.dietGiven} onChange={handleChange} variant="filled" sx={inputStyle} />
 
                                     <Box sx={{ mt: 2, mb: 3 }}>
                                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Habits</Typography>
+                                        <FormControlLabel control={<Checkbox checked={formData.eatAtNightDaily} onChange={handleChange} name="eatAtNightDaily" />} label="Do you eat at night every day?" />
                                         <FormControlLabel control={<Checkbox checked={formData.nightEater} onChange={handleChange} name="nightEater" />} label="Are you a night eater?" />
                                         <FormControlLabel control={<Checkbox checked={formData.coffee} onChange={handleChange} name="coffee" />} label="Do you drink coffee?" />
+
+                                        <FormControl component="fieldset" variant="filled" sx={{ ...inputStyle, mt: 1.5, p: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
+                                            <FormLabel component="legend" sx={{ fontSize: '0.75rem' }}>At night do you feel hungry or just a snack?</FormLabel>
+                                            <RadioGroup row name="nightHungerType" value={formData.nightHungerType} onChange={handleChange}>
+                                                <FormControlLabel value="Hungry" control={<Radio size="small" />} label="Hungry" />
+                                                <FormControlLabel value="Just Snack" control={<Radio size="small" />} label="Just a snack" />
+                                            </RadioGroup>
+                                        </FormControl>
                                         
                                         <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                                             <TextField 
                                                 fullWidth 
                                                 type="number" 
                                                 name="sugar" 
-                                                label="Sugar Spoons per day" 
+                                                label="How many tea spoons of sugar?" 
                                                 value={formData.sugar} 
                                                 onChange={handleChange} 
                                                 onKeyDown={preventInvalidNumberKeys}

@@ -905,6 +905,13 @@ export default function AdminPlanBuilderPage() {
                                                 : 'None'}
                                         </Typography>
 
+                                        <Typography variant="subtitle2" color="primary">Daily Habits</Typography>
+                                        <Typography variant="body2" paragraph>
+                                            Water: {currentFormData.waterIntake ?? 'N/A'} glass(es) | Breakfast: {currentFormData.breakfastFrequency || 'N/A'}
+                                            <br />
+                                            Bread: {currentFormData.breadServings ?? 'N/A'} | Rice: {currentFormData.ricePlates ?? 'N/A'}
+                                        </Typography>
+
                                         {(currentFormData.bodyImage || (currentFormData.inbodyImages && currentFormData.inbodyImages.length > 0)) && (
                                             <>
                                                 <Typography variant="subtitle2" color="primary">Inbody Images</Typography>
@@ -1938,13 +1945,19 @@ export default function AdminPlanBuilderPage() {
                                                     <Typography><strong>Breakfast:</strong> {currentFormData.breakfast}</Typography>
                                                     <Typography><strong>Lunch:</strong> {currentFormData.lunch}</Typography>
                                                     <Typography><strong>Dinner:</strong> {currentFormData.dinner}</Typography>
+                                                    <Typography><strong>Water Intake:</strong> {currentFormData.waterIntake ?? 'N/A'} glass(es)/day</Typography>
+                                                    <Typography><strong>Breakfast Frequency:</strong> {currentFormData.breakfastFrequency || 'N/A'}</Typography>
+                                                    <Typography><strong>Toast/Bread:</strong> {currentFormData.breadServings ?? 'N/A'}</Typography>
+                                                    <Typography><strong>Rice Plates:</strong> {currentFormData.ricePlates ?? 'N/A'}</Typography>
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Typography><strong>Dislikes:</strong> {currentFormData.dislikedFood}</Typography>
                                                     <Typography><strong>Diet Given:</strong> {currentFormData.dietGiven}</Typography>
                                                     <Typography><strong>Goals:</strong> {currentFormData.goals?.join(', ')}</Typography>
                                                     <Divider sx={{ my: 1 }} />
+                                                    <Typography><strong>Eat at Night Every Day:</strong> {currentFormData.eatAtNightDaily == null ? 'N/A' : currentFormData.eatAtNightDaily ? 'Yes' : 'No'}</Typography>
                                                     <Typography><strong>Night Eater:</strong> {currentFormData.nightEater ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Night Feeling:</strong> {currentFormData.nightHungerType || 'N/A'}</Typography>
                                                     <Typography><strong>Coffee:</strong> {currentFormData.coffee ? 'Yes' : 'No'}</Typography>
                                                     <Typography><strong>Sugar:</strong> {currentFormData.sugar} spoon(s)</Typography>
                                                     <Typography><strong>Snack Time:</strong> {currentFormData.snackTime}</Typography>

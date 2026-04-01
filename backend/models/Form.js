@@ -100,19 +100,41 @@ const formSchema = new Schema ({
     // 24 Hour Recall
     breakfast: {
         type: String,
-        // enum: ['Always', 'Sometimes', 'Never'], // Relaxing enum as user might input text in new design? 
-        // Request says "Breakfast". Old model had enum. Keeping simple string allows more flexibility if design changes, 
-        // but enum is safer if UI is strict. User prompt listed "Breakfast" as a bullet. 
-        // I will keep existing enum if it makes sense, but the prompt implies "What did you eat?" as 24h recall.
-        // "24 Hour Recall" usually means "What did you eat yesterday?".
-        // If it means "Do you eat breakfast?", the old enum is fine.
-        // But "24 Hour Recall -> Breakfast, Lunch, Dinner" strongly suggests content of the meal.
-        // I will change it to String to allow description.
-        type: String, 
         required: true
     },
     lunch: { type: String },
     dinner: { type: String },
+
+    // Additional Nutrition Questions
+    waterIntake: {
+        type: Number,
+        min: 0,
+        default: 0
+    },
+    breakfastFrequency: {
+        type: String,
+        enum: ['Always', 'Sometimes', 'Never'],
+        default: 'Sometimes'
+    },
+    breadServings: {
+        type: Number,
+        min: 0,
+        default: 0
+    },
+    ricePlates: {
+        type: Number,
+        min: 0,
+        default: 0
+    },
+    eatAtNightDaily: {
+        type: Boolean,
+        default: false
+    },
+    nightHungerType: {
+        type: String,
+        enum: ['Hungry', 'Just Snack'],
+        default: 'Hungry'
+    },
 
     // Diet & Goals
     dislikedFood: { type: String }, // What you don't eat?

@@ -1374,13 +1374,19 @@ export default function ViewPlanPage () {
                                                 <Typography><strong>Breakfast:</strong> {formData.breakfast}</Typography>
                                                 <Typography><strong>Lunch:</strong> {formData.lunch}</Typography>
                                                 <Typography><strong>Dinner:</strong> {formData.dinner}</Typography>
+                                                <Typography><strong>Water Intake:</strong> {formData.waterIntake ?? 'N/A'} glass(es)/day</Typography>
+                                                <Typography><strong>Breakfast Frequency:</strong> {formData.breakfastFrequency || 'N/A'}</Typography>
+                                                <Typography><strong>Toast/Bread:</strong> {formData.breadServings ?? 'N/A'}</Typography>
+                                                <Typography><strong>Rice Plates:</strong> {formData.ricePlates ?? 'N/A'}</Typography>
                                             </Grid>
                                             <Grid item xs={12} md={6}>
                                                 <Typography><strong>Dislikes:</strong> {formData.dislikedFood}</Typography>
                                                 <Typography><strong>Diet Given:</strong> {formData.dietGiven}</Typography>
                                                 <Typography><strong>Goals:</strong> {formData.goals?.join(', ')}</Typography>
                                                 <Divider sx={{ my: 1 }} />
+                                                <Typography><strong>Eat at Night Every Day:</strong> {formData.eatAtNightDaily == null ? 'N/A' : formData.eatAtNightDaily ? 'Yes' : 'No'}</Typography>
                                                 <Typography><strong>Night Eater:</strong> {formData.nightEater ? 'Yes' : 'No'}</Typography>
+                                                <Typography><strong>Night Feeling:</strong> {formData.nightHungerType || 'N/A'}</Typography>
                                                 <Typography><strong>Coffee:</strong> {formData.coffee ? 'Yes' : 'No'}</Typography>
                                                 <Typography><strong>Sugar:</strong> {formData.sugar} spoon(s)</Typography>
                                                 <Typography><strong>Snack Time:</strong> {formData.snackTime}</Typography>

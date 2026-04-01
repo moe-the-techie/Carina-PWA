@@ -1025,13 +1025,19 @@ export default function AdminFormsPage() {
                                                     <Typography><strong>Breakfast:</strong> {selectedForm.breakfast}</Typography>
                                                     <Typography><strong>Lunch:</strong> {selectedForm.lunch}</Typography>
                                                     <Typography><strong>Dinner:</strong> {selectedForm.dinner}</Typography>
+                                                    <Typography><strong>Water Intake:</strong> {selectedForm.waterIntake ?? 'N/A'} glass(es)/day</Typography>
+                                                    <Typography><strong>Breakfast Frequency:</strong> {selectedForm.breakfastFrequency || 'N/A'}</Typography>
+                                                    <Typography><strong>Toast/Bread:</strong> {selectedForm.breadServings ?? 'N/A'}</Typography>
+                                                    <Typography><strong>Rice Plates:</strong> {selectedForm.ricePlates ?? 'N/A'}</Typography>
                                                 </Grid>
                                                 <Grid item xs={12} md={6}>
                                                     <Typography><strong>Dislikes:</strong> {selectedForm.dislikedFood}</Typography>
                                                     <Typography><strong>Diet Given:</strong> {selectedForm.dietGiven}</Typography>
                                                     <Typography><strong>Goals:</strong> {selectedForm.goals?.join(', ')}</Typography>
                                                     <Divider sx={{ my: 1 }} />
+                                                    <Typography><strong>Eat at Night Every Day:</strong> {selectedForm.eatAtNightDaily == null ? 'N/A' : selectedForm.eatAtNightDaily ? 'Yes' : 'No'}</Typography>
                                                     <Typography><strong>Night Eater:</strong> {selectedForm.nightEater ? 'Yes' : 'No'}</Typography>
+                                                    <Typography><strong>Night Feeling:</strong> {selectedForm.nightHungerType || 'N/A'}</Typography>
                                                     <Typography><strong>Coffee:</strong> {selectedForm.coffee ? 'Yes' : 'No'}</Typography>
                                                     <Typography><strong>Sugar:</strong> {selectedForm.sugar} spoon(s)</Typography>
                                                     <Typography><strong>Snack Time:</strong> {selectedForm.snackTime}</Typography>
