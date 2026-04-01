@@ -23,7 +23,6 @@ import {
     Menu,
     MenuItem as MenuOption,
     Divider,
-    Alert,
     CircularProgress,
     Backdrop,
     Slide
@@ -40,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -474,11 +474,7 @@ export default function AdminTemplatesPage() {
                     </Grid>
                 </Grid>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator error={error} onClose={() => setError('')} sx={{ mb: 2 }} />
 
                 {/* Templates Grid */}
                 <Grid container spacing={3}>

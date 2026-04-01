@@ -45,6 +45,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { spacing, borderRadius, transitions, priorityColors as sharedPriorityColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -270,11 +271,7 @@ export default function AdminAnnouncementsPage() {
                         </Typography>
                     </Box>
 
-                    {error && (
-                        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-                            {error}
-                        </Alert>
-                    )}
+                    <PageErrorIndicator error={error} onClose={() => setError('')} sx={{ mb: 2 }} />
 
                     {success && (
                         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>

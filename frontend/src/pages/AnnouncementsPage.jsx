@@ -7,7 +7,6 @@ import {
     CardActions,
     Button,
     Chip,
-    Alert,
     Container,
     Grid,
     IconButton,
@@ -28,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import {
     getUserAnnouncements,
     markAnnouncementAsRead,
@@ -249,11 +249,7 @@ export default function AnnouncementsPage({ user }) {
                     )}
                 </Box>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator error={error} onClose={() => setError('')} />
 
                 {announcements.length === 0 ? (
                     <Card>

@@ -31,6 +31,7 @@ import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import EditIcon from '@mui/icons-material/Edit';
 import PageFade from '../components/PageFade';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { useCachedData } from '../hooks/useCachedData';
 import { 
     glassCard, 
@@ -282,24 +283,12 @@ export default function AdminDashboardPage() {
                     </Grid>
                 </motion.div>
 
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                    >
-                        <Paper sx={{ 
-                            p: 2, 
-                            mb: 3, 
-                            backgroundColor: alpha(theme.palette.error.main, 0.1),
-                            border: `1px solid ${theme.palette.error.main}`,
-                            borderRadius: 2 
-                        }}>
-                            <Typography color="error" sx={{ fontWeight: 500 }}>
-                                ⚠️ {error}
-                            </Typography>
-                        </Paper>
-                    </motion.div>
-                )}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
+                    <PageErrorIndicator error={error} />
+                </motion.div>
 
                 {/* Recent Activity */}
                 <Box

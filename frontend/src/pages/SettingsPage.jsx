@@ -33,6 +33,7 @@ import OnboardingOverlay from '../components/OnboardingOverlay';
 import PageFade from '../components/PageFade';
 import EditAccountDialog from '../components/EditAccountDialog.jsx';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { useThemeMode } from '../contexts/ThemeContext';
 import { useUserProfile } from '../contexts/UserContext';
 import { 
@@ -132,11 +133,7 @@ export default function SettingsPage({ onLogout }) {
               Settings
             </Typography>
             
-            {error && (
-              <Alert severity="error" sx={{ mb: spacing.md, borderRadius: borderRadius.sm }}>
-                {error}
-              </Alert>
-            )}
+            <PageErrorIndicator error={error} onClose={() => setError('')} sx={{ mb: spacing.md, borderRadius: borderRadius.sm }} />
 
             {success && (
               <Alert severity="success" sx={{ mb: spacing.md, borderRadius: borderRadius.sm }}>

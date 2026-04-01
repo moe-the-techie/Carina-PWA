@@ -29,6 +29,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { spacing, borderRadius, accentColors, shadows } from '../styles';
 import { glassCard, glassButton, glassDialog } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
@@ -744,7 +745,7 @@ export default function ActivePlansPage() {
                         ))}
                     </>
                 ) : error ? (
-                    <Alert severity="error" sx={{ mb: 2 }}>{error?.message || 'Failed to load active plans'}</Alert>
+                    <PageErrorIndicator error={error?.message || 'Failed to load active plans'} sx={{ mb: 2 }} />
                 ) : activePlans.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

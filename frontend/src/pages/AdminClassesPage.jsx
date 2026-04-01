@@ -27,6 +27,7 @@ import {
     Circle as CircleIcon
 } from '@mui/icons-material';
 import PageFade from '../components/PageFade';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -235,11 +236,7 @@ export default function AdminClassesPage() {
                     </Button>
                 </Box>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator error={error} onClose={() => setError('')} sx={{ mb: 2 }} />
 
                 <Grid container spacing={2}>
                     {classes.map((userClass) => (

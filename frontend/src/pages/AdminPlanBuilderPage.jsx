@@ -34,6 +34,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { MEAL_TYPES, getMealVisualByType } from '../utils/mealVisuals';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -792,11 +793,7 @@ export default function AdminPlanBuilderPage() {
                     </Alert>
                 )}
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator error={error} onClose={() => setError('')} sx={{ mb: 2 }} />
 
                 {successMessage && (
                     <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage('')}>

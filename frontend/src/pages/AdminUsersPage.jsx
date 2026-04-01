@@ -57,6 +57,7 @@ import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import UserActionsDialog from '../components/UserActionsDialog';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { useNavigation } from '../contexts/NavigationContext';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
@@ -535,11 +536,7 @@ export default function AdminUsersPage() {
                     </Box>
                 </Paper>
 
-                {error && (
-                    <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator error={error} onClose={() => setError('')} />
 
                 {/* Users Content */}
                 {isMobile ? (

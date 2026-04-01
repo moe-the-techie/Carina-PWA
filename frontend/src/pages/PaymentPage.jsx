@@ -7,7 +7,6 @@ import {
     Button,
     Paper,
     CircularProgress,
-    Alert,
     Chip,
     Divider,
     useMediaQuery
@@ -20,6 +19,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -258,16 +258,12 @@ export default function PaymentPage() {
                     </motion.div>
 
                     {/* Error Alert */}
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                        >
-                            <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-                                {error}
-                            </Alert>
-                        </motion.div>
-                    )}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                    >
+                        <PageErrorIndicator error={error} onClose={() => setError('')} />
+                    </motion.div>
 
                     {/* Payment Section */}
                     <motion.div

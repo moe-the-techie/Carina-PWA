@@ -16,7 +16,6 @@ import {
     CircularProgress,
     InputAdornment,
     Chip,
-    Alert,
     Button,
     useMediaQuery,
     AppBar,
@@ -47,6 +46,7 @@ import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import PageErrorIndicator from '../components/PageErrorIndicator';
 import { spacing, borderRadius, transitions, zIndex } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import {
@@ -1862,23 +1862,19 @@ export default function AdminChatsPage() {
                     ? 'radial-gradient(circle at 50% 50%, #2d3748 0%, #1a202c 100%)' 
                     : 'radial-gradient(circle at 50% 50%, #f7fafc 0%, #edf2f7 100%)'
             }}>
-                {error && (
-                    <Alert 
-                        severity="error" 
-                        sx={{ 
-                            position: 'absolute', 
-                            top: { xs: 10, md: 80 }, 
-                            left: '50%', 
-                            transform: 'translateX(-50%)', 
-                            zIndex: 1000,
-                            width: { xs: '90%', md: 'auto' },
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                            borderRadius: 2
-                        }}
-                    >
-                        {error}
-                    </Alert>
-                )}
+                <PageErrorIndicator
+                    error={error}
+                    onClose={() => setError('')}
+                    sx={{
+                        position: 'absolute',
+                        top: { xs: 10, md: 80 },
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 1000,
+                        width: { xs: '90%', md: 'auto' },
+                        mb: 0,
+                    }}
+                />
                 
                 {!isMobile && (
                     <>
