@@ -179,6 +179,9 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
     const todayMeals = plan.planType === 'general'
         ? (plan.generalPlan || {})
         : (plan.weeklyPlan?.[todayDay] || {});
+    const fruits = Array.isArray(plan?.fruits)
+        ? plan.fruits.filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+        : [];
     
     const [localProgress, setLocalProgress] = useState({
         mealsCompleted: todayProgress?.mealsCompleted || { breakfast: false, lunch: false, dinner: false, snack: false },
@@ -389,6 +392,29 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
                             />
                         ))}
                     </Box>
+
+                    {fruits.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                                Fruits
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {fruits.map((fruit, index) => (
+                                    <Chip
+                                        key={`${fruit.name}-${index}`}
+                                        size="small"
+                                        label={`${fruit.name}: ${fruit.quantity}`}
+                                        sx={{
+                                            backgroundColor: alpha('#F97316', 0.12),
+                                            color: '#C2410C',
+                                            border: `1px solid ${alpha('#F97316', 0.25)}`,
+                                            fontWeight: 600
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
                 </CardContent>
 
                 {/* Exercise & Water Tracking */}

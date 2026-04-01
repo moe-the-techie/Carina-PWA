@@ -25,6 +25,19 @@ const dayMealSchema = new Schema({
     }
 }, { _id: false });
 
+const fruitItemSchema = new Schema({
+    name: {
+        type: String,
+        trim: true,
+        required: true
+    },
+    quantity: {
+        type: Number,
+        min: 1,
+        required: true
+    }
+}, { _id: false });
+
 // Schema for daily progress tracking
 const dailyProgressSchema = new Schema({
     date: {
@@ -110,6 +123,10 @@ const planSchema = new Schema({
     },
     // General meal plan - same meals for all days
     generalPlan: dayMealSchema,
+    fruits: {
+        type: [fruitItemSchema],
+        default: []
+    },
     // General recommendations
     recommendations: {
         avoid: [{

@@ -55,6 +55,58 @@ const DAY_LABELS = {
     friday: 'Friday'
 };
 
+const FRUIT_OPTIONS = [
+    'Apple',
+    'Apricot',
+    'Almonds',
+    'Avocado',
+    'Banana',
+    'Berries',
+    'Beetroot',
+    'Orange',
+    'Olives',
+    'Mango',
+    'Melon',
+    'Grapes',
+    'Grapefruit',
+    'Guava',
+    'Pineapple',
+    'Fruit Salad',
+    'Fresh Fig',
+    'Figs',
+    'Dates',
+    'Dried Peach/Pineapple',
+    'Cherry',
+    'Carrot',
+    'Corn',
+    'Green Beans',
+    'Kaka',
+    'Strawberry',
+    'Blueberry',
+    'Watermelon',
+    'Kiwi',
+    'Nectarine',
+    'Pear',
+    'Peach',
+    'Papaya',
+    'Pium',
+    'Pomegranate',
+    'Raisin tsp.',
+    'Tangerine',
+    'Nuts'
+];
+
+const normalizeFruits = (fruits) => {
+    if (!Array.isArray(fruits)) return [];
+
+    return fruits
+        .map((fruit) => ({
+            name: (fruit?.name || '').trim(),
+            quantity: Number(fruit?.quantity)
+        }))
+        .filter((fruit) => fruit.name && Number.isFinite(fruit.quantity) && fruit.quantity > 0);
+};
+
 // Meal types for each day
 // Helper function to create empty weekly plan
 const createEmptyWeeklyPlan = () => {
@@ -139,6 +191,7 @@ export default function AdminPlanBuilderPage() {
         },
         weeklyPlan: createEmptyWeeklyPlan(),
         generalPlan: createEmptyGeneralPlan(),
+        fruits: [],
         recommendations: createEmptyRecommendations(),
         warnings: []
     });
@@ -193,6 +246,7 @@ export default function AdminPlanBuilderPage() {
                         },
                         weeklyPlan: createEmptyWeeklyPlan(),
                         generalPlan: createEmptyGeneralPlan(),
+                        fruits: [],
                         recommendations: createEmptyRecommendations(),
                         warnings: []
                     }));
@@ -216,6 +270,7 @@ export default function AdminPlanBuilderPage() {
                     },
                     weeklyPlan: templateData.defaultWeeklyPlan || createEmptyWeeklyPlan(),
                     generalPlan: templateData.defaultGeneralPlan || createEmptyGeneralPlan(),
+                    fruits: normalizeFruits(templateData.defaultFruits),
                     recommendations: templateData.defaultRecommendations || createEmptyRecommendations(),
                     warnings: templateData.defaultWarnings || []
                 }));
@@ -249,6 +304,7 @@ export default function AdminPlanBuilderPage() {
                     },
                     weeklyPlan: templateData.defaultWeeklyPlan || createEmptyWeeklyPlan(),
                     generalPlan: templateData.defaultGeneralPlan || createEmptyGeneralPlan(),
+                    fruits: normalizeFruits(templateData.defaultFruits),
                     recommendations: templateData.defaultRecommendations || createEmptyRecommendations(),
                     warnings: templateData.defaultWarnings || []
                 }));
@@ -308,6 +364,7 @@ export default function AdminPlanBuilderPage() {
                     },
                     weeklyPlan: existingPlan.weeklyPlan || createEmptyWeeklyPlan(),
                     generalPlan: existingPlan.generalPlan || createEmptyGeneralPlan(),
+                    fruits: normalizeFruits(existingPlan.fruits),
                     recommendations: {
                         avoid: recommendations.avoid || [],
                         useCarefully: recommendations.useCarefully || [],
@@ -431,6 +488,7 @@ export default function AdminPlanBuilderPage() {
                 },
                 weeklyPlan: template.defaultWeeklyPlan || createEmptyWeeklyPlan(),
                 generalPlan: template.defaultGeneralPlan || createEmptyGeneralPlan(),
+                fruits: normalizeFruits(template.defaultFruits),
                 recommendations: template.defaultRecommendations || createEmptyRecommendations(),
                 warnings: template.defaultWarnings || []
             }));
@@ -500,6 +558,47 @@ export default function AdminPlanBuilderPage() {
     };
 
     // Helper functions for managing recommendations
+    const [newFruitInput, setNewFruitInput] = useState({
+        name: '',
+        quantity: ''
+    });
+
+    const addFruit = () => {
+        const fruitName = newFruitInput.name.trim();
+        const quantity = Number(newFruitInput.quantity);
+
+        if (!fruitName || !Number.isFinite(quantity) || quantity <= 0) {
+            return;
+        }
+
+        setPlanData((prev) => {
+            const existingIndex = (prev.fruits || []).findIndex((fruit) => fruit.name === fruitName);
+
+            if (existingIndex >= 0) {
+                return {
+                    ...prev,
+                    fruits: prev.fruits.map((fruit, index) => (
+                        index === existingIndex ? { ...fruit, quantity } : fruit
+                    ))
+                };
+            }
+
+            return {
+                ...prev,
+                fruits: [...(prev.fruits || []), { name: fruitName, quantity }]
+            };
+        });
+
+        setNewFruitInput({ name: '', quantity: '' });
+    };
+
+    const removeFruit = (index) => {
+        setPlanData((prev) => ({
+            ...prev,
+            fruits: (prev.fruits || []).filter((_, itemIndex) => itemIndex !== index)
+        }));
+    };
+
     const [newRecommendationInputs, setNewRecommendationInputs] = useState({
         avoid: '',
         useCarefully: '',
@@ -608,6 +707,7 @@ export default function AdminPlanBuilderPage() {
                     defaultGoals: planData.goals,
                     defaultWeeklyPlan: planData.weeklyPlan,
                     defaultGeneralPlan: planData.generalPlan,
+                    defaultFruits: planData.fruits,
                     defaultRecommendations: planData.recommendations,
                     defaultWarnings: planData.warnings
                 })
@@ -659,6 +759,7 @@ export default function AdminPlanBuilderPage() {
                     defaultGoals: planData.goals,
                     defaultWeeklyPlan: planData.weeklyPlan,
                     defaultGeneralPlan: planData.generalPlan,
+                    defaultFruits: planData.fruits,
                     defaultRecommendations: planData.recommendations,
                     defaultWarnings: planData.warnings,
                     tags: templateMetadata.tags.filter(tag => tag.trim() !== '')
@@ -704,6 +805,7 @@ export default function AdminPlanBuilderPage() {
             },
             weeklyPlan: createEmptyWeeklyPlan(),
             generalPlan: createEmptyGeneralPlan(),
+            fruits: [],
             recommendations: createEmptyRecommendations(),
             warnings: []
         });
@@ -1380,6 +1482,90 @@ export default function AdminPlanBuilderPage() {
                                         </Grid>
                                     </>
                                 )}
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
+                    {/* Fruits */}
+                    <Grid item xs={12}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h6" gutterBottom>
+                                    Fruits
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Select fruits and set quantity per day.
+                                </Typography>
+
+                                <Grid container spacing={2} sx={{ mb: 2 }}>
+                                    <Grid item xs={12} sm={6} md={6}>
+                                        <FormControl fullWidth size="small" sx={{ minWidth: { sm: 260 } }}>
+                                            <InputLabel id="fruit-select-label" shrink>
+                                                Fruit
+                                            </InputLabel>
+                                            <Select
+                                                labelId="fruit-select-label"
+                                                value={newFruitInput.name}
+                                                label="Fruit"
+                                                displayEmpty
+                                                renderValue={(selected) => selected || 'Select a fruit'}
+                                                onChange={(e) => setNewFruitInput((prev) => ({ ...prev, name: e.target.value }))}
+                                                sx={{
+                                                    '& .MuiSelect-select': {
+                                                        color: newFruitInput.name ? 'text.primary' : 'text.secondary'
+                                                    }
+                                                }}
+                                            >
+                                                {FRUIT_OPTIONS.map((fruitOption) => (
+                                                    <MenuItem key={fruitOption} value={fruitOption}>
+                                                        {fruitOption}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12} sm={3} md={3}>
+                                        <TextField
+                                            fullWidth
+                                            type="number"
+                                            size="small"
+                                            label="Quantity"
+                                            value={newFruitInput.quantity}
+                                            onChange={(e) => setNewFruitInput((prev) => ({ ...prev, quantity: e.target.value }))}
+                                            onKeyDown={preventInvalidNumberKeys}
+                                            inputProps={{ min: 1, step: 'any' }}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} sm={3} md={2}>
+                                        <Button
+                                            fullWidth
+                                            variant="contained"
+                                            onClick={addFruit}
+                                            disabled={!newFruitInput.name || !newFruitInput.quantity}
+                                            sx={{ height: '100%' }}
+                                        >
+                                            Add
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {planData.fruits?.length > 0 ? (
+                                        planData.fruits.map((fruit, index) => (
+                                            <Chip
+                                                key={`${fruit.name}-${index}`}
+                                                label={`${fruit.name}: ${fruit.quantity}`}
+                                                onDelete={() => removeFruit(index)}
+                                                color="primary"
+                                                variant="outlined"
+                                            />
+                                        ))
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary">
+                                            No fruits selected yet.
+                                        </Typography>
+                                    )}
+                                </Box>
                             </CardContent>
                         </Card>
                     </Grid>

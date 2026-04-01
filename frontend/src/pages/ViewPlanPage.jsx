@@ -138,6 +138,9 @@ export default function ViewPlanPage () {
     const plan = planData?.plan || null;
     const noPlan = planData?.noPlan || false;
     const planType = plan?.planType || 'weekly';
+    const fruits = Array.isArray(plan?.fruits)
+        ? plan.fruits.filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+        : [];
     const error = planError?.message || (noPlan ? 'No plan available yet. Your form is being reviewed by our nutrition team.' : '');
 
     // Fetch form details if not in state
@@ -918,6 +921,51 @@ export default function ViewPlanPage () {
                                                         )}
                                                     </Box>
                                                 </Box>
+                                            ))}
+                                        </Box>
+                                    </Paper>
+                                </motion.div>
+                            )}
+
+                            {/* Fruits */}
+                            {fruits.length > 0 && (
+                                <motion.div variants={itemVariants}>
+                                    <Paper sx={{ ...glassCardStyle, p: 3, mb: 3 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+                                            <Box sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 2,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'linear-gradient(135deg, #F97316, #FB7185)',
+                                                boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)',
+                                            }}>
+                                                <RestaurantIcon sx={{ color: 'white', fontSize: 20 }} />
+                                            </Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                                Fruits
+                                            </Typography>
+                                        </Box>
+
+                                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                            {fruits.map((fruit, index) => (
+                                                <Chip
+                                                    key={`${fruit.name}-${index}`}
+                                                    label={`${fruit.name}: ${fruit.quantity}`}
+                                                    onClick={() => openChipDetailDialog(`${fruit.name}\nQuantity: ${fruit.quantity}`, 'Fruit', 'Fruits')}
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        backgroundColor: alpha('#F97316', 0.1),
+                                                        color: '#C2410C',
+                                                        border: `1px solid ${alpha('#F97316', 0.35)}`,
+                                                        fontWeight: 600,
+                                                        '&:hover': {
+                                                            backgroundColor: alpha('#F97316', 0.2),
+                                                        }
+                                                    }}
+                                                />
                                             ))}
                                         </Box>
                                     </Paper>

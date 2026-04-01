@@ -186,6 +186,12 @@ export default function PlanListItem ({ form, plan, onClick }) {
                         {plan.duration} week{plan.duration > 1 ? 's' : ''}
                     </Typography>
                 )}
+
+                {Array.isArray(plan?.fruits) && plan.fruits.length > 0 && (
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                        Fruits: {plan.fruits.length}
+                    </Typography>
+                )}
             </Box>
         </Box>
     );

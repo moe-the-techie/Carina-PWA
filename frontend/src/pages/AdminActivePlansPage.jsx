@@ -295,6 +295,30 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                                 variant="outlined"
                             />
                         </Box>
+
+                        {Array.isArray(progressData.plan.fruits) && progressData.plan.fruits.length > 0 && (
+                            <Box sx={{ mb: 2.5 }}>
+                                <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                                    Fruits
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {progressData.plan.fruits
+                                        .filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+                                        .map((fruit, idx) => (
+                                            <Chip
+                                                key={`${fruit.name}-${idx}`}
+                                                label={`${fruit.name}: ${fruit.quantity}`}
+                                                size="small"
+                                                sx={{
+                                                    bgcolor: alpha('#F97316', 0.1),
+                                                    color: '#C2410C',
+                                                    fontWeight: 500
+                                                }}
+                                            />
+                                        ))}
+                                </Box>
+                            </Box>
+                        )}
                         
                         {/* Stats Grid */}
                         <Grid container spacing={2} sx={{ mb: 3 }}>

@@ -1588,6 +1588,30 @@ export default function AdminFormsPage() {
                                                             )}
                                                         </Box>
                                                     </Box>
+
+                                                    <Box sx={{ mb: { xs: 0.5, sm: 1 } }}>
+                                                        <Typography variant="subtitle2" color="primary.main" gutterBottom sx={{ fontSize: { xs: '0.875rem', sm: '0.875rem' } }}>
+                                                            Fruits:
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
+                                                            {selectedPlan.fruits?.length > 0 ? (
+                                                                selectedPlan.fruits
+                                                                    .filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+                                                                    .map((fruit, index) => (
+                                                                        <Chip
+                                                                            key={`${fruit.name}-${index}`}
+                                                                            label={`${fruit.name}: ${fruit.quantity}`}
+                                                                            onClick={() => openChipDetailDialog(`${fruit.name}\nQuantity: ${fruit.quantity}`, 'Fruit', 'Fruits')}
+                                                                            color="primary"
+                                                                            size="small"
+                                                                            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                                                        />
+                                                                    ))
+                                                            ) : (
+                                                                <Typography variant="body2" color="text.secondary">None specified</Typography>
+                                                            )}
+                                                        </Box>
+                                                    </Box>
                                                     
                                                     {selectedPlan.recommendations?.notes && (
                                                         <Box sx={{ mt: 2 }}>

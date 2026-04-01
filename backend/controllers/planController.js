@@ -57,6 +57,7 @@ export async function createPlan(req, res) {
             recommendations,
             weeklyPlan,
             generalPlan,
+            fruits,
             warnings,
             templateId,
             status,
@@ -93,6 +94,7 @@ export async function createPlan(req, res) {
             existingPlan.recommendations = recommendations || {};
             existingPlan.weeklyPlan = weeklyPlan || existingPlan.weeklyPlan || {};
             existingPlan.generalPlan = generalPlan || existingPlan.generalPlan || {};
+            existingPlan.fruits = fruits || existingPlan.fruits || [];
             existingPlan.warnings = warnings || [];
             existingPlan.status = status || 'draft'; // Use provided status or default to draft
             const shouldResetActivation =
@@ -159,6 +161,7 @@ export async function createPlan(req, res) {
             recommendations: recommendations || {},
             weeklyPlan: weeklyPlan || {},
             generalPlan: generalPlan || {},
+            fruits: fruits || [],
             warnings: warnings || [],
             createdBy: req.user._id,
             status: initialStatus,
@@ -618,7 +621,7 @@ export async function getTodayProgress(req, res) {
         const { planId } = req.params;
 
         const plan = await Plan.findOne({ _id: planId, user: req.user._id })
-            .select('progress currentStreak longestStreak planType weeklyPlan generalPlan activatedAt duration');
+            .select('progress currentStreak longestStreak planType weeklyPlan generalPlan fruits activatedAt duration');
 
         if (!plan) {
             return res.status(404).json({ error: 'Plan not found or does not belong to user' });
@@ -646,6 +649,7 @@ export async function getTodayProgress(req, res) {
             dayName: todayDayName,
             planType: plan.planType || 'weekly',
             todayMeals,
+            fruits: plan.fruits || [],
             progress: todayProgress || null,
             currentStreak: plan.currentStreak,
             longestStreak: plan.longestStreak,

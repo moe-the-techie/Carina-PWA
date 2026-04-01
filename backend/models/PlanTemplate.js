@@ -25,6 +25,19 @@ const dayMealSchema = new Schema({
     }
 }, { _id: false });
 
+const fruitItemSchema = new Schema({
+    name: {
+        type: String,
+        trim: true,
+        required: true
+    },
+    quantity: {
+        type: Number,
+        min: 1,
+        required: true
+    }
+}, { _id: false });
+
 const planTemplateSchema = new Schema({
     name: {
         type: String,
@@ -69,6 +82,10 @@ const planTemplateSchema = new Schema({
     },
     // General meal plan template - same meals for all days
     defaultGeneralPlan: dayMealSchema,
+    defaultFruits: {
+        type: [fruitItemSchema],
+        default: []
+    },
     // General recommendations
     defaultRecommendations: {
         avoid: [{
