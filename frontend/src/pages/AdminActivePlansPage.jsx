@@ -59,6 +59,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import PlanActionsDialog from '../components/PlanActionsDialog';
+import { useNavigation } from '../contexts/NavigationContext';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { accentColors } from '../styles';
 import { MEAL_CARD_CONFIG } from '../utils/mealVisuals';
@@ -148,6 +149,7 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
     const [progressData, setProgressData] = useState(null);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { startNavigation } = useNavigation();
     const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => {
@@ -182,6 +184,7 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
 
     const handleMessageUser = () => {
         if (progressData?.plan?.user?._id) {
+            startNavigation('/admin/chats');
             navigate('/admin/chats', { state: { userId: progressData.plan.user._id } });
         }
     };
@@ -544,6 +547,7 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
 export default function AdminPlansPage() {
     const theme = useTheme();
     const navigate = useNavigate();
+    const { startNavigation } = useNavigation();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
     const [plans, setPlans] = useState([]);
@@ -611,6 +615,7 @@ export default function AdminPlansPage() {
 
     const handleMessageUser = (userId) => {
         if (!userId) return;
+        startNavigation('/admin/chats');
         navigate('/admin/chats', { state: { userId } });
     };
 
@@ -623,6 +628,7 @@ export default function AdminPlansPage() {
             return;
         }
 
+        startNavigation('/admin/plan-builder');
         navigate('/admin/plan-builder', {
             state: {
                 selectedUser: userId,

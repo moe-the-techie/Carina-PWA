@@ -57,6 +57,7 @@ import { useNavigate } from 'react-router-dom';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import UserActionsDialog from '../components/UserActionsDialog';
+import { useNavigation } from '../contexts/NavigationContext';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -66,6 +67,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function AdminUsersPage() {
     const navigate = useNavigate();
+    const { startNavigation } = useNavigation();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -208,6 +210,7 @@ export default function AdminUsersPage() {
             return;
         }
         
+        startNavigation('/admin/chats');
         navigate('/admin/chats', { state: { userId } });
     };
 

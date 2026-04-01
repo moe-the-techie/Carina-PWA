@@ -70,6 +70,7 @@ import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import FormActionsDialog from '../components/FormActionsDialog';
+import { useNavigation } from '../contexts/NavigationContext';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -83,6 +84,7 @@ export default function AdminFormsPage() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const navigate = useNavigate();
+    const { startNavigation } = useNavigation();
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
     const [reviewedFilter, setReviewedFilter] = useState('');
@@ -188,6 +190,7 @@ export default function AdminFormsPage() {
         try {
             setPlanLoading(true);
             // Navigate to plan builder with form data
+            startNavigation('/admin/plan-builder');
             navigate('/admin/plan-builder', { 
                 state: { 
                     selectedUser: form.user._id,
@@ -221,6 +224,7 @@ export default function AdminFormsPage() {
             return;
         }
         
+        startNavigation('/admin/chats');
         navigate('/admin/chats', { state: { userId } });
     };
 
