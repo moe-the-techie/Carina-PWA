@@ -46,10 +46,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import WbTwilightIcon from '@mui/icons-material/WbTwilight';
-import NightsStayIcon from '@mui/icons-material/NightsStay';
-import CookieIcon from '@mui/icons-material/Cookie';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
@@ -58,6 +54,7 @@ import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
 import { useCachedData } from '../hooks/useCachedData';
+import { MEAL_CARD_CONFIG } from '../utils/mealVisuals';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -954,70 +951,30 @@ export default function ViewPlanPage () {
                                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                                     Same meal structure applies every day.
                                                 </Typography>
-                                                <Box sx={{
-                                                    p: 2.5,
-                                                    borderRadius: 3,
-                                                    backgroundColor: alpha('#F59E0B', 0.08),
-                                                    border: `2px solid ${alpha('#F59E0B', 0.3)}`,
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                        <WbSunnyIcon sx={{ color: '#F59E0B', fontSize: 24 }} />
-                                                        <Typography variant="h6" sx={{ color: '#F59E0B', fontWeight: 600 }}>
-                                                            Breakfast
-                                                        </Typography>
-                                                    </Box>
-                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                        {plan.generalPlan?.breakfast || 'Not specified'}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{
-                                                    p: 2.5,
-                                                    borderRadius: 3,
-                                                    backgroundColor: alpha('#10B981', 0.08),
-                                                    border: `2px solid ${alpha('#10B981', 0.3)}`,
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                        <WbTwilightIcon sx={{ color: '#10B981', fontSize: 24 }} />
-                                                        <Typography variant="h6" sx={{ color: '#10B981', fontWeight: 600 }}>
-                                                            Lunch
-                                                        </Typography>
-                                                    </Box>
-                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                        {plan.generalPlan?.lunch || 'Not specified'}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{
-                                                    p: 2.5,
-                                                    borderRadius: 3,
-                                                    backgroundColor: alpha('#6366F1', 0.08),
-                                                    border: `2px solid ${alpha('#6366F1', 0.3)}`,
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                        <NightsStayIcon sx={{ color: '#6366F1', fontSize: 24 }} />
-                                                        <Typography variant="h6" sx={{ color: '#6366F1', fontWeight: 600 }}>
-                                                            Dinner
-                                                        </Typography>
-                                                    </Box>
-                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                        {plan.generalPlan?.dinner || 'Not specified'}
-                                                    </Typography>
-                                                </Box>
-                                                <Box sx={{
-                                                    p: 2.5,
-                                                    borderRadius: 3,
-                                                    backgroundColor: alpha('#EC4899', 0.08),
-                                                    border: `2px solid ${alpha('#EC4899', 0.3)}`,
-                                                }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                        <CookieIcon sx={{ color: '#EC4899', fontSize: 24 }} />
-                                                        <Typography variant="h6" sx={{ color: '#EC4899', fontWeight: 600 }}>
-                                                            Snack
-                                                        </Typography>
-                                                    </Box>
-                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                        {plan.generalPlan?.snack || 'Not specified'}
-                                                    </Typography>
-                                                </Box>
+                                                {MEAL_CARD_CONFIG.map((meal) => {
+                                                    const MealIcon = meal.icon;
+                                                    return (
+                                                        <Box
+                                                            key={meal.key}
+                                                            sx={{
+                                                                p: 2.5,
+                                                                borderRadius: 3,
+                                                                backgroundColor: alpha(meal.color, 0.08),
+                                                                border: `2px solid ${alpha(meal.color, 0.3)}`,
+                                                            }}
+                                                        >
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                <MealIcon sx={{ color: meal.color, fontSize: 24 }} />
+                                                                <Typography variant="h6" sx={{ color: meal.color, fontWeight: 600 }}>
+                                                                    {meal.label}
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
+                                                                {plan.generalPlan?.[meal.key] || 'Not specified'}
+                                                            </Typography>
+                                                        </Box>
+                                                    );
+                                                })}
                                             </Box>
                                         ) : (
                                             <>
@@ -1063,70 +1020,30 @@ export default function ViewPlanPage () {
                                                     >
                                                         {selectedDayTab === dayIndex && (
                                                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                                                                <Box sx={{
-                                                                    p: 2.5,
-                                                                    borderRadius: 3,
-                                                                    backgroundColor: alpha('#F59E0B', 0.08),
-                                                                    border: `2px solid ${alpha('#F59E0B', 0.3)}`,
-                                                                }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                                        <WbSunnyIcon sx={{ color: '#F59E0B', fontSize: 24 }} />
-                                                                        <Typography variant="h6" sx={{ color: '#F59E0B', fontWeight: 600 }}>
-                                                                            Breakfast
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                                        {plan.weeklyPlan[day]?.breakfast || 'Not specified'}
-                                                                    </Typography>
-                                                                </Box>
-                                                                <Box sx={{
-                                                                    p: 2.5,
-                                                                    borderRadius: 3,
-                                                                    backgroundColor: alpha('#10B981', 0.08),
-                                                                    border: `2px solid ${alpha('#10B981', 0.3)}`,
-                                                                }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                                        <WbTwilightIcon sx={{ color: '#10B981', fontSize: 24 }} />
-                                                                        <Typography variant="h6" sx={{ color: '#10B981', fontWeight: 600 }}>
-                                                                            Lunch
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                                        {plan.weeklyPlan[day]?.lunch || 'Not specified'}
-                                                                    </Typography>
-                                                                </Box>
-                                                                <Box sx={{
-                                                                    p: 2.5,
-                                                                    borderRadius: 3,
-                                                                    backgroundColor: alpha('#6366F1', 0.08),
-                                                                    border: `2px solid ${alpha('#6366F1', 0.3)}`,
-                                                                }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                                        <NightsStayIcon sx={{ color: '#6366F1', fontSize: 24 }} />
-                                                                        <Typography variant="h6" sx={{ color: '#6366F1', fontWeight: 600 }}>
-                                                                            Dinner
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                                        {plan.weeklyPlan[day]?.dinner || 'Not specified'}
-                                                                    </Typography>
-                                                                </Box>
-                                                                <Box sx={{
-                                                                    p: 2.5,
-                                                                    borderRadius: 3,
-                                                                    backgroundColor: alpha('#EC4899', 0.08),
-                                                                    border: `2px solid ${alpha('#EC4899', 0.3)}`,
-                                                                }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                                                                        <CookieIcon sx={{ color: '#EC4899', fontSize: 24 }} />
-                                                                        <Typography variant="h6" sx={{ color: '#EC4899', fontWeight: 600 }}>
-                                                                            Snack
-                                                                        </Typography>
-                                                                    </Box>
-                                                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
-                                                                        {plan.weeklyPlan[day]?.snack || 'Not specified'}
-                                                                    </Typography>
-                                                                </Box>
+                                                                {MEAL_CARD_CONFIG.map((meal) => {
+                                                                    const MealIcon = meal.icon;
+                                                                    return (
+                                                                        <Box
+                                                                            key={meal.key}
+                                                                            sx={{
+                                                                                p: 2.5,
+                                                                                borderRadius: 3,
+                                                                                backgroundColor: alpha(meal.color, 0.08),
+                                                                                border: `2px solid ${alpha(meal.color, 0.3)}`,
+                                                                            }}
+                                                                        >
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                                                                                <MealIcon sx={{ color: meal.color, fontSize: 24 }} />
+                                                                                <Typography variant="h6" sx={{ color: meal.color, fontWeight: 600 }}>
+                                                                                    {meal.label}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                            <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: theme.palette.text.primary }}>
+                                                                                {plan.weeklyPlan[day]?.[meal.key] || 'Not specified'}
+                                                                            </Typography>
+                                                                        </Box>
+                                                                    );
+                                                                })}
                                                             </Box>
                                                         )}
                                                     </Box>

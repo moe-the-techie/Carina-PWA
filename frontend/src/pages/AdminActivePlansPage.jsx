@@ -47,10 +47,6 @@ import {
     CalendarToday as CalendarTodayIcon,
     Close as CloseIcon,
     CheckCircle as CheckCircleIcon,
-    WbSunny as WbSunnyIcon,
-    WbTwilight as WbTwilightIcon,
-    NightsStay as NightsStayIcon,
-    Cookie as CookieIcon,
     SentimentVerySatisfied as SentimentVerySatisfiedIcon,
     SentimentSatisfied as SentimentSatisfiedIcon,
     SentimentNeutral as SentimentNeutralIcon,
@@ -65,6 +61,7 @@ import PageFade from '../components/PageFade';
 import PlanActionsDialog from '../components/PlanActionsDialog';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { accentColors } from '../styles';
+import { MEAL_CARD_CONFIG } from '../utils/mealVisuals';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -76,6 +73,8 @@ const moodConfig = {
     tired: { icon: SentimentDissatisfiedIcon, color: '#F97316', label: 'Tired' },
     bad: { icon: SentimentVeryDissatisfiedIcon, color: '#EF4444', label: 'Bad' }
 };
+
+const mealIcons = MEAL_CARD_CONFIG;
 
 // Status colors
 const getStatusConfig = (status) => {
@@ -411,12 +410,6 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                                     <TableBody>
                                         {progressData.progress.slice(0, 14).map((entry, idx) => {
                                             const meals = entry.mealsCompleted || {};
-                                            const mealIcons = [
-                                                { key: 'breakfast', label: 'Breakfast', icon: WbSunnyIcon, color: '#FFB020' },
-                                                { key: 'lunch', label: 'Lunch', icon: WbTwilightIcon, color: '#10B981' },
-                                                { key: 'dinner', label: 'Dinner', icon: NightsStayIcon, color: '#6366F1' },
-                                                { key: 'snack', label: 'Snack', icon: CookieIcon, color: '#EC4899' }
-                                            ];
                                             const mConfig = moodConfig[entry.mood] || moodConfig.okay;
                                             const MoodIcon = mConfig.icon;
                                             

@@ -32,12 +32,9 @@ import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import LunchDiningIcon from '@mui/icons-material/LunchDining';
-import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
-import CookieIcon from '@mui/icons-material/Cookie';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import { MEAL_TYPES, getMealVisualByType } from '../utils/mealVisuals';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -58,20 +55,6 @@ const DAY_LABELS = {
 };
 
 // Meal types for each day
-const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'];
-const MEAL_LABELS = {
-    breakfast: 'Breakfast',
-    lunch: 'Lunch',
-    dinner: 'Dinner',
-    snack: 'Snack'
-};
-const MEAL_ICONS = {
-    breakfast: <RestaurantIcon />,
-    lunch: <LunchDiningIcon />,
-    dinner: <DinnerDiningIcon />,
-    snack: <CookieIcon />
-};
-
 // Helper function to create empty weekly plan
 const createEmptyWeeklyPlan = () => {
     const plan = {};
@@ -1299,7 +1282,10 @@ export default function AdminPlanBuilderPage() {
                                             </Typography>
 
                                             <Grid container spacing={2}>
-                                                {MEAL_TYPES.map((mealType) => (
+                                                {MEAL_TYPES.map((mealType) => {
+                                                    const mealVisual = getMealVisualByType(mealType);
+                                                    const MealIcon = mealVisual?.icon;
+                                                    return (
                                                     <Grid item xs={12} md={6} key={mealType}>
                                                         <Paper 
                                                             variant="outlined" 
@@ -1312,16 +1298,16 @@ export default function AdminPlanBuilderPage() {
                                                             }}
                                                         >
                                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                                                {MEAL_ICONS[mealType]}
+                                                                {MealIcon && <MealIcon sx={{ color: mealVisual.color }} />}
                                                                 <Typography variant="subtitle1" fontWeight={600}>
-                                                                    {MEAL_LABELS[mealType]}
+                                                                    {mealVisual?.label || mealType}
                                                                 </Typography>
                                                             </Box>
                                                             <TextField
                                                                 fullWidth
                                                                 multiline
                                                                 rows={4}
-                                                                placeholder={`Enter ${MEAL_LABELS[mealType].toLowerCase()} details...`}
+                                                                placeholder={`Enter ${(mealVisual?.label || mealType).toLowerCase()} details...`}
                                                                 value={planData.weeklyPlan[currentDay]?.[mealType] || ''}
                                                                 onChange={(e) => handleMealChange(currentDay, mealType, e.target.value)}
                                                                 variant="outlined"
@@ -1335,7 +1321,8 @@ export default function AdminPlanBuilderPage() {
                                                             />
                                                         </Paper>
                                                     </Grid>
-                                                ))}
+                                                    );
+                                                })}
                                             </Grid>
                                         </Box>
                                     </>
@@ -1345,7 +1332,10 @@ export default function AdminPlanBuilderPage() {
                                             General Meal Plan (same every day)
                                         </Typography>
                                         <Grid container spacing={2}>
-                                            {MEAL_TYPES.map((mealType) => (
+                                            {MEAL_TYPES.map((mealType) => {
+                                                const mealVisual = getMealVisualByType(mealType);
+                                                const MealIcon = mealVisual?.icon;
+                                                return (
                                                 <Grid item xs={12} md={6} key={mealType}>
                                                     <Paper 
                                                         variant="outlined" 
@@ -1358,16 +1348,16 @@ export default function AdminPlanBuilderPage() {
                                                         }}
                                                     >
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                                            {MEAL_ICONS[mealType]}
+                                                            {MealIcon && <MealIcon sx={{ color: mealVisual.color }} />}
                                                             <Typography variant="subtitle1" fontWeight={600}>
-                                                                {MEAL_LABELS[mealType]}
+                                                                {mealVisual?.label || mealType}
                                                             </Typography>
                                                         </Box>
                                                         <TextField
                                                             fullWidth
                                                             multiline
                                                             rows={4}
-                                                            placeholder={`Enter ${MEAL_LABELS[mealType].toLowerCase()} details...`}
+                                                            placeholder={`Enter ${(mealVisual?.label || mealType).toLowerCase()} details...`}
                                                             value={planData.generalPlan?.[mealType] || ''}
                                                             onChange={(e) => handleGeneralMealChange(mealType, e.target.value)}
                                                             variant="outlined"
@@ -1381,7 +1371,8 @@ export default function AdminPlanBuilderPage() {
                                                         />
                                                     </Paper>
                                                 </Grid>
-                                            ))}
+                                                );
+                                            })}
                                         </Grid>
                                     </>
                                 )}

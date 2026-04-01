@@ -74,6 +74,7 @@ import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
 import { useCachedData } from '../hooks/useCachedData';
+import { MEAL_CARD_CONFIG } from '../utils/mealVisuals';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -1591,26 +1592,19 @@ export default function AdminFormsPage() {
                                                                         <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'capitalize' }}>
                                                                             {day}:
                                                                         </Typography>
-                                                                        {selectedPlan.weeklyPlan[day]?.breakfast && (
-                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
-                                                                                🌅 {selectedPlan.weeklyPlan[day].breakfast.substring(0, 50)}{selectedPlan.weeklyPlan[day].breakfast.length > 50 ? '...' : ''}
-                                                                            </Typography>
-                                                                        )}
-                                                                        {selectedPlan.weeklyPlan[day]?.lunch && (
-                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
-                                                                                ☀️ {selectedPlan.weeklyPlan[day].lunch.substring(0, 50)}{selectedPlan.weeklyPlan[day].lunch.length > 50 ? '...' : ''}
-                                                                            </Typography>
-                                                                        )}
-                                                                        {selectedPlan.weeklyPlan[day]?.dinner && (
-                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
-                                                                                🌙 {selectedPlan.weeklyPlan[day].dinner.substring(0, 50)}{selectedPlan.weeklyPlan[day].dinner.length > 50 ? '...' : ''}
-                                                                            </Typography>
-                                                                        )}
-                                                                        {selectedPlan.weeklyPlan[day]?.snack && (
-                                                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', ml: 1 }}>
-                                                                                🍪 {selectedPlan.weeklyPlan[day].snack.substring(0, 50)}{selectedPlan.weeklyPlan[day].snack.length > 50 ? '...' : ''}
-                                                                            </Typography>
-                                                                        )}
+                                                                        {MEAL_CARD_CONFIG.map((meal) => {
+                                                                            const mealText = selectedPlan.weeklyPlan[day]?.[meal.key];
+                                                                            const MealIcon = meal.icon;
+                                                                            if (!mealText) return null;
+                                                                            return (
+                                                                                <Box key={`${day}-${meal.key}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                                                                                    <MealIcon sx={{ fontSize: 14, color: meal.color }} />
+                                                                                    <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                                                                                        {mealText.substring(0, 50)}{mealText.length > 50 ? '...' : ''}
+                                                                                    </Typography>
+                                                                                </Box>
+                                                                            );
+                                                                        })}
                                                                     </Box>
                                                                 )
                                                             ))}

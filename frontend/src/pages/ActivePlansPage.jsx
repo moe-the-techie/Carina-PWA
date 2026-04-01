@@ -34,15 +34,12 @@ import { glassCard, glassButton, glassDialog } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
 import { containerVariants, itemVariants } from '../styles/animations';
 import { useCachedData } from '../hooks/useCachedData';
+import { MEAL_CARD_CONFIG } from '../utils/mealVisuals';
 
 // Icons
 import PlayCircleFilledIcon from '@mui/icons-material/PlayCircleFilled';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-import WbSunnyIcon from '@mui/icons-material/WbSunny';
-import WbTwilightIcon from '@mui/icons-material/WbTwilight';
-import NightsStayIcon from '@mui/icons-material/NightsStay';
-import CookieIcon from '@mui/icons-material/Cookie';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
@@ -83,12 +80,7 @@ const moodConfig = {
 };
 
 // Meal configuration
-const mealConfig = [
-    { title: 'Breakfast', key: 'breakfast', icon: WbSunnyIcon, color: '#FFB020' },
-    { title: 'Lunch', key: 'lunch', icon: WbTwilightIcon, color: '#10B981' },
-    { title: 'Dinner', key: 'dinner', icon: NightsStayIcon, color: '#6366F1' },
-    { title: 'Snack', key: 'snack', icon: CookieIcon, color: '#EC4899' }
-];
+const mealConfig = MEAL_CARD_CONFIG;
 
 // Trackable Meal Card component
 const TrackableMealCard = ({ title, content, mealKey, icon: Icon, color, completed, onToggle, saving }) => {
