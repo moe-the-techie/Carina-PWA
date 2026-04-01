@@ -65,10 +65,22 @@ button, [role="button"] {
   }
 
   .MuiChip-root {
-    margin: 0.125rem !important;
-    font-size: 0.7rem !important;
-    height: auto !important;
-    min-height: 24px !important;
+    margin: 0.15rem !important;
+    font-size: 0.72rem !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-width: 100% !important;
+    border-radius: 999px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12) !important;
+  }
+
+  .MuiChip-label {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 
   .MuiDialog-paper {
@@ -202,9 +214,13 @@ button, [role="button"] {
     overflow-wrap: break-word;
   }
 
-  /* Improve chip wrapping */
+  /* Keep chips readable on one line in compact mobile layouts */
   .MuiChip-root {
-    max-width: calc(50% - 4px) !important;
+    max-width: 100% !important;
+  }
+
+  .MuiChip-label {
+    white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
