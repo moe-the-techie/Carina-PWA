@@ -30,6 +30,7 @@ import { useTheme } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import PageErrorIndicator from '../components/PageErrorIndicator';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { spacing, borderRadius, accentColors, shadows } from '../styles';
 import { glassCard, glassButton, glassDialog } from '../styles/glassmorphism';
 import { pageTitle } from '../styles/typography';
@@ -572,14 +573,14 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
                                 startAdornment: <ScaleIcon sx={{ mr: 1, color: 'text.secondary' }} />
                             }}
                         />
-                        <TextField
+                        <ExpandableTextField
                             label="Notes"
-                            multiline
-                            rows={4}
+                            compactRows={2}
+                            expandedRows={10}
                             value={localProgress.notes}
                             onChange={handleNotesChange}
                             fullWidth
-                            margin="normal"
+                            containerSx={{ my: 2 }}
                             placeholder="How did today go? Any observations about your meals, energy levels, etc..."
                         />
                     </DialogContent>

@@ -35,6 +35,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PageFade from '../components/PageFade';
 import ImageViewerDialog from '../components/ImageViewerDialog';
 import PageErrorIndicator from '../components/PageErrorIndicator';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { MEAL_TYPES, getMealVisualByType } from '../utils/mealVisuals';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -1128,14 +1129,15 @@ export default function AdminPlanBuilderPage() {
                                             sx={{ mb: 2 }}
                                         />
                                         
-                                        <TextField
+                                        <ExpandableTextField
                                             fullWidth
-                                            multiline
-                                            rows={3}
+                                            compactRows={2}
+                                            expandedRows={8}
                                             label="Template Description"
+                                            dialogTitle="Template Description"
                                             value={templateMetadata.description}
                                             onChange={(e) => setTemplateMetadata(prev => ({ ...prev, description: e.target.value }))}
-                                            sx={{ mb: 2 }}
+                                            containerSx={{ mb: 2 }}
                                         />
                                         
                                         <FormControl fullWidth sx={{ mb: 2 }}>
@@ -1200,14 +1202,15 @@ export default function AdminPlanBuilderPage() {
                                             sx={{ mb: 2 }}
                                         />
                                         
-                                        <TextField
+                                        <ExpandableTextField
                                             fullWidth
-                                            multiline
-                                            rows={3}
+                                            compactRows={2}
+                                            expandedRows={8}
                                             label="Description"
+                                            dialogTitle="Plan Description"
                                             value={planData.description}
                                             onChange={(e) => handlePlanChange('description', e.target.value)}
-                                            sx={{ mb: 2 }}
+                                            containerSx={{ mb: 2 }}
                                         />
                                         
                                         <TextField
@@ -1409,11 +1412,12 @@ export default function AdminPlanBuilderPage() {
                                                                     {mealVisual?.label || mealType}
                                                                 </Typography>
                                                             </Box>
-                                                            <TextField
+                                                            <ExpandableTextField
                                                                 fullWidth
-                                                                multiline
-                                                                rows={4}
+                                                                compactRows={2}
+                                                                expandedRows={12}
                                                                 placeholder={`Enter ${(mealVisual?.label || mealType).toLowerCase()} details...`}
+                                                                dialogTitle={`${mealVisual?.label || mealType} Details`}
                                                                 value={planData.weeklyPlan[currentDay]?.[mealType] || ''}
                                                                 onChange={(e) => handleMealChange(currentDay, mealType, e.target.value)}
                                                                 variant="outlined"
@@ -1459,11 +1463,12 @@ export default function AdminPlanBuilderPage() {
                                                                 {mealVisual?.label || mealType}
                                                             </Typography>
                                                         </Box>
-                                                        <TextField
+                                                        <ExpandableTextField
                                                             fullWidth
-                                                            multiline
-                                                            rows={4}
+                                                            compactRows={2}
+                                                            expandedRows={12}
                                                             placeholder={`Enter ${(mealVisual?.label || mealType).toLowerCase()} details...`}
+                                                            dialogTitle={`${mealVisual?.label || mealType} Details`}
                                                             value={planData.generalPlan?.[mealType] || ''}
                                                             onChange={(e) => handleGeneralMealChange(mealType, e.target.value)}
                                                             variant="outlined"
@@ -1774,11 +1779,12 @@ export default function AdminPlanBuilderPage() {
 
                                     {/* Notes */}
                                     <Grid item xs={12}>
-                                        <TextField
+                                        <ExpandableTextField
                                             fullWidth
-                                            multiline
-                                            rows={3}
+                                            compactRows={2}
+                                            expandedRows={10}
                                             label="Additional Notes"
+                                            dialogTitle="Additional Notes"
                                             placeholder="Add any additional notes or recommendations..."
                                             value={planData.recommendations.notes || ''}
                                             onChange={(e) => setPlanData(prev => ({

@@ -50,6 +50,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import ImageViewerDialog from '../components/ImageViewerDialog';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog, glassButton } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -1238,11 +1239,12 @@ export default function ViewPlanPage () {
                         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
                             Additional Comments (Optional)
                         </Typography>
-                        <TextField
+                        <ExpandableTextField
                             fullWidth
-                            multiline
-                            rows={4}
+                            compactRows={2}
+                            expandedRows={10}
                             placeholder="Share your thoughts about the plan, what worked well, or suggestions for improvement..."
+                            dialogTitle="Additional Comments"
                             value={feedbackComment}
                             onChange={(e) => setFeedbackComment(e.target.value)}
                             disabled={feedbackSubmitting}

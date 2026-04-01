@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import PageFade from '../components/PageFade';
 import PageErrorIndicator from '../components/PageErrorIndicator';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -371,14 +372,15 @@ export default function AdminClassesPage() {
                                 required
                             />
                             
-                            <TextField
+                            <ExpandableTextField
                                 label="Description"
                                 name="description"
                                 value={formData.description}
                                 onChange={handleInputChange}
                                 fullWidth
-                                multiline
-                                rows={3}
+                                compactRows={2}
+                                expandedRows={8}
+                                dialogTitle="Class Description"
                             />
 
                             <Box>

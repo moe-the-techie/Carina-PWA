@@ -40,6 +40,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import PageFade from '../components/PageFade';
 import PageErrorIndicator from '../components/PageErrorIndicator';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -653,13 +654,14 @@ export default function AdminTemplatesPage() {
                                 />
                             </Grid>
                             <Grid item xs={12}>
-                                <TextField
+                                <ExpandableTextField
                                     fullWidth
                                     label="Description"
                                     value={templateForm.description}
                                     onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
-                                    multiline
-                                    rows={3}
+                                    compactRows={2}
+                                    expandedRows={8}
+                                    dialogTitle="Template Description"
                                 />
                             </Grid>
                             <Grid item xs={6}>

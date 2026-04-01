@@ -37,6 +37,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';import P
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';import LoadingBackdrop from '../components/LoadingBackdrop.jsx';
 import FormCheckBox from '../components/FormCheckBox.jsx';
+import ExpandableTextField from '../components/ExpandableTextField';
 import FormGroup from '@mui/material/FormGroup';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -752,16 +753,18 @@ export default function NewFormPage () {
                                     </FormGroup>
 
                                     {formData.healthConditions.length > 0 && (
-                                        <TextField 
+                                        <ExpandableTextField
                                             fullWidth 
-                                            multiline 
-                                            rows={3} 
+                                            compactRows={2}
+                                            expandedRows={10}
                                             name="healthConditionsDetails" 
                                             label="Health Problems Details (Please provide additional information)" 
+                                            dialogTitle="Health Problems Details"
                                             value={formData.healthConditionsDetails} 
                                             onChange={handleChange} 
                                             variant="filled" 
-                                            sx={{ ...inputStyle, mb: 2 }} 
+                                            sx={{ ...inputStyle }}
+                                            containerSx={{ mb: 2 }}
                                             placeholder="Describe your health conditions in detail..."
                                         />
                                     )}

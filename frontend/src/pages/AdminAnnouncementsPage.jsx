@@ -46,6 +46,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import PageFade from '../components/PageFade';
 import LoadingBackdrop from '../components/LoadingBackdrop';
 import PageErrorIndicator from '../components/PageErrorIndicator';
+import ExpandableTextField from '../components/ExpandableTextField';
 import { spacing, borderRadius, transitions, priorityColors as sharedPriorityColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
@@ -641,13 +642,14 @@ export default function AdminAnnouncementsPage() {
                                     />
                                 </Grid>
                                 <Grid item xs={12}>
-                                    <TextField
+                                    <ExpandableTextField
                                         fullWidth
                                         label="Message"
                                         value={formData.message}
                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                        multiline
-                                        rows={window.innerWidth < 600 ? 3 : 4}
+                                        compactRows={2}
+                                        expandedRows={window.innerWidth < 600 ? 10 : 12}
+                                        dialogTitle="Announcement Message"
                                         required
                                         size={window.innerWidth < 600 ? "small" : "medium"}
                                     />
