@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Box,
@@ -43,6 +43,7 @@ import PageFade from '../components/PageFade';
 import { spacing, borderRadius, transitions, accentColors } from '../styles';
 import { glassCard, glassDialog } from '../styles/glassmorphism';
 import { containerVariants, itemVariants } from '../styles/animations';
+import { useCachedData } from '../hooks/useCachedData';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
@@ -57,12 +58,9 @@ export default function AdminTemplatesPage() {
     const navigate = useNavigate();
     
     // State
-    const [templates, setTemplates] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [navigationLoading, setNavigationLoading] = useState(false);
     const [error, setError] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [categoryFilter, setCategoryFilter] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilter, setActiveFilter] = useState('');
@@ -85,13 +83,12 @@ export default function AdminTemplatesPage() {
         tags: ''
     });
 
-    useEffect(() => {
-        fetchTemplates();
-    }, [page, categoryFilter, searchQuery, activeFilter]);
+    const templatesCacheKey = useMemo(
+        () => `admin_templates_p${page}_c${categoryFilter || 'all'}_q${searchQuery || 'all'}_a${activeFilter === '' ? 'all' : activeFilter}`,
+        [page, categoryFilter, searchQuery, activeFilter]
+    );
 
-    const fetchTemplates = async () => {
-        try {
-            setLoading(true);
+    const fetchTemplatesData = useCallback(async () => {
             let url = `${apiBaseUrl}/api/admin/templates?page=${page}&limit=12`;
             
             if (categoryFilter) url += `&category=${categoryFilter}`;
@@ -108,16 +105,47 @@ export default function AdminTemplatesPage() {
                 throw new Error('Failed to fetch templates');
             }
 
-            const data = await response.json();
-            setTemplates(data.templates);
-            setTotalPages(data.totalPages);
-        } catch (error) {
-            console.error('Error fetching templates:', error);
-            setError(error.message);
-        } finally {
-            setLoading(false);
+            return response.json();
+    }, [page, categoryFilter, searchQuery, activeFilter]);
+
+    const {
+        data: templatesData,
+        isLoading: loading,
+        setData: setTemplatesData,
+    } = useCachedData(
+        templatesCacheKey,
+        fetchTemplatesData,
+        {
+            cacheTTL: 2 * 60 * 1000,
+            initialData: { templates: [], totalPages: 1 },
+            dependencies: [page, categoryFilter, searchQuery, activeFilter],
+            onError: (fetchError) => {
+                setError(fetchError.message || 'Failed to fetch templates');
+            },
         }
-    };
+    );
+
+    const templates = templatesData?.templates || [];
+    const totalPages = templatesData?.totalPages || 1;
+
+    const doesTemplateMatchFilters = useCallback((template) => {
+        if (!template) return false;
+
+        const normalizedSearch = searchQuery.trim().toLowerCase();
+        const matchesCategory = !categoryFilter || template.category === categoryFilter;
+        const matchesActive = activeFilter === '' || String(Boolean(template.isActive)) === activeFilter;
+        const matchesSearch =
+            !normalizedSearch ||
+            [
+                template.name,
+                template.description,
+                ...(template.tags || []),
+            ]
+                .filter(Boolean)
+                .some((value) => String(value).toLowerCase().includes(normalizedSearch));
+
+        return matchesCategory && matchesActive && matchesSearch;
+    }, [categoryFilter, activeFilter, searchQuery]);
 
     const createTemplate = async () => {
         try {
@@ -144,6 +172,25 @@ export default function AdminTemplatesPage() {
                 throw new Error('Failed to create template');
             }
 
+            const data = await response.json().catch(() => ({}));
+            const createdTemplate = data?.template;
+
+            if (createdTemplate && page === 1 && doesTemplateMatchFilters(createdTemplate)) {
+                setTemplatesData((previousData) => {
+                    const previousTemplates = previousData?.templates || [];
+
+                    if (previousTemplates.some((template) => template._id === createdTemplate._id)) {
+                        return previousData;
+                    }
+
+                    return {
+                        ...previousData,
+                        templates: [createdTemplate, ...previousTemplates].slice(0, 12),
+                        totalPages: Math.max(previousData?.totalPages || 1, 1),
+                    };
+                });
+            }
+
             setCreateDialogOpen(false);
             setTemplateForm({
                 name: '',
@@ -152,7 +199,6 @@ export default function AdminTemplatesPage() {
                 duration: 1,
                 tags: ''
             });
-            fetchTemplates();
         } catch (error) {
             console.error('Error creating template:', error);
             setError(error.message);
@@ -174,7 +220,23 @@ export default function AdminTemplatesPage() {
                 throw new Error('Failed to duplicate template');
             }
 
-            fetchTemplates();
+            const data = await response.json().catch(() => ({}));
+            const duplicatedTemplate = data?.template;
+
+            if (duplicatedTemplate && page === 1 && doesTemplateMatchFilters(duplicatedTemplate)) {
+                setTemplatesData((previousData) => {
+                    const previousTemplates = previousData?.templates || [];
+
+                    if (previousTemplates.some((template) => template._id === duplicatedTemplate._id)) {
+                        return previousData;
+                    }
+
+                    return {
+                        ...previousData,
+                        templates: [duplicatedTemplate, ...previousTemplates].slice(0, 12),
+                    };
+                });
+            }
         } catch (error) {
             console.error('Error duplicating template:', error);
             setError(error.message);
@@ -194,7 +256,40 @@ export default function AdminTemplatesPage() {
                 throw new Error('Failed to toggle template status');
             }
 
-            fetchTemplates();
+            const data = await response.json().catch(() => ({}));
+            const updatedTemplate = data?.template;
+
+            setTemplatesData((previousData) => {
+                if (!previousData?.templates) return previousData;
+
+                if (!updatedTemplate || !doesTemplateMatchFilters(updatedTemplate)) {
+                    return {
+                        ...previousData,
+                        templates: previousData.templates.filter((template) => template._id !== templateId),
+                    };
+                }
+
+                return {
+                    ...previousData,
+                    templates: previousData.templates.map((template) => (
+                        template._id === templateId
+                            ? { ...template, ...updatedTemplate }
+                            : template
+                    )),
+                };
+            });
+
+            setSelectedTemplate((previous) => {
+                if (!previous || previous._id !== templateId) return previous;
+                if (!updatedTemplate) return previous;
+                return { ...previous, ...updatedTemplate };
+            });
+
+            setMenuTemplate((previous) => {
+                if (!previous || previous._id !== templateId) return previous;
+                if (!updatedTemplate) return previous;
+                return { ...previous, ...updatedTemplate };
+            });
         } catch (error) {
             console.error('Error toggling template status:', error);
             setError(error.message);
@@ -230,7 +325,26 @@ export default function AdminTemplatesPage() {
                 throw new Error('Failed to delete template');
             }
 
-            fetchTemplates();
+            setTemplatesData((previousData) => {
+                if (!previousData?.templates) return previousData;
+
+                return {
+                    ...previousData,
+                    templates: previousData.templates.filter((template) => template._id !== templateId),
+                };
+            });
+
+            setSelectedTemplate((previous) => (
+                previous?._id === templateId ? null : previous
+            ));
+
+            setMenuTemplate((previous) => (
+                previous?._id === templateId ? null : previous
+            ));
+
+            if (viewDialogOpen && selectedTemplate?._id === templateId) {
+                setViewDialogOpen(false);
+            }
         } catch (error) {
             console.error('Error deleting template:', error);
             setError(error.message);
