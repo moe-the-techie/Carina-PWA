@@ -37,8 +37,8 @@ import {
 } from '@mui/material';
 import {
     Search as SearchIcon,
+    Email as EmailIcon,
     Refresh as RefreshIcon,
-    Visibility as VisibilityIcon,
     PlayCircleFilled as PlayCircleFilledIcon,
     LocalFireDepartment as LocalFireDepartmentIcon,
     EmojiEvents as EmojiEventsIcon,
@@ -57,12 +57,12 @@ import {
     SentimentDissatisfied as SentimentDissatisfiedIcon,
     SentimentVeryDissatisfied as SentimentVeryDissatisfiedIcon,
     Chat as ChatIcon,
-    Edit as EditIcon,
-    DeleteOutline as DeleteOutlineIcon
+    MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageFade from '../components/PageFade';
+import PlanActionsDialog from '../components/PlanActionsDialog';
 import { glassCard, glassInput, glassDialog } from '../styles/glassmorphism';
 import { accentColors } from '../styles';
 
@@ -567,6 +567,8 @@ export default function AdminPlansPage() {
     const [updatingPlanId, setUpdatingPlanId] = useState(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [planToDelete, setPlanToDelete] = useState(null);
+    const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
+    const [selectedPlanForActions, setSelectedPlanForActions] = useState(null);
 
     useEffect(() => {
         fetchPlans();
@@ -678,6 +680,17 @@ export default function AdminPlansPage() {
     const openDeleteDialog = (plan) => {
         setPlanToDelete(plan);
         setDeleteDialogOpen(true);
+    };
+
+    const handleOpenActionsDialog = (event, plan) => {
+        event.stopPropagation();
+        setSelectedPlanForActions(plan);
+        setActionsDialogOpen(true);
+    };
+
+    const handleCloseActionsDialog = () => {
+        setActionsDialogOpen(false);
+        setSelectedPlanForActions(null);
     };
 
     const handleDeletePlan = async () => {
@@ -829,47 +842,70 @@ export default function AdminPlansPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.04 }}
                                         >
-                                            <Paper
+                                            <Card
                                                 onClick={() => handleViewProgress(plan._id)}
                                                 sx={{
-                                                    ...glassCard(theme),
-                                                    p: 1.5,
-                                                    cursor: 'pointer',
-                                                    borderRadius: 2
+                                                    borderRadius: 4,
+                                                    border: '1px solid transparent',
+                                                    boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+                                                    transition: 'all 0.3s ease',
+                                                    cursor: 'pointer'
                                                 }}
                                             >
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1.25 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                                                        <Avatar
-                                                            src={plan.user?.profileImageUrl}
-                                                            sx={{
-                                                                width: 36,
-                                                                height: 36,
-                                                                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
-                                                            }}
+                                                <CardContent>
+                                                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                                                        <Box sx={{ display: 'flex', gap: 2, minWidth: 0 }}>
+                                                            <Avatar
+                                                                src={plan.user?.profileImageUrl}
+                                                                sx={{
+                                                                    width: 56,
+                                                                    height: 56,
+                                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                                                    border: `2px solid ${theme.palette.background.paper}`,
+                                                                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                                                    fontSize: '1.5rem',
+                                                                    fontWeight: 600
+                                                                }}
+                                                            >
+                                                                {plan.user?.name?.charAt(0).toUpperCase() || '?'}
+                                                            </Avatar>
+                                                            <Box sx={{ minWidth: 0 }}>
+                                                                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                                                                    {plan.user?.name || 'Unknown'}
+                                                                </Typography>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    color="text.secondary"
+                                                                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}
+                                                                    noWrap
+                                                                >
+                                                                    <EmailIcon sx={{ fontSize: 14 }} />
+                                                                    {plan.user?.email || ''}
+                                                                </Typography>
+                                                            </Box>
+                                                        </Box>
+                                                        <Box
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.75, flexShrink: 0 }}
                                                         >
-                                                            {plan.user?.name?.charAt(0).toUpperCase() || '?'}
-                                                        </Avatar>
-                                                        <Box sx={{ minWidth: 0 }}>
-                                                            <Typography variant="subtitle2" fontWeight={700} noWrap>
-                                                                {plan.user?.name || 'Unknown'}
-                                                            </Typography>
-                                                            <Typography variant="caption" color="text.secondary" noWrap>
-                                                                {plan.user?.email || ''}
-                                                            </Typography>
+                                                            <IconButton onClick={(e) => handleOpenActionsDialog(e, plan)}>
+                                                                <MoreVertIcon />
+                                                            </IconButton>
+                                                            <Chip
+                                                                label={statusConfig.label}
+                                                                size="small"
+                                                                sx={{
+                                                                    bgcolor: alpha(statusConfig.color, 0.1),
+                                                                    color: statusConfig.color,
+                                                                    fontWeight: 600,
+                                                                    flexShrink: 0,
+                                                                    '& .MuiChip-label': {
+                                                                        whiteSpace: 'nowrap'
+                                                                    }
+                                                                }}
+                                                            />
                                                         </Box>
                                                     </Box>
-                                                    <Chip
-                                                        label={statusConfig.label}
-                                                        size="small"
-                                                        sx={{
-                                                            bgcolor: alpha(statusConfig.color, 0.1),
-                                                            color: statusConfig.color,
-                                                            fontWeight: 600,
-                                                            flexShrink: 0
-                                                        }}
-                                                    />
-                                                </Box>
 
                                                 <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
                                                     {plan.title || 'Nutrition Plan'}
@@ -920,61 +956,25 @@ export default function AdminPlansPage() {
                                                     </Typography>
                                                 </Box>
 
-                                                <Box onClick={(e) => e.stopPropagation()}>
-                                                    <FormControl size="small" fullWidth>
-                                                        <InputLabel>Update Status</InputLabel>
-                                                        <Select
-                                                            value={plan.status || 'draft'}
-                                                            label="Update Status"
-                                                            onChange={(e) => handleStatusChange(plan, e.target.value)}
-                                                            disabled={updatingPlanId === plan._id}
-                                                        >
-                                                            <MenuItem value="draft">Draft</MenuItem>
-                                                            <MenuItem value="active">Active</MenuItem>
-                                                            <MenuItem value="paused">Paused</MenuItem>
-                                                            <MenuItem value="completed">Completed</MenuItem>
-                                                        </Select>
-                                                    </FormControl>
-
-                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1.25 }}>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<VisibilityIcon fontSize="small" />}
-                                                            onClick={() => handleViewProgress(plan._id)}
-                                                        >
-                                                            View
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<ChatIcon fontSize="small" />}
-                                                            onClick={() => handleMessageUser(plan.user?._id)}
-                                                        >
-                                                            Chat
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            startIcon={<EditIcon fontSize="small" />}
-                                                            onClick={() => handleEditPlan(plan)}
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            color="error"
-                                                            startIcon={<DeleteOutlineIcon fontSize="small" />}
-                                                            onClick={() => openDeleteDialog(plan)}
-                                                            disabled={updatingPlanId === plan._id}
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                        {updatingPlanId === plan._id && <CircularProgress size={16} sx={{ ml: 0.5, mt: 0.5 }} />}
+                                                    <Box onClick={(e) => e.stopPropagation()}>
+                                                        <FormControl size="small" fullWidth>
+                                                            <InputLabel>Update Status</InputLabel>
+                                                            <Select
+                                                                value={plan.status || 'draft'}
+                                                                label="Update Status"
+                                                                onChange={(e) => handleStatusChange(plan, e.target.value)}
+                                                                disabled={updatingPlanId === plan._id}
+                                                            >
+                                                                <MenuItem value="draft">Draft</MenuItem>
+                                                                <MenuItem value="active">Active</MenuItem>
+                                                                <MenuItem value="paused">Paused</MenuItem>
+                                                                <MenuItem value="completed">Completed</MenuItem>
+                                                            </Select>
+                                                        </FormControl>
+                                                        {updatingPlanId === plan._id && <CircularProgress size={16} sx={{ mt: 1.25, ml: 0.5 }} />}
                                                     </Box>
-                                                </Box>
-                                            </Paper>
+                                                </CardContent>
+                                            </Card>
                                         </motion.div>
                                     );
                                 })}
@@ -1119,46 +1119,24 @@ export default function AdminPlansPage() {
                                                         </FormControl>
                                                     </TableCell>
                                                     <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                                                        <Tooltip title="View Details">
-                                                            <IconButton 
+                                                        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                                                            <Button
+                                                                variant="contained"
                                                                 size="small"
-                                                                onClick={() => handleViewProgress(plan._id)}
-                                                                sx={{ color: theme.palette.primary.main }}
+                                                                onClick={(e) => handleOpenActionsDialog(e, plan)}
+                                                                sx={{
+                                                                    borderRadius: 2,
+                                                                    textTransform: 'none',
+                                                                    boxShadow: 'none',
+                                                                    '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                                                                }}
                                                             >
-                                                                <VisibilityIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="Message User">
-                                                            <IconButton 
-                                                                size="small"
-                                                                onClick={() => handleMessageUser(plan.user?._id)}
-                                                                sx={{ color: accentColors.sky.main }}
-                                                            >
-                                                                <ChatIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="Edit Plan">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => handleEditPlan(plan)}
-                                                                sx={{ color: accentColors.violet.main }}
-                                                            >
-                                                                <EditIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        <Tooltip title="Delete Plan">
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => openDeleteDialog(plan)}
-                                                                sx={{ color: theme.palette.error.main }}
-                                                                disabled={updatingPlanId === plan._id}
-                                                            >
-                                                                <DeleteOutlineIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                        {updatingPlanId === plan._id && (
-                                                            <CircularProgress size={16} sx={{ ml: 1 }} />
-                                                        )}
+                                                                Actions
+                                                            </Button>
+                                                            {updatingPlanId === plan._id && (
+                                                                <CircularProgress size={16} />
+                                                            )}
+                                                        </Box>
                                                     </TableCell>
                                                 </motion.tr>
                                             );
@@ -1189,6 +1167,17 @@ export default function AdminPlansPage() {
                     onClose={() => setProgressDialogOpen(false)}
                     planId={selectedPlanId}
                     theme={theme}
+                />
+
+                <PlanActionsDialog
+                    open={actionsDialogOpen}
+                    onClose={handleCloseActionsDialog}
+                    plan={selectedPlanForActions}
+                    onViewDetails={(plan) => handleViewProgress(plan._id)}
+                    onMessage={handleMessageUser}
+                    onEdit={handleEditPlan}
+                    onDelete={openDeleteDialog}
+                    isDeleting={updatingPlanId === selectedPlanForActions?._id}
                 />
 
                 <Dialog
