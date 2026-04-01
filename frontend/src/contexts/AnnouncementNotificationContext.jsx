@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getUnreadAnnouncementsCount } from '../services/announcementService';
-import { subscribeToAnnouncements } from '../services/ablyService';
+import { subscribeToAnnouncements, removeMessageHandler } from '../services/ablyService';
 import { showSmartAnnouncementNotification, requestAnnouncementNotificationPermission } from '../utils/announcementNotificationUtils';
 
 const AnnouncementNotificationContext = createContext();
@@ -61,8 +61,7 @@ export const AnnouncementNotificationProvider = ({ children, user }) => {
     // Subscribe to real-time updates when user is available
     useEffect(() => {
         if (!user || user.role === 'admin' || user.role === 'chat_admin') return;
-
-        let unsubscribe;
+        const channelName = `user:${user._id}:announcements`;
 
         const setupSubscription = async () => {
             try {
@@ -74,7 +73,9 @@ export const AnnouncementNotificationProvider = ({ children, user }) => {
 
         setupSubscription();
 
-        return unsubscribe;
+        return () => {
+            removeMessageHandler(channelName, handleNewAnnouncement);
+        };
     }, [user, handleNewAnnouncement]);
 
     // Fetch initial unread count

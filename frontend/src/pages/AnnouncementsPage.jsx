@@ -33,7 +33,7 @@ import {
     markAnnouncementAsRead,
     getUnreadAnnouncementsCount
 } from '../services/announcementService';
-import { subscribeToAnnouncements } from '../services/ablyService';
+import { subscribeToAnnouncements, removeMessageHandler } from '../services/ablyService';
 import { useAnnouncementNotifications } from '../contexts/AnnouncementNotificationContext';
 import { spacing, borderRadius, transitions, priorityColors as sharedPriorityColors, accentColors } from '../styles';
 import { glassCard } from '../styles/glassmorphism';
@@ -75,6 +75,8 @@ export default function AnnouncementsPage({ user }) {
     );
 
     useEffect(() => {
+        const channelName = user?._id ? `user:${user._id}:announcements` : null;
+
         // Subscribe to real-time announcement updates
         if (user?._id) {
             subscribeToAnnouncements(user._id, handleNewAnnouncement);
@@ -100,6 +102,10 @@ export default function AnnouncementsPage({ user }) {
         }
 
         return () => {
+            if (channelName) {
+                removeMessageHandler(channelName, handleNewAnnouncement);
+            }
+
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
             }

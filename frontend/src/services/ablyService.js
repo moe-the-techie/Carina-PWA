@@ -350,6 +350,15 @@ export const removeMessageHandler = (channelName, handler) => {
             if (index > -1) {
                 handlers.splice(index, 1);
                 console.log(`Removed handler from ${channelName}`);
+
+                // If no handlers remain, fully unsubscribe from the channel.
+                if (handlers.length === 0 && activeSubscriptions.has(channelName)) {
+                    const channel = activeSubscriptions.get(channelName);
+                    channel.unsubscribe();
+                    activeSubscriptions.delete(channelName);
+                    messageHandlers.delete(channelName);
+                    console.log(`No handlers left, unsubscribed from ${channelName}`);
+                }
             }
         }
     } catch (error) {
@@ -360,6 +369,8 @@ export const removeMessageHandler = (channelName, handler) => {
 // Disconnect Ably client
 export const disconnectAbly = () => {
     try {
+        clearCurrentlyViewingChat();
+
         if (ablyClient) {
             activeSubscriptions.forEach((channel, channelName) => {
                 channel.unsubscribe();

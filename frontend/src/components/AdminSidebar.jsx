@@ -165,8 +165,8 @@ export default function AdminSidebar({ onLogout, mobileOpen, handleDrawerToggle 
             <List>
                 <ListItem disablePadding>
                     <ListItemButton 
-                        onClick={() => {
-                            onLogout();
+                        onClick={async () => {
+                            await onLogout();
                             if (isMobile) handleDrawerToggle();
                         }}
                     >

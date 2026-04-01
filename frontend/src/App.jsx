@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, data } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CircularProgress, Box, Skeleton } from '@mui/material';
 
 // Eagerly load critical path components (landing, login)
@@ -38,7 +38,7 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 import ScrollToTop from './components/ScrollToTop';
 import OfflineIndicator from './components/OfflineIndicator';
 import { clearAllCache } from './utils/offlineCache';
-import { disconnectAbly } from './services/ablyService';
+import { disconnectAbly, clearCurrentlyViewingChat } from './services/ablyService';
 import { UnreadCountProvider } from './contexts/UnreadCountContext';
 import { AnnouncementNotificationProvider } from './contexts/AnnouncementNotificationContext';
 import { UserProvider } from './contexts/UserContext';
@@ -101,6 +101,82 @@ const isFeatureEnabled = (featureName) => {
     return import.meta.env[featureName] !== 'false';
 };
 
+const STORAGE_KEYS_TO_PRESERVE = ['themeMode'];
+
+const clearUserStorage = () => {
+    try {
+        const preservedEntries = STORAGE_KEYS_TO_PRESERVE
+            .map((key) => [key, localStorage.getItem(key)])
+            .filter(([, value]) => value !== null);
+
+        localStorage.clear();
+        sessionStorage.clear();
+
+        preservedEntries.forEach(([key, value]) => {
+            localStorage.setItem(key, value);
+        });
+    } catch (error) {
+        console.error('Error clearing user storage:', error);
+    }
+};
+
+const clearServiceWorkerCaches = async () => {
+    if (!('caches' in window)) {
+        return;
+    }
+
+    try {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+    } catch (error) {
+        console.error('Error clearing service worker caches:', error);
+    }
+};
+
+const clearPushSubscriptions = async () => {
+    if (!('serviceWorker' in navigator)) {
+        return;
+    }
+
+    try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(async (registration) => {
+            if (!registration.pushManager) {
+                return;
+            }
+
+            const subscription = await registration.pushManager.getSubscription();
+            if (subscription) {
+                await subscription.unsubscribe();
+            }
+        }));
+    } catch (error) {
+        console.error('Error clearing push subscriptions:', error);
+    }
+};
+
+const clearIndexedDbDatabases = async () => {
+    if (typeof indexedDB === 'undefined' || typeof indexedDB.databases !== 'function') {
+        return;
+    }
+
+    try {
+        const databases = await indexedDB.databases();
+        const databaseNames = databases
+            .map((db) => db?.name)
+            .filter((name) => Boolean(name));
+
+        await Promise.all(databaseNames.map((name) => new Promise((resolve) => {
+            const request = indexedDB.deleteDatabase(name);
+            request.onsuccess = () => resolve();
+            request.onerror = () => resolve();
+            request.onblocked = () => resolve();
+        })));
+    } catch (error) {
+        console.error('Error clearing IndexedDB databases:', error);
+    }
+};
+
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         return localStorage.getItem('token') ? true : false;
@@ -110,6 +186,7 @@ function App() {
     const [update, setUpdate] = useState(0); // State variable to trigger re-render
     const [userId, setUserId] = useState(null);
     const [user, setUser] = useState(null);
+    const [sessionResetKey, setSessionResetKey] = useState(0);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -146,12 +223,14 @@ function App() {
                     setIsLoggedIn(false);
                     setIsAdmin(false);
                     setIsChatAdmin(false);
+                    setUserId(null);
                     setUser(null);
                 })
         } else {
             setIsLoggedIn(false);
             setIsAdmin(false);
             setIsChatAdmin(false);
+            setUserId(null);
             setUser(null);
         }
     }, [update]);
@@ -160,42 +239,35 @@ function App() {
       setUpdate(prev => prev + 1); //  Update the state variable
    };
 
-   const handleLogout = async () => {
-    localStorage.removeItem('token');
-    
-    // Clear application cache
-    clearAllCache();
-    
-    // Clear Service Worker caches (API, Runtime, and Images)
-    if ('caches' in window) {
-      try {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys.map(key => {
-            if (key.includes('api-cache') || key.includes('runtime') || key.includes('image-cache')) {
-              return caches.delete(key);
-            }
-            return Promise.resolve();
-          })
-        );
-      } catch (e) {
-        console.error('Error clearing caches:', e);
-      }
-    }
+     const handleLogout = async () => {
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        setIsChatAdmin(false);
+        setUserId(null);
+        setUser(null);
+          // Remount providers immediately so old in-memory session state is dropped.
+          setSessionResetKey(prev => prev + 1);
 
-    setIsLoggedIn(false);
-    setIsAdmin(false);
-    setIsChatAdmin(false);
-    setUserId(null);
-    setUser(null);
-    disconnectAbly();
-   }
+        disconnectAbly();
+        clearCurrentlyViewingChat();
+
+        // Clear cached app data from localStorage prefixes.
+        clearAllCache();
+        // Then clear user-scoped browser storage while preserving global UI preferences.
+        clearUserStorage();
+
+        await Promise.all([
+            clearServiceWorkerCaches(),
+            clearPushSubscriptions(),
+            clearIndexedDbDatabases(),
+        ]);
+     }
 
    // TODO: to fix the flashing issue, change / to be a loading animation and add /landing for the landing page when loading is done
     return (
         <Router>
             <NavigationProvider>
-            <UserProvider enabled={isLoggedIn}>
+            <UserProvider key={sessionResetKey} enabled={isLoggedIn}>
                 <UnreadCountProvider user={user}>
                     <AnnouncementNotificationProvider user={user}>
                         <OfflineIndicator />

@@ -270,9 +270,9 @@ export default function SettingsPage({ onLogout }) {
             
             <Box sx={{ mt: spacing.lg, display: 'flex', justifyContent: 'center' }}>
               <LandingButton 
-                onClick={() => { 
-                  onLogout(); 
-                  navigate('/'); 
+                onClick={async () => { 
+                  await onLogout(); 
+                  navigate('/', { replace: true }); 
                 }}
               >
                 Logout
