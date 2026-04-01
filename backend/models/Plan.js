@@ -32,8 +32,8 @@ const fruitItemSchema = new Schema({
         required: true
     },
     quantity: {
-        type: Number,
-        min: 1,
+        type: String,
+        trim: true,
         required: true
     }
 }, { _id: false });

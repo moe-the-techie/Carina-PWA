@@ -102,9 +102,9 @@ const normalizeFruits = (fruits) => {
     return fruits
         .map((fruit) => ({
             name: (fruit?.name || '').trim(),
-            quantity: Number(fruit?.quantity)
+            quantity: String(fruit?.quantity ?? '').trim()
         }))
-        .filter((fruit) => fruit.name && Number.isFinite(fruit.quantity) && fruit.quantity > 0);
+        .filter((fruit) => fruit.name && fruit.quantity);
 };
 
 // Meal types for each day
@@ -565,9 +565,9 @@ export default function AdminPlanBuilderPage() {
 
     const addFruit = () => {
         const fruitName = newFruitInput.name.trim();
-        const quantity = Number(newFruitInput.quantity);
+        const quantity = String(newFruitInput.quantity ?? '').trim();
 
-        if (!fruitName || !Number.isFinite(quantity) || quantity <= 0) {
+        if (!fruitName || !quantity) {
             return;
         }
 
@@ -1527,13 +1527,12 @@ export default function AdminPlanBuilderPage() {
                                     <Grid item xs={12} sm={3} md={3}>
                                         <TextField
                                             fullWidth
-                                            type="number"
+                                            type="text"
                                             size="small"
                                             label="Quantity"
+                                            placeholder="e.g. 1 cup"
                                             value={newFruitInput.quantity}
                                             onChange={(e) => setNewFruitInput((prev) => ({ ...prev, quantity: e.target.value }))}
-                                            onKeyDown={preventInvalidNumberKeys}
-                                            inputProps={{ min: 1, step: 'any' }}
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={3} md={2}>
@@ -1541,7 +1540,7 @@ export default function AdminPlanBuilderPage() {
                                             fullWidth
                                             variant="contained"
                                             onClick={addFruit}
-                                            disabled={!newFruitInput.name || !newFruitInput.quantity}
+                                            disabled={!newFruitInput.name || !newFruitInput.quantity.trim()}
                                             sx={{ height: '100%' }}
                                         >
                                             Add
@@ -1555,9 +1554,11 @@ export default function AdminPlanBuilderPage() {
                                             <Chip
                                                 key={`${fruit.name}-${index}`}
                                                 label={`${fruit.name}: ${fruit.quantity}`}
+                                                onClick={() => openChipDetailDialog(`${fruit.name}\nQuantity: ${fruit.quantity}`, 'Fruit', 'Fruits')}
                                                 onDelete={() => removeFruit(index)}
                                                 color="primary"
                                                 variant="outlined"
+                                                sx={{ cursor: 'pointer' }}
                                             />
                                         ))
                                     ) : (

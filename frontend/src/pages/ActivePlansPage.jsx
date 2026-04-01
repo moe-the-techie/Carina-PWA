@@ -180,7 +180,7 @@ const ActivePlanCardWithProgress = ({ plan, todayProgress, onProgressUpdate, sav
         ? (plan.generalPlan || {})
         : (plan.weeklyPlan?.[todayDay] || {});
     const fruits = Array.isArray(plan?.fruits)
-        ? plan.fruits.filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+        ? plan.fruits.filter((fruit) => fruit?.name && String(fruit?.quantity ?? '').trim())
         : [];
     
     const [localProgress, setLocalProgress] = useState({

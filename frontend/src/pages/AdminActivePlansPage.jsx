@@ -303,7 +303,7 @@ const PlanProgressDialog = ({ open, onClose, planId, theme }) => {
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                     {progressData.plan.fruits
-                                        .filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+                                        .filter((fruit) => fruit?.name && String(fruit?.quantity ?? '').trim())
                                         .map((fruit, idx) => (
                                             <Chip
                                                 key={`${fruit.name}-${idx}`}

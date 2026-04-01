@@ -139,7 +139,7 @@ export default function ViewPlanPage () {
     const noPlan = planData?.noPlan || false;
     const planType = plan?.planType || 'weekly';
     const fruits = Array.isArray(plan?.fruits)
-        ? plan.fruits.filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+        ? plan.fruits.filter((fruit) => fruit?.name && String(fruit?.quantity ?? '').trim())
         : [];
     const error = planError?.message || (noPlan ? 'No plan available yet. Your form is being reviewed by our nutrition team.' : '');
 

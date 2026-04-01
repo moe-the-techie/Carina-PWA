@@ -1596,7 +1596,7 @@ export default function AdminFormsPage() {
                                                         <Box sx={{ display: 'flex', gap: { xs: 0.3, sm: 0.5 }, flexWrap: 'wrap' }}>
                                                             {selectedPlan.fruits?.length > 0 ? (
                                                                 selectedPlan.fruits
-                                                                    .filter((fruit) => fruit?.name && Number.isFinite(Number(fruit?.quantity)) && Number(fruit?.quantity) > 0)
+                                                                    .filter((fruit) => fruit?.name && String(fruit?.quantity ?? '').trim())
                                                                     .map((fruit, index) => (
                                                                         <Chip
                                                                             key={`${fruit.name}-${index}`}
