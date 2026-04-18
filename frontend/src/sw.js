@@ -521,7 +521,7 @@ self.addEventListener('message', event => {
   }
 });
 
-// Handle notification clicks
+// Handle notification click
 self.addEventListener('notificationclick', event => {
   console.log('[SW] Notification clicked:', event.action, event.notification.data);
   event.notification.close();
