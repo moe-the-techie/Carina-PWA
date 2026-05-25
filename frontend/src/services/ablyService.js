@@ -438,14 +438,25 @@ export const subscribeToPlans = async (userId, onPlanUpdate) => {
 
         const channel = client.channels.get(channelName);
 
+        const notifyPlanHandlers = (payload) => {
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(payload);
+                } catch (error) {
+                    console.error('Error in plan handler:', error);
+                }
+            });
+        };
+
         const handlePlanNotification = async (message) => {
             console.log('Received plan update:', message.data);
-            
+
             const planData = message.data;
-            const notificationTitle = planData.isUpdate 
-                ? 'Plan Updated Successfully' 
+            const notificationTitle = planData.isUpdate
+                ? 'Plan Updated Successfully'
                 : 'New Plan Created';
-            
+
             const notificationOptions = {
                 body: `Your plan "${planData.title}" is ready for view.`,
                 icon: '/icons/manifest-icon-192.maskable.png',
@@ -461,22 +472,23 @@ export const subscribeToPlans = async (userId, onPlanUpdate) => {
                 }
             };
 
-            await showNotification(notificationTitle, notificationOptions);
+            try {
+                await showNotification(notificationTitle, notificationOptions);
+            } finally {
+                // Always update app state even if notifications are blocked.
+                notifyPlanHandlers(message.data);
+            }
+        };
 
-            // Call all registered handlers for this channel
-            const handlers = messageHandlers.get(channelName) || [];
-            handlers.forEach(handler => {
-                try {
-                    handler(message.data);
-                } catch (error) {
-                    console.error('Error in plan handler:', error);
-                }
-            });
+        const handlePlanDeleted = (message) => {
+            console.log('Received plan deletion:', message.data);
+            notifyPlanHandlers(message.data);
         };
 
         // Subscribe to plan events
         channel.subscribe('plan-created', handlePlanNotification);
         channel.subscribe('plan-updated', handlePlanNotification);
+        channel.subscribe('plan-deleted', handlePlanDeleted);
 
         activeSubscriptions.set(channelName, channel);
         console.log(`Subscribed to ${channelName}`);

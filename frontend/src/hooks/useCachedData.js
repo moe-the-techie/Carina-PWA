@@ -46,6 +46,23 @@ const notifyCacheUpdate = (cacheKey, data) => {
 };
 
 /**
+ * External cache helpers
+ *
+ * These allow non-hook code (e.g., realtime events) to keep cached data in sync
+ * while still notifying any mounted useCachedData consumers.
+ */
+export const setSharedCacheData = (cacheKey, data, cacheTTL = 24 * 60 * 60 * 1000) => {
+  setCacheData(cacheKey, data, cacheTTL);
+  notifyCacheUpdate(cacheKey, data);
+};
+
+export const invalidateSharedCacheData = (cacheKey) => {
+  removeCacheData(cacheKey);
+  inFlightRequests.delete(cacheKey);
+  notifyCacheUpdate(cacheKey, null);
+};
+
+/**
  * Custom hook for data fetching with stale-while-revalidate caching
  * 
  * @param {string} cacheKey - Unique key for caching this data

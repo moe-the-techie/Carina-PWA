@@ -402,6 +402,19 @@ export async function deletePlan(req, res) {
             return res.status(404).json({ error: 'Plan not found' });
         }
 
+        // Publish notification to Ably so user clients can refresh caches
+        try {
+            await publishMessage(`plans:${plan.user}`, 'plan-deleted', {
+                planId: plan._id,
+                title: plan.title,
+                userId: plan.user,
+                isDeleted: true
+            });
+        } catch (publishError) {
+            // Do not fail the request if realtime publish fails
+            console.error('Error publishing plan-deleted event:', publishError);
+        }
+
         res.status(200).json({ message: 'Plan deleted successfully' });
     } catch (error) {
         console.error(error);
