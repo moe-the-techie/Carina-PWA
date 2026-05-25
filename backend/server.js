@@ -111,13 +111,17 @@ app.use('/api', paymentRoutes);
 // Debug logging route
 app.post('/api/debug-log', (req, res) => {
   const { message, timestamp } = req.body;
-  const logMessage = `[${new Date(timestamp).toISOString()}] ${message}\n`;
+  const parsedTimestamp = timestamp ? new Date(timestamp) : new Date();
+  const safeTimestamp = Number.isNaN(parsedTimestamp.getTime()) ? new Date() : parsedTimestamp;
+  const logMessage = `[${safeTimestamp.toISOString()}] ${message || ''}\n`;
   
   fs.appendFile(path.join(__dirname, 'debug_log.txt'), logMessage, (err) => {
     if (err) {
       console.error('Error writing to debug log:', err);
       return res.status(500).json({ error: 'Failed to write log' });
     }
+
+    console.log('Debug log written:', message);
     res.status(200).json({ success: true });
   });
 });
