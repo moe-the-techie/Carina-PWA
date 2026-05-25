@@ -326,6 +326,63 @@ export const subscribeToAdminChats = async (onMessage) => {
     }
 };
 
+// Subscribe to admin forms updates (for admin users only)
+export const subscribeToAdminForms = async (onFormEvent) => {
+    try {
+        const client = await initializeAbly();
+        const channelName = 'admin:forms';
+
+        if (!messageHandlers.has(channelName)) {
+            messageHandlers.set(channelName, []);
+        }
+
+        if (onFormEvent && !messageHandlers.get(channelName).includes(onFormEvent)) {
+            messageHandlers.get(channelName).push(onFormEvent);
+        }
+
+        if (activeSubscriptions.has(channelName)) {
+            console.log(`Already subscribed to ${channelName}, added new handler`);
+            return activeSubscriptions.get(channelName);
+        }
+
+        const channel = client.channels.get(channelName);
+
+        const forwardToHandlers = (payload, eventName) => {
+            const handlers = messageHandlers.get(channelName) || [];
+            handlers.forEach(handler => {
+                try {
+                    handler(payload, eventName);
+                } catch (error) {
+                    console.error('Error in admin forms handler:', error);
+                }
+            });
+        };
+
+        channel.subscribe('form-created', (message) => {
+            console.log('Admin received form created:', message.data);
+            forwardToHandlers(message.data, 'form-created');
+        });
+
+        channel.subscribe('form-updated', (message) => {
+            console.log('Admin received form updated:', message.data);
+            forwardToHandlers(message.data, 'form-updated');
+        });
+
+        channel.subscribe('form-deleted', (message) => {
+            console.log('Admin received form deleted:', message.data);
+            forwardToHandlers(message.data, 'form-deleted');
+        });
+
+        activeSubscriptions.set(channelName, channel);
+        console.log(`Subscribed to ${channelName}`);
+
+        return channel;
+    } catch (error) {
+        console.error('Error subscribing to admin forms:', error);
+        throw error;
+    }
+};
+
 // Unsubscribe from a channel
 export const unsubscribeFromChannel = (channelName) => {
     try {

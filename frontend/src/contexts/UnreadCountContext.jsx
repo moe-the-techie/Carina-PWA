@@ -5,6 +5,7 @@ import { getCacheData } from '../utils/offlineCache';
 import { 
     subscribeToChat, 
     subscribeToAdminChats,
+    subscribeToAdminForms,
     subscribeToPlans,
     removeMessageHandler,
     requestNotificationPermission,
@@ -27,6 +28,7 @@ export const UnreadCountProvider = ({ children, user }) => {
 
     const activePlansRefreshState = useRef({ inFlight: null, pending: false });
     const homeFormsRefreshState = useRef({ inFlight: null, pending: false });
+    const adminFormsRefreshState = useRef({ inFlight: null, pending: false });
 
     const refreshUserActivePlansCache = useCallback(async () => {
         if (!user?._id) return;
@@ -229,6 +231,76 @@ export const UnreadCountProvider = ({ children, user }) => {
         }
     }, [user?._id, setSharedCacheData]);
 
+    const refreshCachedAdminFormsPages = useCallback(async () => {
+        if (!user?._id) return;
+
+        const refreshState = adminFormsRefreshState.current;
+        if (refreshState.inFlight) {
+            refreshState.pending = true;
+            return refreshState.inFlight;
+        }
+
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const token = localStorage.getItem('token');
+
+        const storageKeys = Object.keys(localStorage);
+        const cachedAdminFormsKeys = storageKeys
+            .filter((storageKey) => (
+                storageKey.startsWith('carina_cache_admin_forms_p') &&
+                !storageKey.endsWith('_expiry')
+            ))
+            .map((storageKey) => storageKey.replace('carina_cache_', ''));
+
+        if (cachedAdminFormsKeys.length === 0) {
+            return;
+        }
+
+        refreshState.pending = false;
+        refreshState.inFlight = (async () => {
+            await Promise.all(cachedAdminFormsKeys.map(async (cacheKey) => {
+                const match = cacheKey.match(/^admin_forms_p(\d+)_r(.*?)_t(.+)$/);
+                if (!match) return;
+
+                const page = Number(match[1]);
+                const reviewedFilter = match[2] ?? '';
+                const typeFilter = match[3] ?? '';
+
+                if (!Number.isFinite(page) || page < 1) return;
+
+                let url = `${apiBaseUrl}/api/admin/forms?page=${page}&limit=10`;
+                if (reviewedFilter !== '') {
+                    url += `&reviewed=${encodeURIComponent(reviewedFilter)}`;
+                }
+                if (typeFilter) {
+                    url += `&type=${encodeURIComponent(typeFilter)}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                setSharedCacheData(cacheKey, data, 2 * 60 * 1000);
+            }));
+        })();
+
+        try {
+            await refreshState.inFlight;
+        } finally {
+            refreshState.inFlight = null;
+            if (refreshState.pending) {
+                refreshState.pending = false;
+                refreshCachedAdminFormsPages().catch(() => {});
+            }
+        }
+    }, [user?._id, setSharedCacheData]);
+
     const fetchUnreadCount = useCallback(async () => {
         if (!user) {
             setUnreadCount(0);
@@ -284,8 +356,19 @@ export const UnreadCountProvider = ({ children, user }) => {
                 console.error('Error subscribing to admin chats:', error);
             });
 
+            const adminFormsHandler = () => {
+                refreshCachedAdminFormsPages().catch((error) => {
+                    console.error('Error refreshing admin forms cache:', error);
+                });
+            };
+
+            subscribeToAdminForms(adminFormsHandler).catch(error => {
+                console.error('Error subscribing to admin forms:', error);
+            });
+
             return () => {
                 removeMessageHandler('admin:chats', messageHandler);
+                removeMessageHandler('admin:forms', adminFormsHandler);
             };
         } else {
             // Regular user: Subscribe to their own chat
@@ -328,7 +411,7 @@ export const UnreadCountProvider = ({ children, user }) => {
                 removeMessageHandler(`plans:${user._id}`, planHandler);
             };
         }
-    }, [user, refreshUserActivePlansCache, refreshCachedHomeFormsPages, refreshCachedViewPlanEntries]);
+    }, [user, refreshUserActivePlansCache, refreshCachedHomeFormsPages, refreshCachedViewPlanEntries, refreshCachedAdminFormsPages]);
 
     const resetUnreadCount = useCallback(() => {
         setUnreadCount(0);

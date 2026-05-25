@@ -3,6 +3,7 @@ import Plan from '../models/Plan.js';
 import User from '../models/User.js';
 import { uploadBodyImageToCloudinary, deleteImage } from '../config/cloudinary.js';
 import cache, { CacheKeys } from '../config/cache.js';
+import { publishMessage } from '../config/ably.js';
 
 // TODO: Add route for admin to get all forms that were not reviewed
 
@@ -177,6 +178,20 @@ export async function newForm(req, res) {
         const newForm = new Form(formData);
         await newForm.save();
 
+        // Notify admins in realtime so cached admin forms lists update instantly
+        try {
+            await publishMessage('admin:forms', 'form-created', {
+                formId: newForm._id,
+                userId,
+                type: newForm.type,
+                reviewed: newForm.reviewed === true,
+                planSent: newForm.planSent === true,
+                createdAt: newForm.createdAt,
+            });
+        } catch (publishError) {
+            console.error('Error publishing form-created event:', publishError);
+        }
+
         // Deduct one form credit (only for non-admin users when payments are enabled)
         if (paymentsEnabled && user.role !== 'admin') {
             user.formCredits -= 1;
@@ -266,6 +281,17 @@ export async function deleteFormAdmin(req, res) {
         // Invalidate dashboard cache since counts changed
         cache.delete(CacheKeys.dashboardStats());
 
+        // Notify admins so cached lists update without a manual refresh
+        try {
+            await publishMessage('admin:forms', 'form-deleted', {
+                formId,
+                userId: form.user,
+                deletedAt: new Date(),
+            });
+        } catch (publishError) {
+            console.error('Error publishing form-deleted event:', publishError);
+        }
+
         res.status(200).json({ 
             message: 'Form deleted successfully',
             deletedPlan: plan ? true : false
@@ -338,6 +364,17 @@ export async function deleteMyForm(req, res) {
 
         // Invalidate dashboard cache
         cache.delete(CacheKeys.dashboardStats());
+
+        // Notify admins so cached lists update without a manual refresh
+        try {
+            await publishMessage('admin:forms', 'form-deleted', {
+                formId,
+                userId,
+                deletedAt: new Date(),
+            });
+        } catch (publishError) {
+            console.error('Error publishing form-deleted event:', publishError);
+        }
 
         res.status(200).json({ 
             message: 'Form deleted successfully',

@@ -99,6 +99,7 @@ export const generateAdminAblyToken = async (userId) => {
                 'chat:*': ['subscribe', 'presence'],
                 'chat:*:messages': ['subscribe'],
                 'admin:chats': ['subscribe'],
+                'admin:forms': ['subscribe'],
                 'announcements': ['subscribe', 'publish'],
                 'user:*:announcements': ['publish'],
             },

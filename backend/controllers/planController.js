@@ -125,6 +125,19 @@ export async function createPlan(req, res) {
                 planSent: true 
             });
 
+            // Notify admins that the related form status changed
+            try {
+                await publishMessage('admin:forms', 'form-updated', {
+                    formId,
+                    userId,
+                    reviewed: true,
+                    planSent: true,
+                    updatedAt: new Date(),
+                });
+            } catch (publishError) {
+                console.error('Error publishing form-updated event:', publishError);
+            }
+
             // Publish notification to Ably
             await publishMessage(`plans:${userId}`, 'plan-updated', {
                 planId: existingPlan._id,
@@ -175,6 +188,19 @@ export async function createPlan(req, res) {
             reviewed: true, 
             planSent: true 
         });
+
+        // Notify admins that the related form status changed
+        try {
+            await publishMessage('admin:forms', 'form-updated', {
+                formId,
+                userId,
+                reviewed: true,
+                planSent: true,
+                updatedAt: new Date(),
+            });
+        } catch (publishError) {
+            console.error('Error publishing form-updated event:', publishError);
+        }
 
         if (templateId) {
             const PlanTemplate = (await import('../models/PlanTemplate.js')).default;
