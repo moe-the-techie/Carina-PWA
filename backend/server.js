@@ -49,9 +49,6 @@ app.use(compression({
 app.use(express.json({ limit: '10mb' })); // Limit JSON body size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Apply general rate limiting to all API routes
-app.use('/api', generalLimiter);
-
 const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
 const allowedOrigins = isDevelopment ? [
@@ -67,16 +64,36 @@ const allowedOrigins = isDevelopment ? [
   'https://carina-pwa-1.vercel.app'
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
       callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return;
     }
+
+    const isAllowedOrigin = allowedOrigins.some((allowedOrigin) => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      }
+
+      return allowedOrigin.test(origin);
+    });
+
+    if (isAllowedOrigin) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
+// Apply general rate limiting to all API routes after CORS so limited responses
+// still include the CORS headers the browser needs to read them.
+app.use('/api', generalLimiter);
 
 
 // Use routes
