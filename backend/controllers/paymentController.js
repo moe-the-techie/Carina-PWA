@@ -22,8 +22,19 @@ async function getEffectivePaymentPackageSettings() {
             price: typeof followUpPrice === 'number' ? followUpPrice : fawaterkConfig.followUpPackagePrice,
             formsPerPackage: typeof followUpForms === 'number' ? followUpForms : fawaterkConfig.followUpFormsPerPackage
         },
+        firstTimeResetEnabled: settingsDoc?.firstTimeResetEnabled === true,
+        firstTimeResetAfterDays: typeof settingsDoc?.firstTimeResetAfterDays === 'number'
+            ? settingsDoc.firstTimeResetAfterDays
+            : 60,
         currency: fawaterkConfig.currency
     };
+}
+
+function isFirstTimeEligible({ lastPaidAt, resetEnabled, resetAfterDays }) {
+    if (!lastPaidAt) return true;
+    if (!resetEnabled) return false;
+    const ms = resetAfterDays * 24 * 60 * 60 * 1000;
+    return (Date.now() - new Date(lastPaidAt).getTime()) > ms;
 }
 
 /**
@@ -39,9 +50,22 @@ export async function createPaymentIntention(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Determine whether this is a first-time purchase or a follow-up purchase
-        const hasPaidBefore = await Payment.exists({ user: userId, status: 'paid' });
-        const inferredPackageType = hasPaidBefore ? 'follow_up' : 'first_time';
+        const effectiveSettings = await getEffectivePaymentPackageSettings();
+
+        // Determine whether this should be treated as first-time vs follow-up
+        const lastPaidPayment = await Payment.findOne({ user: userId, status: 'paid' })
+            .sort({ paidAt: -1, createdAt: -1 })
+            .select('paidAt createdAt')
+            .lean();
+
+        const lastPaidAt = lastPaidPayment?.paidAt || lastPaidPayment?.createdAt || null;
+        const eligibleForFirstTime = isFirstTimeEligible({
+            lastPaidAt,
+            resetEnabled: effectiveSettings.firstTimeResetEnabled,
+            resetAfterDays: effectiveSettings.firstTimeResetAfterDays
+        });
+
+        const inferredPackageType = eligibleForFirstTime ? 'first_time' : 'follow_up';
 
         // Allow the client to request a specific packageType, but enforce separation rules
         const requestedPackageType = req.body?.packageType;
@@ -51,20 +75,16 @@ export async function createPaymentIntention(req, res) {
             return res.status(400).json({ error: 'Invalid packageType' });
         }
 
-        // Enforce: once user has a paid payment, they can only use follow-up packages
-        if (hasPaidBefore && packageType === 'first_time') {
-            return res.status(400).json({ error: 'First-time package is only available for first-time purchases' });
+        // Enforce separation rules
+        if (!eligibleForFirstTime && packageType === 'first_time') {
+            return res.status(400).json({ error: 'First-time package is not available for your account right now' });
         }
-
-        // Enforce: users who never paid before should use first-time package (keep flows simple & separated)
-        if (!hasPaidBefore && packageType === 'follow_up') {
+        if (eligibleForFirstTime && packageType === 'follow_up' && !lastPaidAt) {
             return res.status(400).json({ error: 'Follow-up package is only available after your first successful payment' });
         }
 
         // Generate unique reference for this payment
         const cartId = `CARINA-${packageType}-${userId}-${Date.now()}`;
-
-        const effectiveSettings = await getEffectivePaymentPackageSettings();
 
         // Get amount (Fawaterk expects amount in main currency unit, not cents)
         const amount = packageType === 'first_time'
@@ -543,11 +563,22 @@ export async function getFormCredits(req, res) {
 
         const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
 
-        // Determine which package should be shown (first-time vs follow-up)
-        const hasPaidBefore = await Payment.exists({ user: userId, status: 'paid' });
-        const packageType = hasPaidBefore ? 'follow_up' : 'first_time';
-
         const effectiveSettings = await getEffectivePaymentPackageSettings();
+
+        // Determine which package should be shown (first-time vs follow-up)
+        const lastPaidPayment = await Payment.findOne({ user: userId, status: 'paid' })
+            .sort({ paidAt: -1, createdAt: -1 })
+            .select('paidAt createdAt')
+            .lean();
+
+        const lastPaidAt = lastPaidPayment?.paidAt || lastPaidPayment?.createdAt || null;
+        const eligibleForFirstTime = isFirstTimeEligible({
+            lastPaidAt,
+            resetEnabled: effectiveSettings.firstTimeResetEnabled,
+            resetAfterDays: effectiveSettings.firstTimeResetAfterDays
+        });
+
+        const packageType = eligibleForFirstTime ? 'first_time' : 'follow_up';
         const pricePerPackage = packageType === 'first_time'
             ? effectiveSettings.firstTime.price
             : effectiveSettings.followUp.price;
@@ -565,7 +596,12 @@ export async function getFormCredits(req, res) {
 
             // New fields to support separating first-time vs follow-up packages
             packageType,
-            isFirstTimeBuyer: !hasPaidBefore
+            isFirstTimeBuyer: eligibleForFirstTime,
+
+            // Reset policy info (for admin/debugging; safe for UI to ignore)
+            firstTimeResetEnabled: effectiveSettings.firstTimeResetEnabled,
+            firstTimeResetAfterDays: effectiveSettings.firstTimeResetAfterDays,
+            lastPaidAt
         });
 
     } catch (error) {

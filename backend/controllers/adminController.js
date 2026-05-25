@@ -27,6 +27,10 @@ function getEffectivePaymentPackageSettings(settingsDoc) {
             price: typeof followUpPrice === 'number' ? followUpPrice : fawaterkConfig.followUpPackagePrice,
             formsPerPackage: typeof followUpForms === 'number' ? followUpForms : fawaterkConfig.followUpFormsPerPackage
         },
+        firstTimeResetEnabled: settingsDoc?.firstTimeResetEnabled === true,
+        firstTimeResetAfterDays: typeof settingsDoc?.firstTimeResetAfterDays === 'number'
+            ? settingsDoc.firstTimeResetAfterDays
+            : 60,
         currency: fawaterkConfig.currency
     };
 }
@@ -60,7 +64,9 @@ export async function updatePaymentPackageSettingsAdmin(req, res) {
             firstTimePrice,
             firstTimeFormsPerPackage,
             followUpPrice,
-            followUpFormsPerPackage
+            followUpFormsPerPackage,
+            firstTimeResetEnabled,
+            firstTimeResetAfterDays
         } = req.body || {};
 
         const update = {
@@ -98,6 +104,18 @@ export async function updatePaymentPackageSettingsAdmin(req, res) {
                 return res.status(400).json({ message: 'Invalid followUpFormsPerPackage' });
             }
             update['followUp.formsPerPackage'] = Math.floor(value);
+        }
+
+        if (firstTimeResetEnabled !== undefined) {
+            update.firstTimeResetEnabled = Boolean(firstTimeResetEnabled);
+        }
+
+        if (firstTimeResetAfterDays !== undefined) {
+            const value = Number(firstTimeResetAfterDays);
+            if (Number.isNaN(value) || value < 1) {
+                return res.status(400).json({ message: 'Invalid firstTimeResetAfterDays' });
+            }
+            update.firstTimeResetAfterDays = Math.floor(value);
         }
 
         const updatedDoc = await PaymentSettings.findOneAndUpdate(

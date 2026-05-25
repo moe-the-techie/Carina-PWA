@@ -27,7 +27,9 @@ import {
     useTheme,
     useMediaQuery,
     CircularProgress,
-    Tooltip
+    Tooltip,
+    Switch,
+    FormControlLabel
 } from '@mui/material';
 import {
     Search as SearchIcon,
@@ -57,7 +59,9 @@ export default function AdminPaymentsPage() {
         firstTimePrice: '',
         firstTimeFormsPerPackage: '',
         followUpPrice: '',
-        followUpFormsPerPackage: ''
+        followUpFormsPerPackage: '',
+        firstTimeResetEnabled: false,
+        firstTimeResetAfterDays: ''
     });
 
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -92,7 +96,9 @@ export default function AdminPaymentsPage() {
                     firstTimePrice: settings?.firstTime?.price ?? '',
                     firstTimeFormsPerPackage: settings?.firstTime?.formsPerPackage ?? '',
                     followUpPrice: settings?.followUp?.price ?? '',
-                    followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? ''
+                    followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? '',
+                    firstTimeResetEnabled: settings?.firstTimeResetEnabled === true,
+                    firstTimeResetAfterDays: settings?.firstTimeResetAfterDays ?? ''
                 });
             } catch (err) {
                 setMessage({ type: 'error', text: err.message || 'Failed to load payment package settings' });
@@ -112,6 +118,8 @@ export default function AdminPaymentsPage() {
             if (packageSettings.firstTimeFormsPerPackage !== '') payload.firstTimeFormsPerPackage = packageSettings.firstTimeFormsPerPackage;
             if (packageSettings.followUpPrice !== '') payload.followUpPrice = packageSettings.followUpPrice;
             if (packageSettings.followUpFormsPerPackage !== '') payload.followUpFormsPerPackage = packageSettings.followUpFormsPerPackage;
+            payload.firstTimeResetEnabled = packageSettings.firstTimeResetEnabled;
+            if (packageSettings.firstTimeResetAfterDays !== '') payload.firstTimeResetAfterDays = packageSettings.firstTimeResetAfterDays;
 
             const response = await fetch(`${apiBaseUrl}/api/admin/payment-package-settings`, {
                 method: 'PUT',
@@ -133,7 +141,9 @@ export default function AdminPaymentsPage() {
                 firstTimePrice: settings?.firstTime?.price ?? packageSettings.firstTimePrice,
                 firstTimeFormsPerPackage: settings?.firstTime?.formsPerPackage ?? packageSettings.firstTimeFormsPerPackage,
                 followUpPrice: settings?.followUp?.price ?? packageSettings.followUpPrice,
-                followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? packageSettings.followUpFormsPerPackage
+                followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? packageSettings.followUpFormsPerPackage,
+                firstTimeResetEnabled: settings?.firstTimeResetEnabled === true,
+                firstTimeResetAfterDays: settings?.firstTimeResetAfterDays ?? packageSettings.firstTimeResetAfterDays
             });
         } catch (err) {
             setMessage({ type: 'error', text: err.message || 'Failed to save settings' });
@@ -353,6 +363,26 @@ export default function AdminPaymentsPage() {
                             value={packageSettings.followUpFormsPerPackage}
                             onChange={(e) => setPackageSettings(prev => ({ ...prev, followUpFormsPerPackage: e.target.value }))}
                             disabled={packageSettingsLoading}
+                            sx={{ ...glassInput, minWidth: 220 }}
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mt: 2 }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={packageSettings.firstTimeResetEnabled}
+                                    onChange={(e) => setPackageSettings(prev => ({ ...prev, firstTimeResetEnabled: e.target.checked }))}
+                                    disabled={packageSettingsLoading}
+                                />
+                            }
+                            label="Enable first-time reset"
+                        />
+                        <TextField
+                            label="Reset after (days)"
+                            value={packageSettings.firstTimeResetAfterDays}
+                            onChange={(e) => setPackageSettings(prev => ({ ...prev, firstTimeResetAfterDays: e.target.value }))}
+                            disabled={packageSettingsLoading || !packageSettings.firstTimeResetEnabled}
                             sx={{ ...glassInput, minWidth: 220 }}
                         />
                     </Box>

@@ -20,6 +20,17 @@ const paymentSettingsSchema = new Schema({
         unique: true,
         default: 'payment_packages'
     },
+    // When enabled, a user becomes eligible for the first-time package again
+    // if their last successful (paid) purchase is older than `firstTimeResetAfterDays`.
+    firstTimeResetEnabled: {
+        type: Boolean,
+        default: false
+    },
+    firstTimeResetAfterDays: {
+        type: Number,
+        min: 1,
+        default: 60
+    },
     firstTime: {
         type: packageSchema,
         default: () => ({})
