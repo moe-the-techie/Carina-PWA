@@ -7,6 +7,13 @@ const paymentSchema = new Schema({
         ref: 'User',
         required: true
     },
+    // Package type: first-time purchase vs follow-up purchase
+    // Kept optional for backwards compatibility with existing records.
+    packageType: {
+        type: String,
+        enum: ['first_time', 'follow_up'],
+        default: null
+    },
     // Fawaterk specific fields
     fawaterkInvoiceId: {
         type: String,

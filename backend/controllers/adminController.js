@@ -5,11 +5,118 @@ import Chat from '../models/Chat.js';
 import Message from '../models/Message.js';
 import UserClass from '../models/UserClass.js';
 import Payment from '../models/Payment.js';
+import PaymentSettings from '../models/PaymentSettings.js';
 import fawaterkConfig from '../config/fawaterk.js';
 import { deleteImage } from '../config/cloudinary.js';
 import { adminAuth } from '../config/firebase.js';
 import { sendPlanReminders, updateExpiredPlans } from '../services/planReminderService.js';
 import cache, { CacheKeys, CacheTTL } from '../config/cache.js';
+
+function getEffectivePaymentPackageSettings(settingsDoc) {
+    const firstTimePrice = settingsDoc?.firstTime?.price ?? null;
+    const firstTimeForms = settingsDoc?.firstTime?.formsPerPackage ?? null;
+    const followUpPrice = settingsDoc?.followUp?.price ?? null;
+    const followUpForms = settingsDoc?.followUp?.formsPerPackage ?? null;
+
+    return {
+        firstTime: {
+            price: typeof firstTimePrice === 'number' ? firstTimePrice : fawaterkConfig.firstTimePackagePrice,
+            formsPerPackage: typeof firstTimeForms === 'number' ? firstTimeForms : fawaterkConfig.firstTimeFormsPerPackage
+        },
+        followUp: {
+            price: typeof followUpPrice === 'number' ? followUpPrice : fawaterkConfig.followUpPackagePrice,
+            formsPerPackage: typeof followUpForms === 'number' ? followUpForms : fawaterkConfig.followUpFormsPerPackage
+        },
+        currency: fawaterkConfig.currency
+    };
+}
+
+export async function getPaymentPackageSettingsAdmin(req, res) {
+    try {
+        const settingsDoc = await PaymentSettings.findOne({ key: 'payment_packages' })
+            .populate('updatedBy', 'name email')
+            .lean();
+
+        const effective = getEffectivePaymentPackageSettings(settingsDoc);
+
+        res.status(200).json({
+            settings: effective,
+            savedSettings: settingsDoc ? {
+                firstTime: settingsDoc.firstTime,
+                followUp: settingsDoc.followUp,
+                updatedAt: settingsDoc.updatedAt,
+                updatedBy: settingsDoc.updatedBy
+            } : null
+        });
+    } catch (error) {
+        console.error('Error fetching payment package settings:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function updatePaymentPackageSettingsAdmin(req, res) {
+    try {
+        const {
+            firstTimePrice,
+            firstTimeFormsPerPackage,
+            followUpPrice,
+            followUpFormsPerPackage
+        } = req.body || {};
+
+        const update = {
+            updatedBy: req.user?._id || null,
+            updatedAt: new Date()
+        };
+
+        if (firstTimePrice !== undefined) {
+            const value = Number(firstTimePrice);
+            if (Number.isNaN(value) || value < 0) {
+                return res.status(400).json({ message: 'Invalid firstTimePrice' });
+            }
+            update['firstTime.price'] = value;
+        }
+
+        if (firstTimeFormsPerPackage !== undefined) {
+            const value = Number(firstTimeFormsPerPackage);
+            if (Number.isNaN(value) || value < 1) {
+                return res.status(400).json({ message: 'Invalid firstTimeFormsPerPackage' });
+            }
+            update['firstTime.formsPerPackage'] = Math.floor(value);
+        }
+
+        if (followUpPrice !== undefined) {
+            const value = Number(followUpPrice);
+            if (Number.isNaN(value) || value < 0) {
+                return res.status(400).json({ message: 'Invalid followUpPrice' });
+            }
+            update['followUp.price'] = value;
+        }
+
+        if (followUpFormsPerPackage !== undefined) {
+            const value = Number(followUpFormsPerPackage);
+            if (Number.isNaN(value) || value < 1) {
+                return res.status(400).json({ message: 'Invalid followUpFormsPerPackage' });
+            }
+            update['followUp.formsPerPackage'] = Math.floor(value);
+        }
+
+        const updatedDoc = await PaymentSettings.findOneAndUpdate(
+            { key: 'payment_packages' },
+            { $set: update, $setOnInsert: { key: 'payment_packages', createdAt: new Date() } },
+            { upsert: true, new: true, runValidators: true }
+        ).lean();
+
+        const effective = getEffectivePaymentPackageSettings(updatedDoc);
+
+        res.status(200).json({
+            message: 'Payment package settings updated',
+            settings: effective
+        });
+    } catch (error) {
+        console.error('Error updating payment package settings:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
 
 // Dashboard stats with caching - reduces DB load significantly
 export async function getDashboardStats(req, res) {

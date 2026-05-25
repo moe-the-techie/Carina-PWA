@@ -51,6 +51,15 @@ export default function AdminPaymentsPage() {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [verifyLoading, setVerifyLoading] = useState(null);
 
+    const [packageSettingsLoading, setPackageSettingsLoading] = useState(false);
+    const [packageSettingsSaving, setPackageSettingsSaving] = useState(false);
+    const [packageSettings, setPackageSettings] = useState({
+        firstTimePrice: '',
+        firstTimeFormsPerPackage: '',
+        followUpPrice: '',
+        followUpFormsPerPackage: ''
+    });
+
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState(null);
     const [newStatus, setNewStatus] = useState('');
@@ -62,6 +71,76 @@ export default function AdminPaymentsPage() {
         }, 500);
         return () => clearTimeout(timer);
     }, [search]);
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            setPackageSettingsLoading(true);
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/admin/payment-package-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to load payment package settings');
+                }
+
+                const settings = data.settings;
+                setPackageSettings({
+                    firstTimePrice: settings?.firstTime?.price ?? '',
+                    firstTimeFormsPerPackage: settings?.firstTime?.formsPerPackage ?? '',
+                    followUpPrice: settings?.followUp?.price ?? '',
+                    followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? ''
+                });
+            } catch (err) {
+                setMessage({ type: 'error', text: err.message || 'Failed to load payment package settings' });
+            } finally {
+                setPackageSettingsLoading(false);
+            }
+        };
+
+        loadSettings();
+    }, []);
+
+    const savePackageSettings = async () => {
+        setPackageSettingsSaving(true);
+        try {
+            const payload = {};
+            if (packageSettings.firstTimePrice !== '') payload.firstTimePrice = packageSettings.firstTimePrice;
+            if (packageSettings.firstTimeFormsPerPackage !== '') payload.firstTimeFormsPerPackage = packageSettings.firstTimeFormsPerPackage;
+            if (packageSettings.followUpPrice !== '') payload.followUpPrice = packageSettings.followUpPrice;
+            if (packageSettings.followUpFormsPerPackage !== '') payload.followUpFormsPerPackage = packageSettings.followUpFormsPerPackage;
+
+            const response = await fetch(`${apiBaseUrl}/api/admin/payment-package-settings`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to save settings');
+            }
+
+            setMessage({ type: 'success', text: 'Payment package settings saved' });
+            const settings = data.settings;
+            setPackageSettings({
+                firstTimePrice: settings?.firstTime?.price ?? packageSettings.firstTimePrice,
+                firstTimeFormsPerPackage: settings?.firstTime?.formsPerPackage ?? packageSettings.firstTimeFormsPerPackage,
+                followUpPrice: settings?.followUp?.price ?? packageSettings.followUpPrice,
+                followUpFormsPerPackage: settings?.followUp?.formsPerPackage ?? packageSettings.followUpFormsPerPackage
+            });
+        } catch (err) {
+            setMessage({ type: 'error', text: err.message || 'Failed to save settings' });
+        } finally {
+            setPackageSettingsSaving(false);
+        }
+    };
 
     const paymentsCacheKey = useMemo(
         () => `admin_payments_p${page}_s${statusFilter || 'all'}_q${debouncedSearch || 'all'}`,
@@ -232,6 +311,52 @@ export default function AdminPaymentsPage() {
                         {message.text}
                     </Alert>
                 )}
+
+                <Paper sx={{ ...glassCard, mb: 3, p: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                            Payment Package Settings
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={savePackageSettings}
+                            disabled={packageSettingsLoading || packageSettingsSaving}
+                        >
+                            {packageSettingsSaving ? 'Saving...' : 'Save Settings'}
+                        </Button>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                        <TextField
+                            label="First-time price"
+                            value={packageSettings.firstTimePrice}
+                            onChange={(e) => setPackageSettings(prev => ({ ...prev, firstTimePrice: e.target.value }))}
+                            disabled={packageSettingsLoading}
+                            sx={{ ...glassInput, minWidth: 220 }}
+                        />
+                        <TextField
+                            label="First-time forms"
+                            value={packageSettings.firstTimeFormsPerPackage}
+                            onChange={(e) => setPackageSettings(prev => ({ ...prev, firstTimeFormsPerPackage: e.target.value }))}
+                            disabled={packageSettingsLoading}
+                            sx={{ ...glassInput, minWidth: 220 }}
+                        />
+                        <TextField
+                            label="Follow-up price"
+                            value={packageSettings.followUpPrice}
+                            onChange={(e) => setPackageSettings(prev => ({ ...prev, followUpPrice: e.target.value }))}
+                            disabled={packageSettingsLoading}
+                            sx={{ ...glassInput, minWidth: 220 }}
+                        />
+                        <TextField
+                            label="Follow-up forms"
+                            value={packageSettings.followUpFormsPerPackage}
+                            onChange={(e) => setPackageSettings(prev => ({ ...prev, followUpFormsPerPackage: e.target.value }))}
+                            disabled={packageSettingsLoading}
+                            sx={{ ...glassInput, minWidth: 220 }}
+                        />
+                    </Box>
+                </Paper>
 
                 <Paper sx={{ ...glassCard, mb: 3, p: 2 }}>
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>

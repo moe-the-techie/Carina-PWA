@@ -18,6 +18,8 @@ import {
     getAllPaymentsAdmin,
     verifyPaymentAdmin,
     updatePaymentStatusAdmin,
+    getPaymentPackageSettingsAdmin,
+    updatePaymentPackageSettingsAdmin,
     getAllActivePlansAdmin,
     getPlanProgressAdmin,
     triggerPlanReminders,
@@ -50,6 +52,10 @@ router.delete('/admin/classes/:classId', adminOnly, checkFeatureEnabled('ENABLE_
 router.get('/admin/payments', adminOnly, getAllPaymentsAdmin);
 router.post('/admin/payments/:paymentId/verify', adminOnly, verifyPaymentAdmin);
 router.put('/admin/payments/:paymentId/status', adminOnly, updatePaymentStatusAdmin);
+
+// Payment package settings (price + forms per package)
+router.get('/admin/payment-package-settings', adminOnly, getPaymentPackageSettingsAdmin);
+router.put('/admin/payment-package-settings', adminOnly, updatePaymentPackageSettingsAdmin);
 
 // Active Plans routes
 router.get('/admin/active-plans', adminOnly, getAllActivePlansAdmin);

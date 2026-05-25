@@ -35,6 +35,10 @@ export default function PaymentPage() {
     const [creditsInfo, setCreditsInfo] = useState(null);
     const [paymentsEnabled, setPaymentsEnabled] = useState(true);
 
+    const packageLabel = creditsInfo?.packageType === 'follow_up'
+        ? 'Follow-up Package'
+        : 'First-time Package';
+
     // Fetch credits info on mount
     useEffect(() => {
         fetchCreditsInfo();
@@ -178,7 +182,7 @@ export default function PaymentPage() {
                             Purchase Form Credits
                         </Typography>
                         <Typography color="text.secondary" sx={{ mb: 4 }}>
-                            Get credits to submit your health assessment forms
+                            Get credits to submit your health assessment forms ({packageLabel})
                         </Typography>
                     </motion.div>
 
@@ -214,7 +218,7 @@ export default function PaymentPage() {
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                                 <ShoppingCartIcon color="primary" sx={{ mr: 1 }} />
                                 <Typography variant="h6" fontWeight={600}>
-                                    Form Credits Package
+                                    {packageLabel}
                                 </Typography>
                             </Box>
 

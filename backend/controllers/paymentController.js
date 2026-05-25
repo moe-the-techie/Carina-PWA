@@ -1,8 +1,30 @@
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
+import PaymentSettings from '../models/PaymentSettings.js';
 import fawaterkConfig from '../config/fawaterk.js';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
+
+async function getEffectivePaymentPackageSettings() {
+    const settingsDoc = await PaymentSettings.findOne({ key: 'payment_packages' }).lean();
+
+    const firstTimePrice = settingsDoc?.firstTime?.price;
+    const firstTimeForms = settingsDoc?.firstTime?.formsPerPackage;
+    const followUpPrice = settingsDoc?.followUp?.price;
+    const followUpForms = settingsDoc?.followUp?.formsPerPackage;
+
+    return {
+        firstTime: {
+            price: typeof firstTimePrice === 'number' ? firstTimePrice : fawaterkConfig.firstTimePackagePrice,
+            formsPerPackage: typeof firstTimeForms === 'number' ? firstTimeForms : fawaterkConfig.firstTimeFormsPerPackage
+        },
+        followUp: {
+            price: typeof followUpPrice === 'number' ? followUpPrice : fawaterkConfig.followUpPackagePrice,
+            formsPerPackage: typeof followUpForms === 'number' ? followUpForms : fawaterkConfig.followUpFormsPerPackage
+        },
+        currency: fawaterkConfig.currency
+    };
+}
 
 /**
  * Create a payment invoice using Fawaterk's API
@@ -17,11 +39,41 @@ export async function createPaymentIntention(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Determine whether this is a first-time purchase or a follow-up purchase
+        const hasPaidBefore = await Payment.exists({ user: userId, status: 'paid' });
+        const inferredPackageType = hasPaidBefore ? 'follow_up' : 'first_time';
+
+        // Allow the client to request a specific packageType, but enforce separation rules
+        const requestedPackageType = req.body?.packageType;
+        const packageType = requestedPackageType || inferredPackageType;
+
+        if (packageType !== 'first_time' && packageType !== 'follow_up') {
+            return res.status(400).json({ error: 'Invalid packageType' });
+        }
+
+        // Enforce: once user has a paid payment, they can only use follow-up packages
+        if (hasPaidBefore && packageType === 'first_time') {
+            return res.status(400).json({ error: 'First-time package is only available for first-time purchases' });
+        }
+
+        // Enforce: users who never paid before should use first-time package (keep flows simple & separated)
+        if (!hasPaidBefore && packageType === 'follow_up') {
+            return res.status(400).json({ error: 'Follow-up package is only available after your first successful payment' });
+        }
+
         // Generate unique reference for this payment
-        const cartId = `CARINA-${userId}-${Date.now()}`;
-        
+        const cartId = `CARINA-${packageType}-${userId}-${Date.now()}`;
+
+        const effectiveSettings = await getEffectivePaymentPackageSettings();
+
         // Get amount (Fawaterk expects amount in main currency unit, not cents)
-        const amount = fawaterkConfig.formPackagePrice;
+        const amount = packageType === 'first_time'
+            ? effectiveSettings.firstTime.price
+            : effectiveSettings.followUp.price;
+
+        const formsPerPackage = packageType === 'first_time'
+            ? effectiveSettings.firstTime.formsPerPackage
+            : effectiveSettings.followUp.formsPerPackage;
 
         // Prepare customer data
         const customerData = {
@@ -35,7 +87,7 @@ export async function createPaymentIntention(req, res) {
         // Prepare cart items
         const cartItems = [
             {
-                name: 'Form Credits Package',
+                name: packageType === 'first_time' ? 'Form Credits Package (First-time)' : 'Form Credits Package (Follow-up)',
                 price: amount,
                 quantity: 1
             }
@@ -80,11 +132,12 @@ export async function createPaymentIntention(req, res) {
         // Create payment record in database
         const payment = new Payment({
             user: userId,
+            packageType,
             fawaterkInvoiceId: invoiceData.data.invoice_id.toString(),
             fawaterkInvoiceKey: invoiceData.data.invoice_key,
             amount: amount * 100, // Store in cents for consistency
             currency: fawaterkConfig.currency,
-            formCredits: fawaterkConfig.formsPerPackage,
+            formCredits: formsPerPackage,
             status: 'pending'
         });
 
@@ -95,10 +148,11 @@ export async function createPaymentIntention(req, res) {
             success: true,
             payment: {
                 id: payment._id,
+                packageType,
                 invoiceId: invoiceData.data.invoice_id,
                 amount: amount,
                 currency: fawaterkConfig.currency,
-                formsCount: fawaterkConfig.formsPerPackage
+                formsCount: formsPerPackage
             },
             // Fawaterk payment URL for redirecting users
             checkoutUrl: invoiceData.data.payment_data.redirectTo
@@ -489,12 +543,29 @@ export async function getFormCredits(req, res) {
 
         const paymentsEnabled = process.env.ENABLE_PAYMENTS !== 'false';
 
+        // Determine which package should be shown (first-time vs follow-up)
+        const hasPaidBefore = await Payment.exists({ user: userId, status: 'paid' });
+        const packageType = hasPaidBefore ? 'follow_up' : 'first_time';
+
+        const effectiveSettings = await getEffectivePaymentPackageSettings();
+        const pricePerPackage = packageType === 'first_time'
+            ? effectiveSettings.firstTime.price
+            : effectiveSettings.followUp.price;
+        const formsPerPackage = packageType === 'first_time'
+            ? effectiveSettings.firstTime.formsPerPackage
+            : effectiveSettings.followUp.formsPerPackage;
+
         res.json({
             formCredits: user.formCredits || 0,
-            pricePerPackage: fawaterkConfig.formPackagePrice,
-            formsPerPackage: fawaterkConfig.formsPerPackage,
+            // Backwards-compatible fields consumed by the frontend
+            pricePerPackage,
+            formsPerPackage,
             currency: fawaterkConfig.currency,
-            paymentsEnabled: paymentsEnabled
+            paymentsEnabled: paymentsEnabled,
+
+            // New fields to support separating first-time vs follow-up packages
+            packageType,
+            isFirstTimeBuyer: !hasPaidBefore
         });
 
     } catch (error) {
