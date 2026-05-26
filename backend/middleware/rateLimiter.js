@@ -63,10 +63,6 @@ export const generalLimiter = rateLimit({
     },
     standardHeaders: true, // Return rate limit info in headers
     legacyHeaders: false,
-    skip: (req) => {
-        // Skip rate limiting for health checks
-        return req.path === '/health' || req.path === '/debug-log' || req.path === '/debug-ip';
-    }
 });
 
 // Strict limiter for auth endpoints (login, register, password reset)
