@@ -1,0 +1,113 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      - name: Add VPS host key
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          VPS_PORT="${VPS_PORT:-22}"
+          mkdir -p ~/.ssh
+          if [ -n "${VPS_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          fi
+          test -s ~/.ssh/known_hosts
+
+      - name: Check SSH login
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          VPS_PORT="${VPS_PORT:-22}"
+          sshpass -e ssh \
+            -o PreferredAuthentications=keyboard-interactive,password \
+            -o PubkeyAuthentication=no \
+            -o PasswordAuthentication=yes \
+            -o KbdInteractiveAuthentication=yes \
+            -o NumberOfPasswordPrompts=1 \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            "echo 'connected as:'; whoami; echo 'host:'; hostname"
+
+      - name: Update repo on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_PATH: ${{ secrets.VPS_PATH }}
+          DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+          SSHPASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          set -euo pipefail
+          VPS_PORT="${VPS_PORT:-22}"
+          DEPLOY_BRANCH="${DEPLOY_BRANCH:-main}"
+
+          sshpass -e ssh \
+            -o PreferredAuthentications=keyboard-interactive,password \
+            -o PubkeyAuthentication=no \
+            -o PasswordAuthentication=yes \
+            -o KbdInteractiveAuthentication=yes \
+            -o NumberOfPasswordPrompts=1 \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 \
+            -p "$VPS_PORT" \
+            "$VPS_USER@$VPS_HOST" \
+            "bash -s" -- "$VPS_PATH" "$DEPLOY_BRANCH" <<'EOF'
+          set -euo pipefail
+          repo_path="$1"
+          branch="$2"
+
+          if [ ! -d "$repo_path" ]; then
+            echo "::error::VPS_PATH does not exist: $repo_path"
+            exit 2
+          fi
+
+          cd "$repo_path"
+          echo "Deploying $(pwd) -> origin/$branch"
+
+          if ! command -v git >/dev/null 2>&1; then
+            echo "::error::git is not installed on the VPS"
+            exit 2
+          fi
+
+          if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+            echo "::error::VPS_PATH is not a git working tree: $repo_path"
+            echo "Directory listing:"
+            ls -la "$repo_path" | head -n 50 || true
+            exit 2
+          fi
+
+          git fetch --prune origin
+          git checkout -B "$branch" "origin/$branch"
+          git reset --hard "origin/$branch"
+          git clean -fd
+          EOF
